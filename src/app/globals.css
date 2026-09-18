@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Interface lisible en plein soleil : contraste fort, gros elements tactiles. */
+@theme {
+  --color-brand: #1b4d3e;
+  --color-brand-accent: #d4af37;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}

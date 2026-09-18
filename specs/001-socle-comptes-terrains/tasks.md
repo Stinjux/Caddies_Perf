@@ -37,14 +37,14 @@ Aucune tâche n'est bloquée. Seul le déploiement (phase 24) reste suspendu au 
 
 **Purpose** : initialisation du projet et de sa structure.
 
-- [ ] T001 Initialiser le projet Next.js 16 avec TypeScript à la racine du dépôt (`package.json`, `tsconfig.json`, `next.config.ts`)
-- [ ] T002 [P] Configurer Tailwind CSS 4 dans `postcss.config.mjs` et `src/app/globals.css`
-- [ ] T003 [P] Configurer ESLint et Prettier dans `eslint.config.mjs`
-- [ ] T004 [P] Créer `.env.example` documentant les variables attendues, **sans aucune valeur réelle** (FR-046)
-- [ ] T005 Créer l'arborescence décrite dans plan.md : `src/app/`, `src/db/`, `src/server/{auth,scope,repositories,pii,audit}/`, `src/components/`, `src/lib/`, `tests/{unit,integration,e2e}/`, `fixtures/`
-- [ ] T006 Installer et configurer Vitest dans `vitest.config.ts` avec un environnement Node et une base de test dédiée
-- [ ] T007 [P] Installer et configurer Playwright dans `playwright.config.ts`, projets desktop et mobile
-- [ ] T008 Créer les bases `caddieperf_dev` et `caddieperf_test`, et documenter la procédure dans `README.md`
+- [x] T001 Initialiser le projet Next.js 16 avec TypeScript à la racine du dépôt (`package.json`, `tsconfig.json`, `next.config.ts`)
+- [x] T002 [P] Configurer Tailwind CSS 4 dans `postcss.config.mjs` et `src/app/globals.css`
+- [x] T003 [P] Configurer ESLint et Prettier dans `eslint.config.mjs`
+- [x] T004 [P] Créer `.env.example` documentant les variables attendues, **sans aucune valeur réelle** (FR-046)
+- [x] T005 Créer l'arborescence décrite dans plan.md : `src/app/`, `src/db/`, `src/server/{auth,scope,repositories,pii,audit}/`, `src/components/`, `src/lib/`, `tests/{unit,integration,e2e}/`, `fixtures/`
+- [x] T006 Installer et configurer Vitest dans `vitest.config.ts` avec un environnement Node et une base de test dédiée
+- [x] T007 [P] Installer et configurer Playwright dans `playwright.config.ts`, projets desktop et mobile
+- [x] T008 Créer les bases `caddieperf_dev` et `caddieperf_test`, et documenter la procédure dans `README.md`
 
 ---
 
