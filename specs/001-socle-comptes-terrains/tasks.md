@@ -12,7 +12,6 @@
 
 - **[P]** : parallélisable — fichiers distincts, aucune dépendance en attente
 - **[Story]** : parcours concerné (US1 à US6)
-- **⛔** : bloqué par une approbation en attente (principe V)
 
 ## Path Conventions
 
@@ -20,15 +19,17 @@ Projet unique, conformément à `plan.md` : `src/` et `tests/` à la racine du d
 
 ---
 
-## ⛔ Blocages à lever avant de commencer
+## ✅ Blocages levés le 2026-09-18
 
-| Tâches | Blocage | Référence |
+| Tâches | Point | Statut |
 |---|---|---|
-| T006, T007 | Ajout de Vitest et Playwright | research.md §9 |
-| T031 | Écrire l'authentification nous-mêmes plutôt qu'ajouter une bibliothèque | research.md §2 |
-| T021, T022 | Version de PostgreSQL à aligner | research.md §10 |
+| T006, T007 | Vitest et Playwright | **Approuvés** |
+| T031 | Authentification maison, sans bibliothèque | **Approuvée** |
+| T021, T022 | Version de PostgreSQL | **Contournée** — développement sur PostgreSQL 14, migrations compatibles 14 et au-delà (research.md §10) |
 
-Aucune de ces tâches ne démarre sans approbation explicite.
+**Contrainte permanente** : aucune migration ne doit employer une fonctionnalité postérieure à PostgreSQL 14 tant que la version du serveur de production reste inconnue.
+
+Aucune tâche n'est bloquée. Seul le déploiement (phase 24) reste suspendu au choix d'hébergement.
 
 ---
 
@@ -41,8 +42,8 @@ Aucune de ces tâches ne démarre sans approbation explicite.
 - [ ] T003 [P] Configurer ESLint et Prettier dans `eslint.config.mjs`
 - [ ] T004 [P] Créer `.env.example` documentant les variables attendues, **sans aucune valeur réelle** (FR-046)
 - [ ] T005 Créer l'arborescence décrite dans plan.md : `src/app/`, `src/db/`, `src/server/{auth,scope,repositories,pii,audit}/`, `src/components/`, `src/lib/`, `tests/{unit,integration,e2e}/`, `fixtures/`
-- [ ] T006 ⛔ Installer et configurer Vitest dans `vitest.config.ts` avec un environnement Node et une base de test dédiée
-- [ ] T007 ⛔ [P] Installer et configurer Playwright dans `playwright.config.ts`, projets desktop et mobile
+- [ ] T006 Installer et configurer Vitest dans `vitest.config.ts` avec un environnement Node et une base de test dédiée
+- [ ] T007 [P] Installer et configurer Playwright dans `playwright.config.ts`, projets desktop et mobile
 - [ ] T008 Créer les bases `caddieperf_dev` et `caddieperf_test`, et documenter la procédure dans `README.md`
 
 ---
@@ -67,8 +68,8 @@ Aucune de ces tâches ne démarre sans approbation explicite.
 - [ ] T018 Définir la table `assignment` dans `src/db/schema/assignment.ts` avec les **clés étrangères composites** `(golf_course_id, id)` vers booking, cart et caddie (FR-026)
 - [ ] T019 [P] Définir `evaluation`, `evaluation_criterion_answer` et `google_review_click` dans `src/db/schema/evaluation.ts`
 - [ ] T020 Définir la table `audit_log` dans `src/db/schema/audit-log.ts` avec ses trois index de filtrage (FR-039)
-- [ ] T021 ⛔ Générer la migration initiale dans `src/db/migrations/`
-- [ ] T022 ⛔ Écrire la migration qui retire `UPDATE` et `DELETE` sur `audit_log` à l'utilisateur applicatif (FR-038)
+- [ ] T021 Générer la migration initiale dans `src/db/migrations/`, en n'employant que des fonctionnalités disponibles depuis PostgreSQL 14
+- [ ] T022 Écrire la migration qui retire `UPDATE` et `DELETE` sur `audit_log` à l'utilisateur applicatif (FR-038)
 
 ### Briques transverses
 
@@ -80,7 +81,7 @@ Aucune de ces tâches ne démarre sans approbation explicite.
 - [ ] T028 Écrire l'écriture du journal dans `src/server/audit/write.ts`, dans la **même transaction** que l'action journalisée (FR-035)
 - [ ] T029 **Écrire le point d'entrée unique des renseignements personnels** dans `src/server/pii/index.ts` : lecture unitaire seulement, aucune lecture en lot, journalisation systématique (FR-030, FR-036)
 - [ ] T030 [P] Écrire le hachage de mot de passe par `scrypt` dans `src/server/auth/password.ts`, sans dépendance externe (FR-017)
-- [ ] T031 ⛔ Écrire la gestion de session dans `src/server/auth/session.ts` : création, vérification, destruction, et revérification du statut du compte à chaque requête (FR-016)
+- [ ] T031 Écrire la gestion de session dans `src/server/auth/session.ts` : création, vérification, destruction, et revérification du statut du compte à chaque requête (FR-016)
 - [ ] T032 [P] Écrire les classes d'erreur et leur traitement dans `src/server/errors.ts` : identifiant de corrélation, **aucune donnée personnelle** dans les traces (FR-031)
 
 ### Données de test

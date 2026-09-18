@@ -2,7 +2,7 @@
 
 **Feature**: Socle — données, comptes et terrains | **Date**: 2026-09-18
 
-Chaque décision est présentée avec sa justification et les options écartées. Les points marqués **EN ATTENTE D'APPROBATION** ne doivent pas être codés avant accord explicite (principe V de la constitution).
+Chaque décision est présentée avec sa justification et les options écartées. **Toutes les approbations requises ont été obtenues le 2026-09-18** ; seul le choix d'hébergement (§11) reste inconnu, et il ne bloque que le déploiement.
 
 ---
 
@@ -18,7 +18,7 @@ Chaque décision est présentée avec sa justification et les options écartées
 
 ---
 
-## 2. Mécanisme d'authentification — **EN ATTENTE D'APPROBATION**
+## 2. Mécanisme d'authentification — **APPROUVÉ le 2026-09-18**
 
 **Décision proposée** : sessions maison, stockées en base, transmises par un cookie `HttpOnly`, `Secure` et `SameSite=Lax`. Aucune bibliothèque d'authentification.
 
@@ -29,7 +29,7 @@ Chaque décision est présentée avec sa justification et les options écartées
 - *better-auth* : solide, mais introduit une dépendance structurante pour un besoin que le produit n'a pas.
 - *Jetons JWT sans état* : inadaptés, car révoquer un compte immédiatement exigerait de toute façon un registre en base — c'est-à-dire ce qu'on cherchait à éviter.
 
-**Ce qui doit être approuvé** : accepter d'écrire cette brique nous-mêmes plutôt que d'ajouter une dépendance.
+**Statut** : approuvé par le propriétaire du produit le 2026-09-18. Aucune bibliothèque d'authentification ne sera ajoutée.
 
 ---
 
@@ -105,7 +105,7 @@ Chaque décision est présentée avec sa justification et les options écartées
 
 ---
 
-## 9. Outils de test — **EN ATTENTE D'APPROBATION**
+## 9. Outils de test — **APPROUVÉS le 2026-09-18**
 
 **Décision proposée** :
 - **Vitest** pour les tests unitaires et d'intégration. *Utilité* : exécute les tests TypeScript sans étape de compilation séparée, démarre en quelques centaines de millisecondes, ce qui permet de les lancer à chaque modification plutôt qu'une fois par jour.
@@ -114,17 +114,21 @@ Chaque décision est présentée avec sa justification et les options écartées
 
 **Justification** : les exigences de cloisonnement (FR-023 à FR-027) et de non-exposition (FR-020, SC-004) ne sont vérifiables qu'en exécutant de vraies requêtes contre une vraie base et un vrai navigateur. Un test fondé sur des simulacres validerait notre propre imagination.
 
-**Ce qui doit être approuvé** : l'ajout de ces deux outils de développement. Ils ne sont pas embarqués en production.
+**Statut** : approuvés par le propriétaire du produit le 2026-09-18. Vitest et Playwright sont des outils de développement, non embarqués en production.
 
 ---
 
-## 10. Version de PostgreSQL — **INCONNUE À LEVER**
+## 10. Version de PostgreSQL — **DÉCISION DE CONTOURNEMENT**
 
-**Constat** : la machine de développement porte PostgreSQL 14.21. La version cible visée est PostgreSQL 16.
+**Constat** : la machine de développement porte PostgreSQL 14.21. La version du serveur de production est **inconnue**, l'hébergement n'étant pas encore arrêté.
 
-**Pourquoi cela compte** : les migrations et certaines contraintes se comportent différemment selon la version. Développer sur 14 et déployer sur 16 fait courir le risque de découvrir l'écart au déploiement.
+**Décision** : développer sur le PostgreSQL 14 déjà installé, en se limitant strictement aux fonctionnalités présentes **depuis la version 14**.
 
-**À décider** : aligner le poste de développement sur la version du serveur de production, une fois celle-ci connue. Aucun travail ne dépend de cette réponse avant l'écriture des premières migrations.
+**Justification** : tout ce que le schéma exige existe en 14 — `citext`, `jsonb`, clés étrangères composites, contraintes de vérification, retrait de droits sur une table. Aucune fonctionnalité de 15, 16 ou 17 n'est nécessaire. Les migrations tourneront donc à l'identique sur n'importe quelle version à partir de 14, ce qui **retire entièrement la dépendance au choix d'hébergement**. Aucune installation supplémentaire n'est requise.
+
+**Contrainte à respecter** : toute migration utilisant une fonctionnalité postérieure à la version 14 doit être refusée en revue, tant que la version de production n'est pas connue.
+
+**Alternative écartée** : *installer PostgreSQL 16 en local et viser cette version* — reporterait le risque sur le déploiement si l'hébergeur ne proposait qu'une version antérieure.
 
 ---
 
@@ -147,9 +151,11 @@ Chaque décision est présentée avec sa justification et les options écartées
 
 | # | Point | Nature | Bloque |
 |---|---|---|---|
-| 2 | Authentification maison plutôt qu'une bibliothèque | Approbation | L'écriture du code d'authentification |
-| 9 | Ajout de Vitest et Playwright | Approbation | L'écriture des tests |
-| 10 | Version de PostgreSQL | Information | Les premières migrations |
-| 11 | Caractéristiques de l'hébergeur | Information | Le déploiement, pas le développement |
+| 2 | Authentification maison plutôt qu'une bibliothèque | ✅ **Approuvé le 2026-09-18** | Plus rien |
+| 9 | Ajout de Vitest et Playwright | ✅ **Approuvé le 2026-09-18** | Plus rien |
+| 10 | Version de PostgreSQL | ✅ **Contournée** — développement sur 14, compatibilité 14+ | Plus rien |
+| 11 | Caractéristiques de l'hébergeur | ⏳ Toujours inconnue | Le déploiement uniquement (phase 24) |
+
+**Aucun point ne bloque plus le développement.** Seul le déploiement reste suspendu au choix d'hébergement.
 
 Les points 1 et 3 à 8 sont des décisions de conception prises et documentées ; elles ne requièrent pas d'approbation distincte mais peuvent être contestées avant le début du codage.
