@@ -191,7 +191,12 @@ Un administrateur autorisé peut corriger ou effacer les renseignements personne
 - **FR-031** : Aucune donnée personnelle NE DOIT figurer dans une adresse Web, un paramètre de requête, un QR code, un journal technique ou un message d'erreur.
 - **FR-032** : Les évaluations clients DOIVENT être anonymes ; aucun mécanisme NE DOIT permettre de remonter d'une évaluation à l'identité du joueur.
 - **FR-033** : Un administrateur autorisé DOIT pouvoir corriger ou effacer les renseignements personnels d'un caddie sans altérer son historique de performance ni les statistiques du terrain.
-- **FR-034** : Le système DOIT appliquer une durée de conservation définie aux données personnelles et aux évaluations. [NEEDS CLARIFICATION : durée de conservation à confirmer pour les renseignements personnels des caddies, pour les commentaires clients et pour les évaluations agrégées]
+- **FR-034** : Le système DOIT appliquer les durées de conservation suivantes :
+  - **Année de naissance d'un caddie** : conservée tant que le caddie est actif, puis effacée **2 ans** après sa désactivation.
+  - **Commentaires clients en texte libre** : effacés **2 ans** après leur dépôt.
+  - **Évaluations chiffrées** : conservées **sans limite de durée**, étant anonymes et non identifiantes.
+- **FR-034b** : L'effacement des données arrivées à échéance DOIT être automatique, journalisé, et NE DOIT PAS altérer les moyennes, comparaisons ni statistiques historiques du terrain.
+- **FR-034c** : L'effacement d'un commentaire NE DOIT PAS supprimer l'évaluation chiffrée à laquelle il était rattaché.
 
 ### Journalisation
 
