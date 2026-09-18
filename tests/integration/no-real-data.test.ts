@@ -17,8 +17,10 @@ describe("principe II — aucune donnee reelle dans le depot", () => {
     expect(csv).toEqual([]);
   });
 
-  it("ne versionne aucun fichier .env", () => {
-    const env = tracked().filter((f) => f === ".env" || f.startsWith(".env."));
+  it("ne versionne aucun fichier .env reel (.env.example est attendu)", () => {
+    const env = tracked().filter(
+      (f) => (f === ".env" || f.startsWith(".env.")) && f !== ".env.example",
+    );
     expect(env).toEqual([]);
   });
 

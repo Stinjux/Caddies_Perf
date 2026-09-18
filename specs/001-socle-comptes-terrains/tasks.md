@@ -56,38 +56,38 @@ Aucune tâche n'est bloquée. Seul le déploiement (phase 24) reste suspendu au 
 
 ### Schéma de données
 
-- [ ] T009 Installer Drizzle ORM et drizzle-kit, et créer la connexion dans `src/db/index.ts`
-- [ ] T010 Définir tous les types énumérés dans `src/db/schema/enums.ts` d'après data-model.md
-- [ ] T011 [P] Définir la table `golf_course` dans `src/db/schema/golf-course.ts`
-- [ ] T012 [P] Définir les tables `account` et `account_golf_course` dans `src/db/schema/account.ts`
-- [ ] T013 [P] Définir la table `session` dans `src/db/schema/session.ts`
-- [ ] T014 [P] Définir la table `caddie` dans `src/db/schema/caddie.ts` — **aucune colonne pour la taille d'habits, l'adresse, l'âge ou la force** (FR-028, FR-028b)
-- [ ] T015 Définir la table `caddie_personal_data` dans `src/db/schema/caddie-personal-data.ts`, fichier **séparé** de `caddie.ts` pour rendre la frontière visible en revue (FR-029)
-- [ ] T016 [P] Définir la table `cart` dans `src/db/schema/cart.ts` avec `qr_token` unique
-- [ ] T017 [P] Définir la table `booking` dans `src/db/schema/booking.ts`
-- [ ] T018 Définir la table `assignment` dans `src/db/schema/assignment.ts` avec les **clés étrangères composites** `(golf_course_id, id)` vers booking, cart et caddie (FR-026)
-- [ ] T019 [P] Définir `evaluation`, `evaluation_criterion_answer` et `google_review_click` dans `src/db/schema/evaluation.ts`
-- [ ] T020 Définir la table `audit_log` dans `src/db/schema/audit-log.ts` avec ses trois index de filtrage (FR-039)
-- [ ] T021 Générer la migration initiale dans `src/db/migrations/`, en n'employant que des fonctionnalités disponibles depuis PostgreSQL 14
-- [ ] T022 Écrire la migration qui retire `UPDATE` et `DELETE` sur `audit_log` à l'utilisateur applicatif (FR-038)
+- [x] T009 Installer Drizzle ORM et drizzle-kit, et créer la connexion dans `src/db/index.ts`
+- [x] T010 Définir tous les types énumérés dans `src/db/schema/enums.ts` d'après data-model.md
+- [x] T011 [P] Définir la table `golf_course` dans `src/db/schema/golf-course.ts`
+- [x] T012 [P] Définir les tables `account` et `account_golf_course` dans `src/db/schema/account.ts`
+- [x] T013 [P] Définir la table `session` dans `src/db/schema/session.ts`
+- [x] T014 [P] Définir la table `caddie` dans `src/db/schema/caddie.ts` — **aucune colonne pour la taille d'habits, l'adresse, l'âge ou la force** (FR-028, FR-028b)
+- [x] T015 Définir la table `caddie_personal_data` dans `src/db/schema/caddie-personal-data.ts`, fichier **séparé** de `caddie.ts` pour rendre la frontière visible en revue (FR-029)
+- [x] T016 [P] Définir la table `cart` dans `src/db/schema/cart.ts` avec `qr_token` unique
+- [x] T017 [P] Définir la table `booking` dans `src/db/schema/booking.ts`
+- [x] T018 Définir la table `assignment` dans `src/db/schema/assignment.ts` avec les **clés étrangères composites** `(golf_course_id, id)` vers booking, cart et caddie (FR-026)
+- [x] T019 [P] Définir `evaluation`, `evaluation_criterion_answer` et `google_review_click` dans `src/db/schema/evaluation.ts`
+- [x] T020 Définir la table `audit_log` dans `src/db/schema/audit-log.ts` avec ses trois index de filtrage (FR-039)
+- [x] T021 Générer la migration initiale dans `src/db/migrations/`, en n'employant que des fonctionnalités disponibles depuis PostgreSQL 14
+- [x] T022 Écrire la migration qui retire `UPDATE` et `DELETE` sur `audit_log` à l'utilisateur applicatif (FR-038)
 
 ### Briques transverses
 
-- [ ] T023 [P] Écrire le générateur d'UUID v7 dans `src/lib/uuid.ts`
-- [ ] T024 [P] Écrire l'assistant de verrouillage optimiste dans `src/server/repositories/optimistic-lock.ts` (FR-045)
-- [ ] T025 [P] Écrire les utilitaires de fuseau horaire dans `src/lib/timezone.ts`, dont la dérivation de la date locale d'un terrain (FR-005, FR-044)
-- [ ] T026 **Écrire la barrière de cloisonnement** dans `src/server/scope/index.ts` : type `Scope` et construction depuis la session vérifiée, jamais depuis une entrée du navigateur (FR-023, FR-024)
-- [ ] T027 Écrire la base des dépôts dans `src/server/repositories/base.ts`, dont la signature **impose** un `Scope` en premier paramètre — un appel sans portée doit être une erreur de compilation (FR-023)
-- [ ] T028 Écrire l'écriture du journal dans `src/server/audit/write.ts`, dans la **même transaction** que l'action journalisée (FR-035)
-- [ ] T029 **Écrire le point d'entrée unique des renseignements personnels** dans `src/server/pii/index.ts` : lecture unitaire seulement, aucune lecture en lot, journalisation systématique (FR-030, FR-036)
-- [ ] T030 [P] Écrire le hachage de mot de passe par `scrypt` dans `src/server/auth/password.ts`, sans dépendance externe (FR-017)
-- [ ] T031 Écrire la gestion de session dans `src/server/auth/session.ts` : création, vérification, destruction, et revérification du statut du compte à chaque requête (FR-016)
-- [ ] T032 [P] Écrire les classes d'erreur et leur traitement dans `src/server/errors.ts` : identifiant de corrélation, **aucune donnée personnelle** dans les traces (FR-031)
+- [x] T023 [P] Écrire le générateur d'UUID v7 dans `src/lib/uuid.ts`
+- [x] T024 [P] Écrire l'assistant de verrouillage optimiste dans `src/server/repositories/optimistic-lock.ts` (FR-045)
+- [x] T025 [P] Écrire les utilitaires de fuseau horaire dans `src/lib/timezone.ts`, dont la dérivation de la date locale d'un terrain (FR-005, FR-044)
+- [x] T026 **Écrire la barrière de cloisonnement** dans `src/server/scope/index.ts` : type `Scope` et construction depuis la session vérifiée, jamais depuis une entrée du navigateur (FR-023, FR-024)
+- [x] T027 Écrire la base des dépôts dans `src/server/repositories/base.ts`, dont la signature **impose** un `Scope` en premier paramètre — un appel sans portée doit être une erreur de compilation (FR-023)
+- [x] T028 Écrire l'écriture du journal dans `src/server/audit/write.ts`, dans la **même transaction** que l'action journalisée (FR-035)
+- [x] T029 **Écrire le point d'entrée unique des renseignements personnels** dans `src/server/pii/index.ts` : lecture unitaire seulement, aucune lecture en lot, journalisation systématique (FR-030, FR-036)
+- [x] T030 [P] Écrire le hachage de mot de passe par `scrypt` dans `src/server/auth/password.ts`, sans dépendance externe (FR-017)
+- [x] T031 Écrire la gestion de session dans `src/server/auth/session.ts` : création, vérification, destruction, et revérification du statut du compte à chaque requête (FR-016)
+- [x] T032 [P] Écrire les classes d'erreur et leur traitement dans `src/server/errors.ts` : identifiant de corrélation, **aucune donnée personnelle** dans les traces (FR-031)
 
 ### Données de test
 
-- [ ] T033 Créer les jeux de données fictifs dans `fixtures/` : 2 terrains, 4 comptes dont un rattaché aux deux terrains, 6 caddies dont un désactivé, 4 voiturettes (principe II)
-- [ ] T034 [P] Écrire l'utilitaire de réinitialisation de la base de test dans `tests/helpers/reset-db.ts`
+- [x] T033 Créer les jeux de données fictifs dans `fixtures/` : 2 terrains, 4 comptes dont un rattaché aux deux terrains, 6 caddies dont un désactivé, 4 voiturettes (principe II)
+- [x] T034 [P] Écrire l'utilitaire de réinitialisation de la base de test dans `tests/helpers/reset-db.ts`
 
 **Checkpoint** : socle prêt. Les parcours utilisateurs peuvent démarrer.
 
