@@ -178,16 +178,16 @@ Aucune tâche n'est bloquée. Seul le déploiement (phase 24) reste suspendu au 
 
 ### Tests
 
-- [ ] T062 [P] [US4] **Test Playwright de capture réseau intégrale** sur une journée de Starter dans `tests/e2e/starter-no-pii.spec.ts` : échoue si une année de naissance, une note, un commentaire ou un jeton de QR code apparaît, **même non affiché** (SC-004)
-- [ ] T063 [P] [US4] Test d'accès direct aux renseignements personnels par un Starter, refusé comme si le caddie n'existait pas, dans `tests/integration/pii/starter-denied.test.ts`
-- [ ] T064 [P] [US4] Test de la matrice complète des permissions dans `tests/integration/permissions/matrix.test.ts` (FR-018, FR-019, FR-020)
-- [ ] T065 [P] [US4] Test vérifiant l'absence de colonne interdite dans le schéma, et l'échec d'insertion d'une taille d'habits, d'une adresse ou d'une force, dans `tests/integration/pii/schema-forbids.test.ts` (V-5)
+- [x] T062 [P] [US4] **Test Playwright de capture réseau intégrale** sur une journée de Starter dans `tests/e2e/starter-no-pii.spec.ts` : échoue si une année de naissance, une note, un commentaire ou un jeton de QR code apparaît, **même non affiché** (SC-004)
+- [x] T063 [P] [US4] Test d'accès direct aux renseignements personnels par un Starter, refusé comme si le caddie n'existait pas, dans `tests/integration/pii/starter-denied.test.ts`
+- [x] T064 [P] [US4] Test de la matrice complète des permissions dans `tests/integration/permissions/matrix.test.ts` (FR-018, FR-019, FR-020)
+- [x] T065 [P] [US4] Test vérifiant l'absence de colonne interdite dans le schéma, et l'échec d'insertion d'une taille d'habits, d'une adresse ou d'une force, dans `tests/integration/pii/schema-forbids.test.ts` (V-5)
 
 ### Implementation
 
-- [ ] T066 [US4] Écrire les projections destinées au Starter dans `src/server/serializers/starter.ts` : liste blanche de champs, jamais liste noire
-- [ ] T067 [US4] Écrire le garde de rôle dans `src/server/auth/require-role.ts` (FR-021)
-- [ ] T068 [US4] Écrire la mise en page et les routes du Starter dans `src/app/(starter)/`
+- [x] T066 [US4] Écrire les projections destinées au Starter dans `src/server/serializers/starter.ts` : liste blanche de champs, jamais liste noire
+- [x] T067 [US4] Écrire le garde de rôle dans `src/server/auth/require-role.ts` (FR-021)
+- [x] T068 [US4] Écrire la mise en page et les routes du Starter dans `src/app/(starter)/`
 
 **Checkpoint** : V-4 et V-5 passent. Ces tests deviennent permanents.
 

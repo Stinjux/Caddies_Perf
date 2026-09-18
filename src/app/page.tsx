@@ -5,5 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const ctx = await currentSession();
-  redirect(ctx ? "/terrains" : "/connexion");
+  if (!ctx) redirect("/connexion");
+  if (!ctx.scope) redirect("/choisir-terrain");
+  redirect(ctx.scope.role === "starter" ? "/depart" : "/terrains");
 }

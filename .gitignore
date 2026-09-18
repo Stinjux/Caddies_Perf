@@ -35,3 +35,7 @@ logs/
 tmp/
 .DS_Store
 coverage/
+
+# Artefacts de test
+test-results/
+playwright-report/
