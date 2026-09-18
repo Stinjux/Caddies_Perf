@@ -127,19 +127,19 @@ Aucune tâche n'est bloquée. Seul le déploiement (phase 24) reste suspendu au 
 
 ### Tests
 
-- [ ] T043 [P] [US2] Test de création de compte et de refus d'une adresse déjà utilisée dans `tests/integration/account.test.ts`
-- [ ] T044 [P] [US2] **Test de l'invariant du dernier administrateur** : désactivation et détachement refusés, dans `tests/integration/last-admin.test.ts` (FR-015)
-- [ ] T045 [P] [US2] Test de sélection du terrain : automatique avec un seul rattachement, écran de choix avec plusieurs, dans `tests/integration/course-selection.test.ts`
-- [ ] T046 [P] [US2] Test d'interruption de session dès la désactivation du compte dans `tests/integration/session-revocation.test.ts` (FR-016)
+- [x] T043 [P] [US2] Test de création de compte et de refus d'une adresse déjà utilisée dans `tests/integration/account.test.ts`
+- [x] T044 [P] [US2] **Test de l'invariant du dernier administrateur** : désactivation et détachement refusés, dans `tests/integration/last-admin.test.ts` (FR-015)
+- [x] T045 [P] [US2] Test de sélection du terrain : automatique avec un seul rattachement, écran de choix avec plusieurs, dans `tests/integration/course-selection.test.ts`
+- [x] T046 [P] [US2] Test d'interruption de session dès la désactivation du compte dans `tests/integration/session-revocation.test.ts` (FR-016)
 
 ### Implementation
 
-- [ ] T047 [US2] Écrire le dépôt des comptes dans `src/server/repositories/account.ts`, excluant **toujours** `password_hash` des lectures
-- [ ] T048 [US2] Écrire le service des comptes dans `src/server/services/account.ts`, avec la vérification transactionnelle du dernier administrateur (FR-015)
-- [ ] T049 [US2] Écrire la gestion des rattachements dans `src/server/services/account-course.ts`, détachement refusé s'il laisse un terrain orphelin
-- [ ] T050 [US2] Écrire l'écran de connexion dans `src/app/(auth)/connexion/page.tsx`, avec un message d'échec **identique** que l'adresse soit inconnue ou le mot de passe faux
-- [ ] T051 [US2] Écrire le sélecteur de terrain actif dans `src/components/course-switcher.tsx`, terrain actif visible en permanence (FR-013)
-- [ ] T052 [US2] Écrire la gestion des comptes dans `src/app/(admin)/comptes/page.tsx`
+- [x] T047 [US2] Écrire le dépôt des comptes dans `src/server/repositories/account.ts`, excluant **toujours** `password_hash` des lectures
+- [x] T048 [US2] Écrire le service des comptes dans `src/server/services/account.ts`, avec la vérification transactionnelle du dernier administrateur (FR-015)
+- [x] T049 [US2] Écrire la gestion des rattachements dans `src/server/services/account-course.ts`, détachement refusé s'il laisse un terrain orphelin
+- [x] T050 [US2] Écrire l'écran de connexion dans `src/app/(auth)/connexion/page.tsx`, avec un message d'échec **identique** que l'adresse soit inconnue ou le mot de passe faux
+- [x] T051 [US2] Écrire le sélecteur de terrain actif dans `src/components/course-switcher.tsx`, terrain actif visible en permanence (FR-013)
+- [x] T052 [US2] Écrire la gestion des comptes dans `src/app/(admin)/comptes/page.tsx`
 
 **Checkpoint** : V-2, V-7 et V-9 passent.
 
