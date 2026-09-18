@@ -222,15 +222,15 @@ Aucune tâche n'est bloquée. Seul le déploiement (phase 24) reste suspendu au 
 
 ### Tests
 
-- [ ] T074 [P] [US6] Test de correction d'une année de naissance et de sa journalisation dans `tests/integration/pii/correction.test.ts`
-- [ ] T075 [P] [US6] **Test d'effacement** : les renseignements disparaissent, les affectations et évaluations demeurent, les moyennes sont strictement identiques, dans `tests/integration/pii/erasure.test.ts` (SC-009)
-- [ ] T076 [P] [US6] Test de la purge à échéance : le commentaire est vidé, l'évaluation chiffrée subsiste, dans `tests/integration/retention.test.ts` (FR-034, FR-034c)
+- [x] T074 [P] [US6] Test de correction d'une année de naissance et de sa journalisation dans `tests/integration/pii/correction.test.ts`
+- [x] T075 [P] [US6] **Test d'effacement** : les renseignements disparaissent, les affectations et évaluations demeurent, les moyennes sont strictement identiques, dans `tests/integration/pii/erasure.test.ts` (SC-009)
+- [x] T076 [P] [US6] Test de la purge à échéance : le commentaire est vidé, l'évaluation chiffrée subsiste, dans `tests/integration/retention.test.ts` (FR-034, FR-034c)
 
 ### Implementation
 
-- [ ] T077 [US6] Écrire la correction et l'effacement dans `src/server/pii/mutate.ts`, journalisés
-- [ ] T078 [US6] Écrire l'écran de consultation et de correction dans `src/app/(admin)/caddies/[id]/donnees-personnelles/page.tsx`
-- [ ] T079 [US6] Écrire le traitement de purge à échéance dans `src/server/jobs/retention.ts` : année de naissance 2 ans après désactivation, commentaires 2 ans après dépôt (FR-034, FR-034b)
+- [x] T077 [US6] Écrire la correction et l'effacement dans `src/server/pii/mutate.ts`, journalisés
+- [x] T078 [US6] Écrire l'écran de consultation et de correction dans `src/app/(admin)/caddies/[id]/donnees-personnelles/page.tsx`
+- [x] T079 [US6] Écrire le traitement de purge à échéance dans `src/server/jobs/retention.ts` : année de naissance 2 ans après désactivation, commentaires 2 ans après dépôt (FR-034, FR-034b)
 
 **Checkpoint** : V-8 passe.
 
