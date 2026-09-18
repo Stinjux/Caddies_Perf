@@ -1,0 +1,37 @@
+# --- Dépendances et build ---
+node_modules/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# --- Environnement et secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Dossier agent (peut contenir des jetons d'authentification) ---
+.claude/
+
+# --- Données réelles : INTERDITES dans le dépôt ---
+# Règle du projet : seules des données fictives sont versionnées.
+# Tout fichier de données réelles (caddies, réservations, évaluations)
+# doit rester hors du dépôt.
+/data/reel/
+/data/real/
+/data/prod/
+/imports/
+*.csv
+!fixtures/**/*.csv
+!**/fixtures/*.csv
+!*.example.csv
+
+# --- Journaux et fichiers temporaires ---
+*.log
+logs/
+tmp/
+.DS_Store
+coverage/
