@@ -46,9 +46,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             Terrains
           </Link>
           {ctx.scope.role === "admin" && (
-            <Link href="/comptes" className="text-neutral-700">
-              Comptes
-            </Link>
+            <>
+              <Link href="/comptes" className="text-neutral-700">
+                Comptes
+              </Link>
+              <Link href="/journal" className="text-neutral-700">
+                Journal
+              </Link>
+            </>
           )}
         </nav>
       </header>

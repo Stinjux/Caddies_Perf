@@ -201,14 +201,14 @@ Aucune tâche n'est bloquée. Seul le déploiement (phase 24) reste suspendu au 
 
 ### Tests
 
-- [ ] T069 [P] [US5] Test vérifiant que chaque mutation administrative produit une entrée de journal dans `tests/integration/audit/coverage.test.ts`
-- [ ] T070 [P] [US5] Test vérifiant qu'**aucune** entrée de journal ne contient de donnée personnelle dans `tests/integration/audit/no-pii.test.ts` (FR-037)
-- [ ] T071 [P] [US5] Test vérifiant que PostgreSQL refuse la modification et la suppression d'une entrée dans `tests/integration/audit/immutable.test.ts` (FR-038)
+- [x] T069 [P] [US5] Test vérifiant que chaque mutation administrative produit une entrée de journal dans `tests/integration/audit/coverage.test.ts`
+- [x] T070 [P] [US5] Test vérifiant qu'**aucune** entrée de journal ne contient de donnée personnelle dans `tests/integration/audit/no-pii.test.ts` (FR-037)
+- [x] T071 [P] [US5] Test vérifiant que PostgreSQL refuse la modification et la suppression d'une entrée dans `tests/integration/audit/immutable.test.ts` (FR-038)
 
 ### Implementation
 
-- [ ] T072 [US5] Brancher l'écriture du journal sur toutes les mutations de `src/server/services/golf-course.ts`, `src/server/services/account.ts` et `src/server/services/account-course.ts`
-- [ ] T073 [US5] Écrire la consultation du journal dans `src/app/(admin)/journal/page.tsx`, avec filtres par auteur, nature d'action et période (FR-039)
+- [x] T072 [US5] Brancher l'écriture du journal sur toutes les mutations de `src/server/services/golf-course.ts`, `src/server/services/account.ts` et `src/server/services/account-course.ts`
+- [x] T073 [US5] Écrire la consultation du journal dans `src/app/(admin)/journal/page.tsx`, avec filtres par auteur, nature d'action et période (FR-039)
 
 **Checkpoint** : V-6 passe.
 

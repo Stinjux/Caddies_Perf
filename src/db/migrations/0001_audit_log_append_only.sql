@@ -18,6 +18,11 @@ BEGIN
 END
 $$;
 
+-- Sans USAGE sur le schema, le role ne voit meme pas les tables :
+-- PostgreSQL repond « relation does not exist », ce qui masquerait le
+-- veritable probleme de droits.
+GRANT USAGE ON SCHEMA public TO caddieperf_app;
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO caddieperf_app;
 
 -- Le journal fait exception : insertion et lecture seulement.
