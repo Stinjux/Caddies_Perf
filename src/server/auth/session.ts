@@ -1,5 +1,7 @@
 import { randomBytes, createHash } from "node:crypto";
 
+export { SESSION_COOKIE, sessionCookieOptions } from "@/lib/session-cookie";
+
 /**
  * Sessions maison, stockees en base (research.md §2, approuve le 2026-09-18).
  *
@@ -8,8 +10,6 @@ import { randomBytes, createHash } from "node:crypto";
  * session dont le compte est passe a "disabled" est detruite immediatement,
  * sans attendre l'expiration (FR-016) — ce qu'un jeton sans etat ne permet pas.
  */
-
-export const SESSION_COOKIE = "caddieperf_session";
 
 export function createSessionToken(): { token: string; tokenHash: string } {
   const token = randomBytes(32).toString("base64url");
@@ -27,10 +27,3 @@ export function sessionExpiry(role: "admin" | "starter", now: Date = new Date())
       : Number(process.env.SESSION_TTL_HOURS_STARTER ?? 24);
   return new Date(now.getTime() + hours * 3_600_000);
 }
-
-export const sessionCookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  path: "/",
-} as const;

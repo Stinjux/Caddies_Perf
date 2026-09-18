@@ -153,18 +153,18 @@ Aucune tâche n'est bloquée. Seul le déploiement (phase 24) reste suspendu au 
 
 ### Tests
 
-- [ ] T053 [P] [US3] Test de lecture inter-terrains refusée, sur caddie, voiturette et journal, dans `tests/integration/isolation/cross-course-read.test.ts`
-- [ ] T054 [P] [US3] Test d'écriture inter-terrains refusée dans `tests/integration/isolation/cross-course-write.test.ts`
-- [ ] T055 [P] [US3] Test vérifiant qu'aucune liste ne laisse apparaître un élément d'un autre terrain dans `tests/integration/isolation/list-leakage.test.ts`
-- [ ] T056 [P] [US3] **Test au niveau de la base** : une clé étrangère composite refuse une affectation reliant deux terrains, dans `tests/integration/isolation/composite-fk.test.ts`
-- [ ] T057 [P] [US3] Test vérifiant que la réponse pour une ressource d'un autre terrain est **indiscernable** d'une ressource inexistante, dans `tests/integration/isolation/not-found-parity.test.ts` (FR-025)
+- [x] T053 [P] [US3] Test de lecture inter-terrains refusée, sur caddie, voiturette et journal, dans `tests/integration/isolation/cross-course-read.test.ts`
+- [x] T054 [P] [US3] Test d'écriture inter-terrains refusée dans `tests/integration/isolation/cross-course-write.test.ts`
+- [x] T055 [P] [US3] Test vérifiant qu'aucune liste ne laisse apparaître un élément d'un autre terrain dans `tests/integration/isolation/list-leakage.test.ts`
+- [x] T056 [P] [US3] **Test au niveau de la base** : une clé étrangère composite refuse une affectation reliant deux terrains, dans `tests/integration/isolation/composite-fk.test.ts`
+- [x] T057 [P] [US3] Test vérifiant que la réponse pour une ressource d'un autre terrain est **indiscernable** d'une ressource inexistante, dans `tests/integration/isolation/not-found-parity.test.ts` (FR-025)
 
 ### Implementation
 
-- [ ] T058 [US3] Écrire l'intercepteur de portée dans `src/middleware.ts` et `src/server/scope/guard.ts`, appliqué à **toutes** les routes serveur
-- [ ] T059 [US3] Écrire la normalisation des réponses « introuvable » dans `src/server/errors.ts`, pour ne jamais révéler l'existence d'une ressource (FR-022, FR-025)
-- [ ] T060 [US3] Écrire le test de conformité de la couche d'accès dans `tests/integration/isolation/scope-coverage.test.ts` : **échoue si une seule fonction de dépôt est appelable sans portée**
-- [ ] T061 [US3] Écrire la réinitialisation de l'état à l'écran lors du changement de terrain actif dans `src/components/course-switcher.tsx` (FR-027)
+- [x] T058 [US3] Écrire l'intercepteur de portée dans `src/middleware.ts` et `src/server/scope/guard.ts`, appliqué à **toutes** les routes serveur
+- [x] T059 [US3] Écrire la normalisation des réponses « introuvable » dans `src/server/errors.ts`, pour ne jamais révéler l'existence d'une ressource (FR-022, FR-025)
+- [x] T060 [US3] Écrire le test de conformité de la couche d'accès dans `tests/integration/isolation/scope-coverage.test.ts` : **échoue si une seule fonction de dépôt est appelable sans portée**
+- [x] T061 [US3] Écrire la réinitialisation de l'état à l'écran lors du changement de terrain actif dans `src/components/course-switcher.tsx` (FR-027)
 
 **Checkpoint** : V-3 passe. Ce test devient permanent.
 
