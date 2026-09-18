@@ -185,6 +185,7 @@ Un administrateur autorisé peut corriger ou effacer les renseignements personne
 ### Protection des renseignements personnels
 
 - **FR-028** : Le système NE DOIT JAMAIS stocker la taille d'habits ni l'adresse du domicile d'un caddie, sous aucune forme et à aucun moment.
+- **FR-028b** : Le système NE DOIT conserver aucune colonne du fichier source qui ne sert pas une fonctionnalité du produit. Le champ « force » entre dans ce cas : sa colonne est tolérée à la lecture, son contenu n'est ni stocké, ni affiché, ni journalisé.
 - **FR-029** : L'année de naissance DOIT être le seul élément d'âge conservé, dans un espace séparé des données de performance.
 - **FR-030** : L'année de naissance NE DOIT être accessible qu'aux administrateurs, et n'apparaître dans aucun rapport ni export.
 - **FR-031** : Aucune donnée personnelle NE DOIT figurer dans une adresse Web, un paramètre de requête, un QR code, un journal technique ou un message d'erreur.
@@ -204,6 +205,7 @@ Un administrateur autorisé peut corriger ou effacer les renseignements personne
 
 - **FR-040** : Chaque entité rattachée à un terrain DOIT porter ce rattachement de façon obligatoire et non modifiable après création.
 - **FR-041** : L'identifiant interne d'un caddie DOIT être unique au sein d'un terrain et NE DOIT JAMAIS être réattribué, même après désactivation.
+- **FR-041b** : L'ancienneté d'un caddie DOIT être conservée comme un nombre entier d'années, accompagné de la date d'enregistrement de cette valeur. Sa mise à jour DOIT se faire par un nouvel import ou une saisie administrateur, le système NE la recalculant pas de lui-même.
 - **FR-042** : Un caddie désactivé DOIT conserver l'intégralité de son historique d'affectations et d'évaluations.
 - **FR-043** : Le score du caddie, la note du parcours et la valeur perçue du prix DOIVENT être conservés comme trois mesures distinctes ; aucune NE DOIT influencer le calcul d'une autre.
 - **FR-044** : Un jour travaillé DOIT être défini comme une date comportant au moins une affectation valide et terminée pour ce caddie, comptée une seule fois quel que soit le nombre de réservations de ce caddie ce jour-là.
@@ -225,7 +227,7 @@ Ce référentiel est la source de vérité du modèle de données. Les spécific
 
 - **Session** : période d'accès authentifié d'un compte, portant le terrain actif sélectionné. Prend fin à l'expiration, à la déconnexion, ou à la désactivation du compte.
 
-- **Caddie** : identité professionnelle d'un caddie sur un terrain. Identifiant interne unique au terrain et jamais réattribué, nom, prénom, ancienneté, force, statut (actif ou désactivé), terrain de rattachement. Ne contient aucune donnée personnelle protégée. Détaillé dans la spécification 2.
+- **Caddie** : identité professionnelle d'un caddie sur un terrain. Identifiant interne unique au terrain et jamais réattribué, nom, prénom, ancienneté, statut (actif ou désactivé), terrain de rattachement. L'ancienneté est un **nombre entier d'années**, accompagné de la date à laquelle cette valeur a été enregistrée afin de rester interprétable dans le temps. Ne contient aucune donnée personnelle protégée. Le champ « force » du fichier source n'est pas conservé. Détaillé dans la spécification 2.
 
 - **Renseignements personnels du caddie** : espace séparé, accessible aux seuls administrateurs, contenant l'**année de naissance** et rien d'autre. La taille d'habits et l'adresse du domicile n'y figurent jamais. Effaçable indépendamment du caddie et de son historique.
 
@@ -278,8 +280,8 @@ Ces choix ont été retenus faute de précision explicite. Ils sont modifiables 
 - **Archivage plutôt que suppression** : terrains, comptes et caddies sont désactivés ou archivés, jamais supprimés, afin de préserver l'intégrité des historiques et des comparaisons.
 - **Portée du pilote** : un seul terrain en exploitation réelle, la plateforme étant multi-terrains dès le premier jour.
 - **Langue de l'administration** : les interfaces administrateur et Starter sont en français ; les cinq langues concernent le questionnaire client.
-- **Format de l'ancienneté** : [NEEDS CLARIFICATION : l'ancienneté est-elle une date d'entrée en fonction, un nombre d'années, ou un texte libre dans le fichier source ?]
-- **Signification du champ « force »** : [NEEDS CLARIFICATION : que représente exactement « force » — une aptitude physique, un niveau de compétence, une catégorie de classement ? Est-ce une valeur libre ou une liste fermée ?]
+- **Format de l'ancienneté** : décision arrêtée — un **nombre entier d'années**, tel que fourni dans le fichier source. Conséquence assumée : cette valeur ne se met pas à jour toute seule et vieillit d'un an chaque année. Pour qu'elle reste interprétable, le système enregistre la date à laquelle elle a été saisie, et sa mise à jour se fait par un nouvel import.
+- **Champ « force »** : décision arrêtée — cette catégorie est **retirée du produit**. La colonne est tolérée dans le fichier source mais son contenu n'est ni stocké, ni affiché, ni journalisé.
 
 ## Dependencies
 
