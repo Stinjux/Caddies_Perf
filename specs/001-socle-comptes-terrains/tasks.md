@@ -103,17 +103,17 @@ Aucune tâche n'est bloquée. Seul le déploiement (phase 24) reste suspendu au 
 
 > Écrire ces tests **d'abord** et vérifier qu'ils échouent avant l'implémentation.
 
-- [ ] T035 [P] [US1] Test d'intégration de création, lecture, modification et archivage d'un terrain dans `tests/integration/golf-course.test.ts`
-- [ ] T036 [P] [US1] Test de validation : nom manquant refusé, fuseau IANA invalide refusé dans `tests/integration/golf-course-validation.test.ts`
-- [ ] T037 [P] [US1] Test d'affichage des dates dans le fuseau du terrain et non celui du navigateur dans `tests/unit/timezone.test.ts`
+- [x] T035 [P] [US1] Test d'intégration de création, lecture, modification et archivage d'un terrain dans `tests/integration/golf-course.test.ts`
+- [x] T036 [P] [US1] Test de validation : nom manquant refusé, fuseau IANA invalide refusé dans `tests/integration/golf-course-validation.test.ts`
+- [x] T037 [P] [US1] Test d'affichage des dates dans le fuseau du terrain et non celui du navigateur dans `tests/unit/timezone.test.ts`
 
 ### Implementation
 
-- [ ] T038 [US1] Écrire le dépôt des terrains dans `src/server/repositories/golf-course.ts`
-- [ ] T039 [US1] Écrire le service des terrains dans `src/server/services/golf-course.ts` : création, modification avec verrouillage optimiste, archivage, journalisation (FR-001 à FR-006)
-- [ ] T040 [P] [US1] Écrire la validation et le stockage du logo dans `src/server/services/logo-upload.ts` : formats et taille limités, refus explicite
-- [ ] T041 [US1] Écrire la liste des terrains dans `src/app/(admin)/terrains/page.tsx`
-- [ ] T042 [US1] Écrire le formulaire de création et de modification dans `src/app/(admin)/terrains/[id]/page.tsx`, dont le lien Google Reviews (FR-007)
+- [x] T038 [US1] Écrire le dépôt des terrains dans `src/server/repositories/golf-course.ts`
+- [x] T039 [US1] Écrire le service des terrains dans `src/server/services/golf-course.ts` : création, modification avec verrouillage optimiste, archivage, journalisation (FR-001 à FR-006)
+- [x] T040 [P] [US1] Écrire la validation et le stockage du logo dans `src/server/services/logo-upload.ts` : formats et taille limités, refus explicite
+- [x] T041 [US1] Écrire la liste des terrains dans `src/app/(admin)/terrains/page.tsx`
+- [x] T042 [US1] Écrire le formulaire de création et de modification dans `src/app/(admin)/terrains/[id]/page.tsx`, dont le lien Google Reviews (FR-007)
 
 **Checkpoint** : V-1 passe. Un terrain peut être créé et configuré.
 
