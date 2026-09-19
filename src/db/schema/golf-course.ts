@@ -11,6 +11,12 @@ export const golfCourse = pgTable("golf_course", {
   brandColorPrimary: text("brand_color_primary"),
   brandColorSecondary: text("brand_color_secondary"),
   googleReviewUrl: text("google_review_url"),
+  /**
+   * Duree, en heures apres la fin d'une partie, pendant laquelle le QR code
+   * accepte encore une evaluation (FR-050). NULL signifie « jusqu'a la fin
+   * de la journee locale du terrain ».
+   */
+  evaluationWindowHours: integer("evaluation_window_hours"),
   settings: jsonb("settings").notNull().default({}),
   status: courseStatus("status").notNull().default("active"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

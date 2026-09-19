@@ -187,7 +187,7 @@ Les huit premiers cas sont exigés par le propriétaire du produit.
 
 - **FR-201** : Le système DOIT permettre à un administrateur d'importer les réservations d'un terrain à partir d'un fichier d'export au format CSV produit par le système de réservation existant de ce terrain.
 - **FR-202** : L'import DOIT présenter un aperçu du résultat — lignes lues, réservations nouvelles, mises à jour, rejetées — **avant** toute écriture, et n'écrire qu'après confirmation explicite.
-- **FR-203** : Le système DOIT reconnaître les colonnes suivantes dans le fichier source : [NEEDS CLARIFICATION: quelles colonnes l'export CSV du système de réservation contient-il exactement, dans quel ordre, et lesquelles sont obligatoires ? Un exemple de fichier réel anonymisé permettrait de trancher.]
+- **FR-203** : Le système DOIT reconnaître les colonnes suivantes dans le fichier source : **Décision du 2026-09-18** : l'import CSV des réservations est **retiré du périmètre du pilote**. Le Starter saisit lui-même le numéro de réservation et l'heure de départ au moment où il crée l'affectation. Le champ `booking.source` vaut alors `manual`. L'import CSV reste possible plus tard sans modification du modèle.
 - **FR-204** : Le système DOIT identifier chaque réservation par le numéro de réservation du système source, unique à l'intérieur d'un terrain ; un second import du même fichier NE DOIT créer aucun doublon.
 - **FR-205** : Le système DOIT rejeter individuellement toute ligne dont le numéro de réservation est absent ou dont l'heure de départ est illisible, en poursuivant l'import des autres lignes, et DOIT produire un rapport de rejet indiquant le numéro de ligne et la raison.
 - **FR-206** : Le système DOIT ignorer toute colonne du fichier source qui ne sert pas une fonctionnalité du produit ; son contenu NE DOIT être ni stocké, ni affiché, ni journalisé.
@@ -226,7 +226,7 @@ Les huit premiers cas sont exigés par le propriétaire du produit.
 - **FR-230** : Le système DOIT enregistrer, à la création d'une affectation, le compte Starter auteur et l'heure de début.
 - **FR-231** : Le système DOIT garantir qu'une nouvelle tentative de création après une interruption réseau ne produit pas deux affectations pour la même réservation.
 - **FR-232** : Le système DOIT indiquer au Starter, en cas de refus, la raison exacte du refus et l'action corrective possible, sans jamais révéler de donnée personnelle.
-- **FR-233** : Le système DOIT traiter le nombre de caddies et de voiturettes attendus par départ conformément à la règle suivante : [NEEDS CLARIFICATION: un même départ peut-il comporter plusieurs caddies et plusieurs voiturettes, par exemple une partie à quatre joueurs, et si oui combien d'affectations distinctes cela produit-il pour une même réservation ?]
+- **FR-233** : Le système DOIT traiter le nombre de caddies et de voiturettes attendus par départ conformément à la règle suivante : **Décision du 2026-09-18** : **une voiturette par caddie** en règle générale. Une partie à quatre joueurs mobilise au moins deux voiturettes, ou quatre chariots — donc autant de QR codes. Lorsqu'un seul caddie sert deux voiturettes, il est **affecté aux deux** : deux affectations distinctes, même caddie. Scanner l'un ou l'autre QR mène au même caddie (FR-052 de la spéc. 001).
 
 ### Modification, terminaison et annulation d'une affectation
 
@@ -257,7 +257,7 @@ Les huit premiers cas sont exigés par le propriétaire du produit.
 - **FR-252** : La résolution DOIT renvoyer exactement une affectation active lorsqu'il en existe une seule pour cette voiturette.
 - **FR-253** : Lorsqu'aucune affectation active n'existe, la résolution DOIT échouer avec un message neutre, sans révéler l'existence de la voiturette ni celle d'affectations passées.
 - **FR-254** : Lorsque plusieurs affectations actives existent pour une même voiturette, le système NE DOIT PAS en choisir une : la résolution échoue, invite à s'adresser au personnel, et l'anomalie est signalée aux administrateurs du terrain.
-- **FR-255** : La résolution DOIT échouer lorsque l'affectation est terminée depuis plus de [NEEDS CLARIFICATION: au bout de combien de temps après l'heure de fin une partie est-elle considérée « terminée depuis trop longtemps » pour qu'un client puisse encore répondre au questionnaire ?], le délai s'appréciant dans le fuseau horaire du terrain.
+- **FR-255** : La résolution DOIT échouer lorsque l'affectation est terminée depuis plus de **Décision du 2026-09-18** : le délai est **paramétrable par terrain** (`golf_course.evaluation_window_hours`, FR-050 de la spéc. 001). En l'absence de valeur, la limite est la **fin de la journée locale du terrain**., le délai s'appréciant dans le fuseau horaire du terrain.
 - **FR-256** : La résolution DOIT échouer lorsque la réservation associée est annulée, ou lorsque la voiturette est signalée indisponible.
 - **FR-257** : Aucun message d'échec, aucune adresse consultée et aucun journal technique produit par la résolution NE DOIT contenir de nom, de numéro de réservation ou de donnée personnelle.
 

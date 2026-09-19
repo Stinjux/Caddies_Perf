@@ -236,7 +236,7 @@ Les mentions entre crochets sont des valeurs substituées par le système et ne 
 - **FR-304** : La résolution DOIT traiter explicitement chacun des cas suivants : aucune affectation active, plusieurs affectations candidates, réservation annulée, affectation annulée, affectation terminée au-delà du délai d'acceptation, voiturette inactive ou en entretien, jeton inconnu.
 - **FR-305** : Lorsque la résolution n'aboutit pas, le système DOIT présenter un message compréhensible par un client non technique et NE DOIT JAMAIS afficher un message d'erreur technique ni un identifiant interne.
 - **FR-306** : La réponse à un jeton inconnu DOIT être indifférenciable de celle d'un jeton valide sans affectation, afin de ne rien révéler sur l'existence des voiturettes.
-- **FR-307** : Le système DOIT cesser d'accepter une évaluation au-delà d'un délai fixe suivant la fin de l'affectation. [NEEDS CLARIFICATION: au bout de combien de temps après la fin d'une partie le QR code cesse-t-il d'accepter une évaluation — 2 h, 6 h, 24 h, fin de journée locale du terrain ?]
+- **FR-307** : Le système DOIT cesser d'accepter une évaluation au-delà d'un délai fixe suivant la fin de l'affectation. **Décision du 2026-09-18** : délai **paramétrable par terrain** (FR-050 de la spéc. 001). En l'absence de valeur, la limite est la **fin de la journée locale du terrain**.
 - **FR-308** : En présence de plusieurs affectations candidates, le système DOIT appliquer une règle de sélection déterministe et documentée ; si l'ambiguïté subsiste, il DOIT refuser d'ouvrir le questionnaire plutôt que de risquer un rattachement erroné.
 
 ### Écran d'accueil et confirmation du caddie
@@ -275,7 +275,7 @@ Les mentions entre crochets sont des valeurs substituées par le système et ne 
 - **FR-331** : Le questionnaire DOIT poser une question sur le niveau du prix, avec cinq réponses exclusives : beaucoup trop bas, plutôt bas, juste et raisonnable, plutôt élevé, beaucoup trop élevé.
 - **FR-332** : Les réponses sur le prix NE DOIVENT JAMAIS modifier la note ni le score du caddie.
 - **FR-333** : Le score du caddie, la note du parcours et la valeur perçue du prix DOIVENT rester trois mesures distinctes, aucune n'influençant le calcul d'une autre.
-- **FR-334** : Le montant affiché dans les deux questions sur le prix DOIT correspondre au tarif du service de caddie applicable au terrain concerné. [NEEDS CLARIFICATION: le prix de 200 MAD est-il fixe pour tous les terrains, ou paramétrable par terrain ?]
+- **FR-334** : Le montant affiché dans les deux questions sur le prix DOIT correspondre au tarif du service de caddie applicable au terrain concerné. **Décision du 2026-09-18** : **200 MAD par caddie pour 18 trous**, tarif identique sur les cinq terrains. Le tarif affiché au client est néanmoins **mémorisé dans chaque évaluation** (FR-048 de la spéc. 001) : sans cela, une révision du tarif rendrait illisible tout l'historique des réponses sur le prix.
 
 ### Commentaire libre
 
@@ -289,7 +289,7 @@ Les mentions entre crochets sont des valeurs substituées par le système et ne 
 - **FR-339** : L'envoi DOIT être possible dès lors que le client a confirmé le caddie, sans qu'aucune question ne soit rendue obligatoire au-delà de cette confirmation.
 - **FR-340** : Le système NE DOIT annoncer la réussite de l'envoi qu'après confirmation par le serveur.
 - **FR-341** : Un même envoi reçu plusieurs fois — double appui, rechargement, reprise réseau — NE DOIT produire qu'une seule évaluation.
-- **FR-342** : Le système DOIT accepter plusieurs évaluations distinctes pour une même affectation, plusieurs joueurs d'une même réservation étant légitimes à répondre chacun. [NEEDS CLARIFICATION: combien de réponses au maximum accepte-t-on pour une même affectation — 4, 8, aucun plafond ?]
+- **FR-342** : Le système DOIT accepter plusieurs évaluations distinctes pour une même affectation, plusieurs joueurs d'une même réservation étant légitimes à répondre chacun. **Décision du 2026-09-18** : **quatre réponses au maximum** par affectation, soit le nombre de joueurs d'une partie (FR-051 de la spéc. 001).
 - **FR-343** : Un appareil ayant déjà envoyé une évaluation pour une affectation donnée DOIT se voir présenter l'écran de remerciement plutôt qu'un questionnaire vierge, **sans qu'aucune donnée identifiant l'appareil ou le joueur ne soit conservée côté serveur**.
 - **FR-344** : Lorsque le plafond de réponses d'une affectation est atteint, une nouvelle tentative DOIT être refusée avec un message courtois, sans révéler le nombre d'évaluations déjà reçues.
 - **FR-345** : En cas d'interruption réseau pendant l'envoi, les réponses du client DOIVENT être conservées et il DOIT pouvoir réessayer sans tout ressaisir.

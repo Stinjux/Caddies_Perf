@@ -6,6 +6,16 @@ export const courseStatus = pgEnum("course_status", ["active", "archived"]);
 export const accountStatus = pgEnum("account_status", ["active", "disabled"]);
 export const accountRole = pgEnum("account_role", ["admin", "starter"]);
 export const caddieStatus = pgEnum("caddie_status", ["active", "disabled"]);
+
+/**
+ * Disponibilite OPERATIONNELLE, distincte du statut de cycle de vie.
+ * « Parti dejeuner » n'est ni actif ni desactive : le Starter doit pouvoir
+ * le signaler sans toucher au cycle de vie du caddie.
+ */
+export const caddieAvailability = pgEnum("caddie_availability", [
+  "available",
+  "unavailable",
+]);
 export const cartStatus = pgEnum("cart_status", [
   "available",
   "assigned",

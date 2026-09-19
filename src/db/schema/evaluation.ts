@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   smallint,
+  integer,
   timestamp,
   primaryKey,
   index,
@@ -36,6 +37,12 @@ export const evaluation = pgTable(
     courseRating: smallint("course_rating"),
     valueForMoney: smallint("value_for_money"),
     pricePerception: pricePerception("price_perception"),
+    /**
+     * Tarif AFFICHE au client au moment de sa reponse, en MAD (FR-048).
+     * Sans lui, une hausse de tarif rendrait illisible tout l'historique
+     * des reponses sur la perception du prix.
+     */
+    priceShownMad: integer("price_shown_mad").notNull().default(200),
     submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
     /** Echeance de purge du commentaire seul : la note chiffree subsiste (FR-034c). */
     commentPurgeAt: timestamp("comment_purge_at", { withTimezone: true }).notNull(),
@@ -84,4 +91,34 @@ export const googleReviewClick = pgTable(
     clickedAt: timestamp("clicked_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("idx_grc_course_date").on(t.golfCourseId, t.clickedAt)],
+);
+
+/**
+ * Signal « Non, ce n'est pas mon caddie » (FR-047).
+ *
+ * Emis AVANT toute evaluation : il n'y a donc rien a rattacher a une
+ * evaluation. C'est le symptome d'une erreur d'affectation, et il doit
+ * pouvoir etre compte et corrige.
+ *
+ * ANONYME comme une evaluation : aucune colonne n'identifie le joueur.
+ */
+export const wrongCaddieReport = pgTable(
+  "wrong_caddie_report",
+  {
+    id: uuid("id").primaryKey(),
+    golfCourseId: uuid("golf_course_id")
+      .notNull()
+      .references(() => golfCourse.id),
+    /** L'affectation que le serveur avait resolue, et que le client dement. */
+    assignmentId: uuid("assignment_id"),
+    reportedAt: timestamp("reported_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.golfCourseId, t.assignmentId],
+      foreignColumns: [assignment.golfCourseId, assignment.id],
+      name: "fk_wrong_caddie_assignment_same_course",
+    }),
+    index("idx_wrong_caddie_course_date").on(t.golfCourseId, t.reportedAt),
+  ],
 );

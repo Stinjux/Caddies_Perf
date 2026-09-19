@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-18
 
-**Status**: Draft
+**Status**: Amendée le 2026-09-18
 
 **Input**: Spécification n°1 de CaddiePerf. Elle détient le modèle de données de référence du produit et couvre les terrains de golf, les comptes Administrateur et Starter, les permissions, le cloisonnement par terrain et la journalisation des actions sensibles.
 
@@ -169,7 +169,7 @@ Un administrateur autorisé peut corriger ou effacer les renseignements personne
 ### Permissions
 
 - **FR-018** : Un administrateur DOIT pouvoir gérer les terrains, les comptes, les caddies, les voiturettes, les réservations, les affectations, les évaluations, les KPI, les rapports et les exports de ses terrains.
-- **FR-019** : Un Starter DOIT pouvoir sélectionner son terrain, consulter les réservations actives ou à venir, voir les voiturettes et les caddies disponibles, créer une affectation, la modifier en cas d'erreur, la terminer, consulter les affectations du jour et signaler un caddie ou une voiturette indisponible.
+- **FR-019** : Un Starter DOIT pouvoir sélectionner son terrain, **saisir une réservation**, consulter les réservations actives ou à venir, voir les voiturettes et les caddies disponibles, créer une affectation, la modifier en cas d'erreur, la terminer, consulter les affectations du jour et signaler un caddie ou une voiturette indisponible.
 - **FR-020** : Un Starter NE DOIT PAS pouvoir importer des caddies, modifier des renseignements personnels, consulter une année de naissance, consulter des évaluations, des commentaires ou des rapports de performance, modifier ou supprimer une évaluation, gérer des comptes, ni modifier des règles de calcul ou la configuration générale.
 - **FR-021** : Chaque permission DOIT être vérifiée par le serveur à chaque demande ; masquer un élément à l'écran NE DOIT PAS tenir lieu de contrôle d'accès.
 - **FR-022** : Un refus de permission DOIT produire un message clair sans révéler l'existence ni le contenu de la ressource visée.
@@ -216,6 +216,15 @@ Un administrateur autorisé peut corriger ou effacer les renseignements personne
 - **FR-044** : Un jour travaillé DOIT être défini comme une date comportant au moins une affectation valide et terminée pour ce caddie, comptée une seule fois quel que soit le nombre de réservations de ce caddie ce jour-là.
 - **FR-045** : Le système DOIT empêcher deux modifications concurrentes de s'écraser silencieusement.
 
+### Amendement du 2026-09-18 — décisions du propriétaire du produit
+
+- **FR-047** : Le système DOIT conserver le signal « Non, ce n'est pas mon caddie » émis par un client, avec le terrain, l'affectation démentie et l'horodatage. Ce signal est **anonyme** comme une évaluation. Il est émis avant toute évaluation et ne peut donc pas y être rattaché.
+- **FR-048** : Chaque évaluation DOIT porter le **tarif affiché au client au moment de sa réponse**, en MAD. Sans cette mémorisation, une modification du tarif rendrait illisible l'historique des réponses sur la perception du prix. Valeur en vigueur : **200 MAD par caddie pour 18 trous**.
+- **FR-049** : Un caddie DOIT porter une **disponibilité opérationnelle** distincte de son statut de cycle de vie. Un caddie momentanément indisponible n'est ni actif au sens de l'affectation, ni désactivé au sens de son historique. Le Starter DOIT pouvoir modifier cette disponibilité.
+- **FR-050** : Chaque terrain DOIT porter la **durée pendant laquelle son QR code accepte encore une évaluation** après la fin d'une partie. En l'absence de valeur, la limite est la fin de la journée locale du terrain.
+- **FR-051** : Le système NE DOIT PAS accepter plus de **quatre évaluations** pour une même affectation, ce qui correspond au nombre de joueurs d'une partie.
+- **FR-052** : Un même caddie PEUT être affecté simultanément à **plusieurs voiturettes**, et une même réservation PEUT porter **plusieurs affectations**. Scanner le QR de l'une quelconque de ces voiturettes DOIT mener au même caddie. Chaque équipement, voiturette ou chariot, porte son propre QR code.
+
 ### Données fictives
 
 - **FR-046** : Les jeux de données de test DOIVENT être entièrement fictifs ; aucune donnée réelle de caddie, de client ou d'employé NE DOIT figurer dans le dépôt, les tests, la documentation ou les captures d'écran.
@@ -232,11 +241,11 @@ Ce référentiel est la source de vérité du modèle de données. Les spécific
 
 - **Session** : période d'accès authentifié d'un compte, portant le terrain actif sélectionné. Prend fin à l'expiration, à la déconnexion, ou à la désactivation du compte.
 
-- **Caddie** : identité professionnelle d'un caddie sur un terrain. Identifiant interne unique au terrain et jamais réattribué, nom, prénom, ancienneté, statut (actif ou désactivé), terrain de rattachement. L'ancienneté est un **nombre entier d'années**, accompagné de la date à laquelle cette valeur a été enregistrée afin de rester interprétable dans le temps. Ne contient aucune donnée personnelle protégée. Le champ « force » du fichier source n'est pas conservé. Détaillé dans la spécification 2.
+- **Caddie** : identité professionnelle d'un caddie sur un terrain. Identifiant interne unique au terrain et jamais réattribué, nom, prénom, ancienneté, statut de cycle de vie (actif ou désactivé), **disponibilité opérationnelle** (disponible ou indisponible, FR-049), terrain de rattachement. L'ancienneté est un **nombre entier d'années**, accompagné de la date à laquelle cette valeur a été enregistrée afin de rester interprétable dans le temps. Ne contient aucune donnée personnelle protégée. Le champ « force » du fichier source n'est pas conservé. Détaillé dans la spécification 2.
 
 - **Renseignements personnels du caddie** : espace séparé, accessible aux seuls administrateurs, contenant l'**année de naissance** et rien d'autre. La taille d'habits et l'adresse du domicile n'y figurent jamais. Effaçable indépendamment du caddie et de son historique.
 
-- **Voiturette** : équipement rattaché à un terrain. Identifiant interne, numéro visible, jeton de QR code opaque et permanent, statut parmi disponible, affectée, entretien, inactive. Un seul type d'équipement existe. Détaillée dans la spécification 2.
+- **Voiturette** : équipement rattaché à un terrain. Identifiant interne, numéro visible, jeton de QR code opaque et permanent, statut parmi disponible, affectée, entretien, inactive. **Un seul type d'équipement existe** : une voiturette électrique et un chariot poussé sont deux lignes de cette même entité, distinguées par leur numéro visible, chacune avec son propre QR code (FR-052). Détaillée dans la spécification 2.
 
 - **Réservation** : un départ enregistré sur un terrain. Numéro de réservation, terrain, date, heure de départ, statut. Provient du système de réservation existant du terrain. Détaillée dans la spécification 3.
 
@@ -253,6 +262,8 @@ Ce référentiel est la source de vérité du modèle de données. Les spécific
 - **Valeur perçue** : deux réponses distinctes sur le rapport qualité-prix et sur le niveau du prix du service de caddie. N'influencent jamais la note d'un caddie. Détaillée dans la spécification 4.
 
 - **Clic Google Reviews** : trace anonyme d'un clic vers le lien d'avis du terrain. Mesure uniquement le clic, jamais la publication d'un avis.
+
+- **Signal de mauvais caddie** : trace anonyme du refus « Non, ce n'est pas mon caddie ». Porte le terrain, l'affectation démentie et l'horodatage, et rien d'autre (FR-047). Symptôme d'une erreur d'affectation, destiné à être compté et corrigé.
 
 - **Entrée de journal** : trace en écriture seule d'une action administrative ou d'une consultation sensible. Auteur, terrain, nature, cible par identifiant interne, horodatage. Ne contient aucune donnée personnelle.
 

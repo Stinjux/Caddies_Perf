@@ -36,6 +36,7 @@ describe("V-5 — le schema est incapable de recevoir des donnees interdites", (
       ORDER BY column_name
     `;
     expect(rows.map((r) => r.column_name)).toEqual([
+      "availability",
       "created_at",
       "first_name",
       "golf_course_id",
@@ -79,6 +80,7 @@ describe("V-3 — cloisonnement garanti par la base", () => {
       "fk_assignment_caddie_same_course",
       "fk_assignment_cart_same_course",
       "fk_evaluation_assignment_same_course",
+      "fk_wrong_caddie_assignment_same_course",
     ]);
   });
 });

@@ -1,6 +1,6 @@
 import { pgTable, uuid, text, integer, date, timestamp, unique, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { caddieStatus } from "./enums";
+import { caddieStatus, caddieAvailability } from "./enums";
 import { golfCourse } from "./golf-course";
 
 /**
@@ -25,7 +25,10 @@ export const caddie = pgTable(
     seniorityYears: integer("seniority_years"),
     /** Date de saisie de l'anciennete : sans elle, la valeur devient illisible. */
     seniorityRecordedOn: date("seniority_recorded_on"),
+    /** Cycle de vie : un caddie desactive conserve son historique (FR-042). */
     status: caddieStatus("status").notNull().default("active"),
+    /** Disponibilite du moment, signalee par le Starter (FR-049). */
+    availability: caddieAvailability("availability").notNull().default("available"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     version: integer("version").notNull().default(1),

@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain — levés le 2026-09-18 par décision du propriétaire du produit
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -60,6 +60,8 @@
 | Q3 | FR-161 | Quel format d'impression attendu — planche A4 à grille fixe, étiquettes autocollantes d'un gabarit précis — et quelle taille minimale pour un QR code scannable en plein soleil ? |
 
 ## Notes
+
+- **Itération finale (2026-09-18)** : les trois marqueurs sont levés. Les décisions sont inscrites dans le corps de la spécification, et les évolutions correspondantes du modèle de données ont été portées par un amendement de la spécification 001 (FR-047 à FR-052). **Validation complète.**
 
 - **Itération 1 (2026-09-18)** : première rédaction. 7 parcours priorisés (4 en P1, 3 en P2/P3), 18 cas limites, 71 exigences fonctionnelles FR-101 à FR-171, 12 critères de succès SC-101 à SC-112.
 - Trois points relevant de la même famille de questions ont été traités par **valeur par défaut documentée** dans la section Assumptions plutôt que par marqueur, afin de respecter la limite de trois : la ligne d'en-tête, le séparateur de colonnes et l'origine de l'identifiant interne. Les deux premiers reçoivent une détection annoncée et corrigeable dans l'aperçu ; le troisième est également remonté en **E-03** car il a une conséquence directe sur la fiabilité de la détection de doublons.

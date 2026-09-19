@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain — levés le 2026-09-18 par décision du propriétaire du produit
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -50,6 +50,8 @@
 - [x] Réponses « Non applicable » exclues des moyennes et ne les abaissant jamais (FR-325, SC-308)
 
 ## Notes
+
+- **Itération finale (2026-09-18)** : les trois marqueurs sont levés. Les décisions sont inscrites dans le corps de la spécification, et les évolutions correspondantes du modèle de données ont été portées par un amendement de la spécification 001 (FR-047 à FR-052). **Validation complète.**
 
 - **Itération 1 (2026-09-18)** : 16 items sur 17 passent dans les trois sections du gabarit. Seul échec : la présence de **3 marqueurs [NEEDS CLARIFICATION]**, qui constituent les questions à poser au propriétaire du produit avant `/speckit-plan`.
 

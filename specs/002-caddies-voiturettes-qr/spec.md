@@ -184,7 +184,7 @@ Les exigences FR-001 à FR-046 de la spéc. 001 restent intégralement applicabl
 - **FR-101** : L'import de caddies DOIT être réservé aux comptes administrateurs ; un compte Starter NE DOIT en aucun cas y accéder.
 - **FR-102** : Le système NE DOIT accepter que les formats de fichier explicitement autorisés et DOIT refuser tout autre format avec un message indiquant les formats admis.
 - **FR-103** : Le système DOIT refuser, avant toute lecture complète, un fichier dépassant la taille maximale ou le nombre de lignes maximal admis, en indiquant ces limites.
-- **FR-104** : Le système DOIT interpréter le fichier selon un encodage déterminé et DOIT signaler à l'administrateur, avant l'aperçu, tout caractère non déchiffrable rencontré dans un nom ou un prénom. [NEEDS CLARIFICATION: quels encodages doivent être acceptés — UTF-8 seul, ou aussi ISO-8859-1 et Windows-1252 — et l'encodage doit-il être détecté automatiquement ou choisi par l'administrateur ?]
+- **FR-104** : Le système DOIT interpréter le fichier selon un encodage déterminé et DOIT signaler à l'administrateur, avant l'aperçu, tout caractère non déchiffrable rencontré dans un nom ou un prénom. **Décision du 2026-09-18** : accepter **UTF-8 et Windows-1252**, détectés automatiquement, l'encodage retenu étant annoncé dans l'aperçu et corrigeable avant importation. Windows-1252 est retenu parce qu'un export Excel le produit sans prévenir.
 - **FR-105** : Le système DOIT déterminer le séparateur de colonnes du fichier, l'indiquer dans l'aperçu, et permettre à l'administrateur de le corriger si l'interprétation est erronée.
 - **FR-106** : Le système DOIT déterminer si la première ligne est une ligne d'en-tête, l'indiquer explicitement dans l'aperçu, et permettre à l'administrateur de changer cette interprétation.
 - **FR-107** : Le système DOIT valider que le fichier présente les **sept colonnes attendues dans l'ordre attendu** : nom, prénom, âge, taille d'habits, ancienneté, force, adresse du domicile.
@@ -198,7 +198,7 @@ Les exigences FR-001 à FR-046 de la spéc. 001 restent intégralement applicabl
 - **FR-112** : Le système DOIT détecter les lignes invalides et présenter pour chacune son numéro de ligne d'origine et le motif précis du rejet.
 - **FR-113** : Le système DOIT signaler distinctement les champs obligatoires manquants, sans jamais leur substituer une valeur par défaut.
 - **FR-114** : Le système DOIT détecter les doublons potentiels **à l'intérieur du fichier** et **par rapport aux caddies déjà enregistrés sur le terrain**, avant toute écriture.
-- **FR-115** : Le système DOIT traiter un doublon détecté selon une règle explicite et annoncée à l'administrateur avant la confirmation. [NEEDS CLARIFICATION: quel traitement pour un doublon détecté — ignorer la ligne, remplacer le caddie existant, ou demander une décision ligne par ligne ?]
+- **FR-115** : Le système DOIT traiter un doublon détecté selon une règle explicite et annoncée à l'administrateur avant la confirmation. **Décision du 2026-09-18** : **demander une décision ligne par ligne**. Remplacer en silence écraserait une correction faite à la main ; ignorer en silence ferait croire à un import réussi alors qu'une mise à jour a été perdue.
 - **FR-116** : L'administrateur DOIT pouvoir **écarter** une ligne de l'importation depuis l'aperçu.
 - **FR-117** : L'administrateur DOIT pouvoir **corriger** la valeur d'un champ d'une ligne depuis l'aperçu, sans avoir à modifier et redéposer le fichier.
 - **FR-118** : Le système DOIT mettre à jour le décompte du résumé à chaque correction ou mise à l'écart, de sorte que le nombre annoncé corresponde toujours à ce qui sera créé.
@@ -259,7 +259,7 @@ Les exigences FR-001 à FR-046 de la spéc. 001 restent intégralement applicabl
 - **FR-158** : Le jeton DOIT être **permanent** : il survit aux changements de statut, aux affectations, aux mises en entretien et à la mise hors service de la voiturette.
 - **FR-159** : Aucune fonction de régénération d'un jeton NE DOIT être offerte à l'administrateur.
 - **FR-160** : L'adresse Web portée par le QR code NE DOIT contenir aucune donnée personnelle, aucun numéro de réservation et aucun nom.
-- **FR-161** : L'administrateur DOIT pouvoir produire une **planche imprimable** couvrant tout ou partie du parc de son terrain. [NEEDS CLARIFICATION: quel format d'impression attendu — planche A4 à grille fixe, étiquettes autocollantes d'un gabarit précis — et quelle taille minimale pour un QR code scannable en plein soleil ?]
+- **FR-161** : L'administrateur DOIT pouvoir produire une **planche imprimable** couvrant tout ou partie du parc de son terrain. [REPORTÉ : le format d'impression des QR codes (planche A4 ou étiquettes) sera arrêté à la phase de génération. Il n'affecte ni le modèle de données ni le jeton, qui reste identique quel que soit le support.]
 - **FR-162** : Chaque étiquette imprimée DOIT porter, à côté du QR code, le **numéro visible** de la voiturette en clair, afin de permettre un rapprochement humain sans scan.
 - **FR-163** : L'administrateur DOIT pouvoir réimprimer l'étiquette d'une seule voiturette à tout moment, le code imprimé restant strictement identique au précédent.
 - **FR-164** : Une planche imprimée NE DOIT contenir aucune donnée personnelle ni aucune information sur les affectations.

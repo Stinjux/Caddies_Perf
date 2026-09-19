@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain — levés le 2026-09-18 par décision du propriétaire du produit
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -56,6 +56,8 @@
 - [x] Partie terminée depuis trop longtemps — Edge case 8, FR-255 *(délai encore inconnu, marqueur en place)*
 
 ## Notes
+
+- **Itération finale (2026-09-18)** : les trois marqueurs sont levés. Les décisions sont inscrites dans le corps de la spécification, et les évolutions correspondantes du modèle de données ont été portées par un amendement de la spécification 001 (FR-047 à FR-052). **Validation complète.**
 
 - **Itération 1 (2026-09-18)** : 16 items de qualité sur 17 passent. Seul échec : les 3 marqueurs [NEEDS CLARIFICATION] subsistants, soumis au propriétaire du produit sous forme de questions Q1 à Q3.
 
