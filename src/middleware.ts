@@ -13,7 +13,8 @@ import { SESSION_COOKIE } from "@/lib/session-cookie";
  * service (FR-021, FR-024). Un cookie forge passe ici et echoue la-bas.
  */
 
-const PUBLIC = ["/connexion", "/_next", "/favicon.ico"];
+// Le parcours client (/e/<jeton>) est PUBLIC : aucun compte n'est requis.
+const PUBLIC = ["/connexion", "/e/", "/_next", "/favicon.ico"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -103,8 +103,14 @@ describe("la portée reste obligatoire dans les dépôts", () => {
     }
 
     // Toute nouvelle entree ici doit etre un choix conscient, pas un oubli.
+    // Le parcours client compte exactement six points d'entrée sans portée.
+    // Toute nouvelle entrée ici doit être un choix conscient, pas un oubli.
     expect(annotees.sort()).toEqual([
       "cart.ts → findCartByToken",
+      "evaluation.ts → compterEvaluations",
+      "evaluation.ts → enregistrerClicGoogle",
+      "evaluation.ts → signalerMauvaisCaddie",
+      "evaluation.ts → soumettreEvaluation",
       "qr-resolution.ts → resoudreJeton",
     ]);
   });
