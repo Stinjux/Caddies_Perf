@@ -35,6 +35,13 @@ function exportedDbFunctions(source: string): { name: string; signature: string 
   return out;
 }
 
+/** Une fonction est du parcours client si son commentaire le declare. */
+function estCheminClientPublic(source: string, nomFonction: string): boolean {
+  const avant = source.slice(0, source.indexOf(`export async function ${nomFonction}`));
+  const dernierBloc = avant.lastIndexOf("/**");
+  return dernierBloc !== -1 && avant.slice(dernierBloc).includes("@public-client-path");
+}
+
 describe("la portée reste obligatoire dans les dépôts", () => {
   it("expose au moins un dépôt à analyser", () => {
     expect(read(REPO_DIR).length).toBeGreaterThan(0);
@@ -73,12 +80,33 @@ describe("la portée reste obligatoire dans les dépôts", () => {
       for (const fn of exportedDbFunctions(source)) {
         const ok =
           /scope\s*:\s*Scope/.test(fn.signature) ||
-          /actorAccountId\s*:\s*string/.test(fn.signature);
+          /actorAccountId\s*:\s*string/.test(fn.signature) ||
+          estCheminClientPublic(source, fn.name);
         if (!ok) fautives.push(`${name} → ${fn.name}`);
       }
     }
 
     expect(fautives).toEqual([]);
+  });
+
+  /**
+   * Le parcours CLIENT n'a pas de portee : le client n'a aucun compte. Ces
+   * fonctions doivent donc porter l'annotation @public-client-path, qui rend
+   * l'exception VISIBLE en revue au lieu d'etre un trou silencieux.
+   */
+  it("n'autorise l'absence de portée que pour les fonctions du parcours client, nommément annotées", () => {
+    const annotees: string[] = [];
+    for (const { name, source } of [...read(SERVICES_DIR), ...read(REPO_DIR)]) {
+      for (const fn of exportedDbFunctions(source)) {
+        if (estCheminClientPublic(source, fn.name)) annotees.push(`${name} → ${fn.name}`);
+      }
+    }
+
+    // Toute nouvelle entree ici doit etre un choix conscient, pas un oubli.
+    expect(annotees.sort()).toEqual([
+      "cart.ts → findCartByToken",
+      "qr-resolution.ts → resoudreJeton",
+    ]);
   });
 });
 

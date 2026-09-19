@@ -1,0 +1,301 @@
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { caddie, caddiePersonalData } from "@/db/schema";
+import { uuidv7 } from "@/lib/uuid";
+import { readCsv, type CsvReadResult } from "@/lib/csv";
+import { requireAdmin, type Scope } from "../scope";
+import { writeAudit } from "../audit/write";
+import { ValidationError } from "../errors";
+
+/**
+ * IMPORT CSV DES CADDIES (spéc. 2, FR-101 a FR-140).
+ *
+ * PRINCIPE I — le fichier source compte 7 colonnes, dont TROIS sont lues
+ * puis REJETEES et ne franchissent jamais la frontiere de la base :
+ * taille d'habits, adresse du domicile, force.
+ *
+ * Ordre des colonnes du fichier source :
+ *   0 nom · 1 prenom · 2 age · 3 taille d'habits · 4 anciennete · 5 force
+ *   6 adresse du domicile
+ */
+
+export const COLONNES_SOURCE = [
+  "nom",
+  "prénom",
+  "âge",
+  "taille d'habits",
+  "ancienneté",
+  "force",
+  "adresse du domicile",
+] as const;
+
+/** Index des colonnes LUES PUIS REJETEES. Jamais stockees (FR-028, FR-028b). */
+export const COLONNES_REJETEES = [3, 5, 6] as const;
+
+export type LigneStatut = "valide" | "invalide" | "doublon";
+
+export interface LigneImport {
+  numero: number;
+  statut: LigneStatut;
+  lastName: string;
+  firstName: string;
+  birthYear: number | null;
+  seniorityYears: number | null;
+  erreurs: string[];
+  /** Identifiant du caddie existant, lorsqu'un doublon est detecte. */
+  doublonDe?: string;
+  doublonRef?: string;
+}
+
+export interface Apercu {
+  encoding: CsvReadResult["encoding"];
+  separator: CsvReadResult["separator"];
+  hasHeader: boolean;
+  headerCandidate: string[] | null;
+  colonnesRejetees: string[];
+  lignes: LigneImport[];
+  resume: { total: number; valides: number; invalides: number; doublons: number };
+}
+
+const TAILLE_MAX = 2 * 1024 * 1024;
+
+function anneeMax(): number {
+  return new Date().getFullYear() - 15;
+}
+
+/** Convertit l'age du fichier source en ANNEE DE NAISSANCE (FR-029). */
+function ageVersAnneeNaissance(brut: string): { valeur: number | null; erreur?: string } {
+  if (!brut) return { valeur: null };
+  const age = Number(brut);
+  if (!Number.isInteger(age) || age < 15 || age > 85) {
+    return { valeur: null, erreur: `Âge invalide : « ${brut} ».` };
+  }
+  return { valeur: new Date().getFullYear() - age };
+}
+
+function ancienneteValide(brut: string): { valeur: number | null; erreur?: string } {
+  if (!brut) return { valeur: null };
+  const n = Number(brut);
+  if (!Number.isInteger(n) || n < 0 || n > 60) {
+    return { valeur: null, erreur: `Ancienneté invalide : « ${brut} ».` };
+  }
+  return { valeur: n };
+}
+
+/**
+ * Construit l'apercu SANS RIEN ECRIRE (FR-120). L'administrateur voit ce qui
+ * sera importe, ce qui sera rejete et pourquoi, avant toute confirmation.
+ */
+export async function construireApercu(
+  scope: Scope,
+  fichier: { bytes: Uint8Array; size: number; name: string },
+): Promise<Apercu> {
+  requireAdmin(scope);
+
+  if (fichier.size > TAILLE_MAX) {
+    throw new ValidationError("fichier", "Fichier trop volumineux. Maximum : 2 Mo.");
+  }
+  if (!/\.csv$/i.test(fichier.name)) {
+    throw new ValidationError("fichier", "Seuls les fichiers .csv sont acceptés.");
+  }
+
+  const lu = readCsv(fichier.bytes);
+  if (lu.rows.length === 0) {
+    throw new ValidationError("fichier", "Le fichier ne contient aucune ligne de données.");
+  }
+
+  const lignes: LigneImport[] = [];
+  const vusDansLeFichier = new Map<string, number>();
+
+  for (let i = 0; i < lu.rows.length; i++) {
+    const cells = lu.rows[i]!;
+    const erreurs: string[] = [];
+
+    if (cells.length < 2) {
+      erreurs.push("Ligne incomplète : le nom et le prénom sont obligatoires.");
+    }
+
+    const lastName = (cells[0] ?? "").trim();
+    const firstName = (cells[1] ?? "").trim();
+    if (!lastName) erreurs.push("Nom manquant.");
+    if (!firstName) erreurs.push("Prénom manquant.");
+
+    const age = ageVersAnneeNaissance((cells[2] ?? "").trim());
+    if (age.erreur) erreurs.push(age.erreur);
+
+    const anc = ancienneteValide((cells[4] ?? "").trim());
+    if (anc.erreur) erreurs.push(anc.erreur);
+
+    // Doublon a l'interieur du fichier lui-meme.
+    const cle = `${lastName.toLowerCase()}|${firstName.toLowerCase()}`;
+    const dejaVu = vusDansLeFichier.get(cle);
+    if (dejaVu !== undefined) {
+      erreurs.push(`Doublon dans le fichier : déjà présent ligne ${dejaVu}.`);
+    } else if (lastName && firstName) {
+      vusDansLeFichier.set(cle, i + 1);
+    }
+
+    lignes.push({
+      numero: i + 1,
+      statut: erreurs.length > 0 ? "invalide" : "valide",
+      lastName,
+      firstName,
+      birthYear: age.valeur,
+      seniorityYears: anc.valeur,
+      erreurs,
+    });
+  }
+
+  // Doublons vis-a-vis des caddies DEJA enregistres sur ce terrain.
+  const existants = await db
+    .select({
+      id: caddie.id,
+      internalRef: caddie.internalRef,
+      firstName: caddie.firstName,
+      lastName: caddie.lastName,
+    })
+    .from(caddie)
+    .where(eq(caddie.golfCourseId, scope.golfCourseId));
+
+  const index = new Map(
+    existants.map((e) => [`${e.lastName.toLowerCase()}|${e.firstName.toLowerCase()}`, e]),
+  );
+
+  for (const l of lignes) {
+    if (l.statut !== "valide") continue;
+    const trouve = index.get(`${l.lastName.toLowerCase()}|${l.firstName.toLowerCase()}`);
+    if (trouve) {
+      l.statut = "doublon";
+      l.doublonDe = trouve.id;
+      l.doublonRef = trouve.internalRef;
+      l.erreurs.push(`Un caddie du même nom existe déjà : ${trouve.internalRef}.`);
+    }
+  }
+
+  return {
+    encoding: lu.encoding,
+    separator: lu.separator,
+    hasHeader: lu.hasHeader,
+    headerCandidate: lu.headerCandidate,
+    colonnesRejetees: COLONNES_REJETEES.map((i) => COLONNES_SOURCE[i]),
+    lignes,
+    resume: {
+      total: lignes.length,
+      valides: lignes.filter((l) => l.statut === "valide").length,
+      invalides: lignes.filter((l) => l.statut === "invalide").length,
+      doublons: lignes.filter((l) => l.statut === "doublon").length,
+    },
+  };
+}
+
+export type DecisionDoublon = "ignorer" | "remplacer";
+
+export interface RapportImport {
+  crees: number;
+  remplaces: number;
+  ignores: number;
+  refs: string[];
+}
+
+/**
+ * Execute l'import DANS UNE SEULE TRANSACTION (FR-130).
+ *
+ * Aucune importation partielle silencieuse : soit toutes les lignes retenues
+ * sont ecrites, soit aucune. Une interruption laisse la base intacte.
+ */
+export async function executerImport(
+  scope: Scope,
+  apercu: Apercu,
+  decisions: Map<number, DecisionDoublon>,
+): Promise<RapportImport> {
+  requireAdmin(scope);
+
+  const aCreer = apercu.lignes.filter((l) => l.statut === "valide");
+  const doublons = apercu.lignes.filter((l) => l.statut === "doublon");
+  const aRemplacer = doublons.filter((l) => decisions.get(l.numero) === "remplacer");
+  const ignores = doublons.length - aRemplacer.length;
+
+  if (aCreer.length === 0 && aRemplacer.length === 0) {
+    throw new ValidationError("import", "Aucune ligne à importer.");
+  }
+
+  const refs: string[] = [];
+
+  await db.transaction(async (tx) => {
+    // Prochain numero disponible, jamais reattribue (FR-041).
+    const tous = await tx
+      .select({ internalRef: caddie.internalRef })
+      .from(caddie)
+      .where(eq(caddie.golfCourseId, scope.golfCourseId));
+
+    let prochain =
+      tous.reduce((max, c) => {
+        const n = Number(c.internalRef.replace(/\D/g, ""));
+        return Number.isFinite(n) && n > max ? n : max;
+      }, 0) + 1;
+
+    const aujourdhui = new Date().toISOString().slice(0, 10);
+
+    for (const l of aCreer) {
+      const id = uuidv7();
+      const ref = `C-${String(prochain++).padStart(4, "0")}`;
+      refs.push(ref);
+
+      await tx.insert(caddie).values({
+        id,
+        golfCourseId: scope.golfCourseId,
+        internalRef: ref,
+        firstName: l.firstName,
+        lastName: l.lastName,
+        seniorityYears: l.seniorityYears,
+        seniorityRecordedOn: l.seniorityYears !== null ? aujourdhui : null,
+      });
+
+      if (l.birthYear !== null) {
+        await tx.insert(caddiePersonalData).values({ caddieId: id, birthYear: l.birthYear });
+      }
+
+      await writeAudit(tx, scope, { action: "caddie.create", targetType: "caddie", targetId: id });
+    }
+
+    for (const l of aRemplacer) {
+      await tx
+        .update(caddie)
+        .set({
+          firstName: l.firstName,
+          lastName: l.lastName,
+          seniorityYears: l.seniorityYears,
+          seniorityRecordedOn: l.seniorityYears !== null ? aujourdhui : null,
+          updatedAt: new Date(),
+        })
+        .where(eq(caddie.id, l.doublonDe!));
+
+      if (l.birthYear !== null) {
+        await tx
+          .insert(caddiePersonalData)
+          .values({ caddieId: l.doublonDe!, birthYear: l.birthYear })
+          .onConflictDoUpdate({
+            target: caddiePersonalData.caddieId,
+            set: { birthYear: l.birthYear, updatedAt: new Date() },
+          });
+      }
+
+      await writeAudit(tx, scope, {
+        action: "caddie.update",
+        targetType: "caddie",
+        targetId: l.doublonDe!,
+      });
+    }
+  });
+
+  return { crees: aCreer.length, remplaces: aRemplacer.length, ignores, refs };
+}
+
+/** Liste des erreurs, telechargeable au format CSV (FR-135). */
+export function rapportErreursCsv(apercu: Apercu): string {
+  const entete = "ligne;statut;nom;prenom;erreurs";
+  const corps = apercu.lignes
+    .filter((l) => l.statut !== "valide")
+    .map((l) => `${l.numero};${l.statut};${l.lastName};${l.firstName};"${l.erreurs.join(" ")}"`);
+  return [entete, ...corps].join("\n");
+}

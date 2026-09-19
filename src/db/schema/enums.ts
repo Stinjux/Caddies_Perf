@@ -12,10 +12,7 @@ export const caddieStatus = pgEnum("caddie_status", ["active", "disabled"]);
  * « Parti dejeuner » n'est ni actif ni desactive : le Starter doit pouvoir
  * le signaler sans toucher au cycle de vie du caddie.
  */
-export const caddieAvailability = pgEnum("caddie_availability", [
-  "available",
-  "unavailable",
-]);
+export const caddieAvailability = pgEnum("caddie_availability", ["available", "unavailable"]);
 export const cartStatus = pgEnum("cart_status", [
   "available",
   "assigned",

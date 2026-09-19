@@ -1,0 +1,70 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireScope } from "@/server/auth/context";
+import { listCaddies } from "@/server/repositories/caddie";
+
+export const dynamic = "force-dynamic";
+
+export default async function CaddiesPage() {
+  const { scope } = await requireScope();
+  if (scope.role !== "admin") redirect("/depart");
+
+  const caddies = await listCaddies(scope);
+
+  return (
+    <div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold text-neutral-900">Caddies</h1>
+        <Link
+          href="/caddies/import"
+          className="rounded-lg bg-[var(--color-brand)] px-4 py-2.5 text-sm font-medium text-white"
+        >
+          Importer un fichier CSV
+        </Link>
+      </div>
+
+      {caddies.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-neutral-300 bg-white p-10 text-center text-neutral-600">
+          Aucun caddie enregistré. Importez un fichier CSV pour commencer.
+        </p>
+      ) : (
+        <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
+          {caddies.map((c) => (
+            <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-4">
+              <div>
+                <p className="font-medium text-neutral-900">
+                  {c.internalRef} — {c.firstName} {c.lastName}
+                </p>
+                <p className="text-sm text-neutral-500">
+                  {c.seniorityYears !== null
+                    ? `${c.seniorityYears} an${c.seniorityYears > 1 ? "s" : ""} d'ancienneté`
+                    : "Ancienneté non renseignée"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={
+                    c.availability === "available"
+                      ? "rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700"
+                      : "rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700"
+                  }
+                >
+                  {c.availability === "available" ? "Disponible" : "Indisponible"}
+                </span>
+                <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-600">
+                  {c.status === "active" ? "Actif" : "Désactivé"}
+                </span>
+                <Link
+                  href={`/caddies/${c.id}/donnees-personnelles`}
+                  className="text-sm text-neutral-500 underline"
+                >
+                  Renseignements
+                </Link>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
