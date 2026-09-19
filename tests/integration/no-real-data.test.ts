@@ -42,9 +42,12 @@ describe("principe II — aucune donnee reelle dans le dépôt", () => {
       .filter((l) => l.includes("=") && !l.trimStart().startsWith("#"));
     const secrets = lines.filter((l) => {
       const value = l.slice(l.indexOf("=") + 1).trim();
-      return (
-        value.length > 0 && !value.startsWith("postgresql://utilisateur:") && !/^\d+$/.test(value)
-      );
+      // Les deux gabarits d'URL admis portent le mot « motdepasse » en clair :
+      // personne ne peut les prendre pour de vraies valeurs.
+      const gabarit =
+        value.startsWith("postgresql://utilisateur:motdepasse@") ||
+        value.startsWith("postgresql://caddieperf_app:motdepasse@");
+      return value.length > 0 && !gabarit && !/^\d+$/.test(value);
     });
     expect(secrets).toEqual([]);
   });

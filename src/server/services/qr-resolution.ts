@@ -1,5 +1,5 @@
 import { eq, and } from "drizzle-orm";
-import { db } from "@/db";
+import { withCourse } from "@/db/scope-tx";
 import { assignment, booking, cart, caddie, golfCourse } from "@/db/schema";
 import { localDateFor } from "@/lib/timezone";
 import { findCartByToken } from "./cart";
@@ -69,32 +69,35 @@ export async function resoudreJeton(token: string, maintenant = new Date()): Pro
   const voiturette = await findCartByToken(token);
   if (!voiturette) return { ok: false, raison: "jeton_inconnu" };
 
-  const lignes = await db
-    .select({
-      assignmentId: assignment.id,
-      status: assignment.status,
-      localDate: assignment.localDate,
-      endedAt: assignment.endedAt,
-      bookingStatus: booking.status,
-      caddieFirstName: caddie.firstName,
-      caddieLastName: caddie.lastName,
-      caddieRef: caddie.internalRef,
-      cartNumber: cart.visibleNumber,
-      golfCourseId: golfCourse.id,
-      courseName: golfCourse.name,
-      timezone: golfCourse.timezone,
-      brandColorPrimary: golfCourse.brandColorPrimary,
-      logoPath: golfCourse.logoPath,
-      googleReviewUrl: golfCourse.googleReviewUrl,
-      fenetre: golfCourse.evaluationWindowHours,
-    })
-    .from(assignment)
-    .innerJoin(booking, eq(booking.id, assignment.bookingId))
-    .innerJoin(cart, eq(cart.id, assignment.cartId))
-    .innerJoin(caddie, eq(caddie.id, assignment.caddieId))
-    .innerJoin(golfCourse, eq(golfCourse.id, assignment.golfCourseId))
-    .where(and(eq(assignment.cartId, voiturette.id)))
-    .orderBy(assignment.startedAt);
+  // Le jeton a livre le terrain : a partir d'ici, le RLS peut cloisonner.
+  const lignes = await withCourse(voiturette.golfCourseId, (tx) =>
+    tx
+      .select({
+        assignmentId: assignment.id,
+        status: assignment.status,
+        localDate: assignment.localDate,
+        endedAt: assignment.endedAt,
+        bookingStatus: booking.status,
+        caddieFirstName: caddie.firstName,
+        caddieLastName: caddie.lastName,
+        caddieRef: caddie.internalRef,
+        cartNumber: cart.visibleNumber,
+        golfCourseId: golfCourse.id,
+        courseName: golfCourse.name,
+        timezone: golfCourse.timezone,
+        brandColorPrimary: golfCourse.brandColorPrimary,
+        logoPath: golfCourse.logoPath,
+        googleReviewUrl: golfCourse.googleReviewUrl,
+        fenetre: golfCourse.evaluationWindowHours,
+      })
+      .from(assignment)
+      .innerJoin(booking, eq(booking.id, assignment.bookingId))
+      .innerJoin(cart, eq(cart.id, assignment.cartId))
+      .innerJoin(caddie, eq(caddie.id, assignment.caddieId))
+      .innerJoin(golfCourse, eq(golfCourse.id, assignment.golfCourseId))
+      .where(and(eq(assignment.cartId, voiturette.id)))
+      .orderBy(assignment.startedAt),
+  );
 
   // Seules comptent les affectations encore évaluables : active ou terminée
   // aujourd'hui, réservation non annulée.

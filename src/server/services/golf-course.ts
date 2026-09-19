@@ -1,5 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
+import { withScope, withCourse } from "@/db/scope-tx";
 import { golfCourse, accountGolfCourse } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { isValidTimezone } from "@/lib/timezone";
@@ -62,7 +63,10 @@ export async function createCourse(actorAccountId: string, input: CourseInput): 
   validate(input);
   const id = uuidv7();
 
-  await db.transaction(async (tx) => {
+  // Le terrain n'existe pas encore, mais son identifiant est deja tire : on
+  // ouvre la portee AVANT l'insertion, faute de quoi le RLS refuserait la
+  // ligne qui inaugure le terrain — et son entree de journal avec elle.
+  await withCourse(id, async (tx) => {
     await tx.insert(golfCourse).values({
       id,
       name: input.name.trim(),
@@ -97,7 +101,7 @@ export async function updateCourse(
   requireAdmin(scope);
   validate(input);
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const updated = await tx
       .update(golfCourse)
       .set({
@@ -135,7 +139,7 @@ export async function updateCourse(
 export async function archiveCourse(scope: Scope, expectedVersion: number): Promise<void> {
   requireAdmin(scope);
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const updated = await tx
       .update(golfCourse)
       .set({ status: "archived", updatedAt: new Date(), version: expectedVersion + 1 })

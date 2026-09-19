@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import postgres from "postgres";
-import { db } from "@/db";
+import { db } from "../../helpers/raw-db";
 import { auditLog } from "@/db/schema";
 import { createAccount } from "@/server/services/account";
 import { testDbUrl, resetDb } from "../../helpers/reset-db";
@@ -79,6 +79,9 @@ describe("droits du rôle applicatif sur le journal", () => {
 
     await sql.begin(async (tx) => {
       await tx`SET LOCAL ROLE caddieperf_app`;
+      // Le role applicatif est soumis au RLS : sans terrain courant, il ne voit
+      // ni n'ecrit rien. C'est ce que fait withScope() dans l'application.
+      await tx`SELECT set_config('app.golf_course_id', ${courseId}, true)`;
       await tx`SELECT count(*) FROM audit_log`;
       await tx`INSERT INTO audit_log (id, golf_course_id, actor_account_id, action, target_type)
                VALUES (gen_random_uuid(), ${courseId}, ${adminId}, 'course.update', 'golf_course')`;

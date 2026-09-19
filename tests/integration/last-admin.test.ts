@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
+import { db } from "../helpers/raw-db";
 import { account, accountGolfCourse } from "@/db/schema";
 import { disableAccount } from "@/server/services/account";
 import { attachAccount, detachAccount } from "@/server/services/account-course";

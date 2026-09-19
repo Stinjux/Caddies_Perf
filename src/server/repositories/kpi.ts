@@ -1,5 +1,5 @@
 import { sql, eq, and, gte, lte, type SQL } from "drizzle-orm";
-import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import {
   assignment,
   evaluation,
@@ -82,49 +82,57 @@ export async function kpiParCaddie(scope: Scope, p: Periode = {}): Promise<KpiCa
   const periode = bornes(assignment.localDate, p);
 
   // Jours travaillés et affectations terminées, par caddie.
-  const activite = await db
-    .select({
-      caddieId: assignment.caddieId,
-      jours: sql<string>`count(distinct ${assignment.localDate})`,
-      terminees: sql<string>`count(*)`,
-    })
-    .from(assignment)
-    .where(and(filtreTerrain, eq(assignment.status, "completed"), ...periode))
-    .groupBy(assignment.caddieId);
+  const activite = await withScope(scope, (tx) =>
+    tx
+      .select({
+        caddieId: assignment.caddieId,
+        jours: sql<string>`count(distinct ${assignment.localDate})`,
+        terminees: sql<string>`count(*)`,
+      })
+      .from(assignment)
+      .where(and(filtreTerrain, eq(assignment.status, "completed"), ...periode))
+      .groupBy(assignment.caddieId),
+  );
 
   // Moyennes par critère, calculées sur les seules réponses renseignées :
   // AVG ignore les valeurs nulles, ce qui applique exactement la règle du
   // « non applicable » exclu.
-  const notes = await db
-    .select({
-      caddieId: assignment.caddieId,
-      criterion: evaluationCriterionAnswer.criterion,
-      moyenne: sql<string>`avg(${evaluationCriterionAnswer.rating})`,
-      n: sql<string>`count(${evaluationCriterionAnswer.rating})`,
-    })
-    .from(evaluationCriterionAnswer)
-    .innerJoin(evaluation, eq(evaluation.id, evaluationCriterionAnswer.evaluationId))
-    .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
-    .where(and(filtreTerrain, ...periode))
-    .groupBy(assignment.caddieId, evaluationCriterionAnswer.criterion);
+  const notes = await withScope(scope, (tx) =>
+    tx
+      .select({
+        caddieId: assignment.caddieId,
+        criterion: evaluationCriterionAnswer.criterion,
+        moyenne: sql<string>`avg(${evaluationCriterionAnswer.rating})`,
+        n: sql<string>`count(${evaluationCriterionAnswer.rating})`,
+      })
+      .from(evaluationCriterionAnswer)
+      .innerJoin(evaluation, eq(evaluation.id, evaluationCriterionAnswer.evaluationId))
+      .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
+      .where(and(filtreTerrain, ...periode))
+      .groupBy(assignment.caddieId, evaluationCriterionAnswer.criterion),
+  );
 
-  const nbEvaluations = await db
-    .select({ caddieId: assignment.caddieId, n: sql<string>`count(*)` })
-    .from(evaluation)
-    .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
-    .where(and(filtreTerrain, ...periode))
-    .groupBy(assignment.caddieId);
+  const nbEvaluations = await withScope(scope, (tx) =>
+    tx
+      .select({ caddieId: assignment.caddieId, n: sql<string>`count(*)` })
+      .from(evaluation)
+      .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
+      .where(and(filtreTerrain, ...periode))
+      .groupBy(assignment.caddieId),
+  );
 
-  const caddies = await db
-    .select({
-      id: caddie.id,
-      internalRef: caddie.internalRef,
-      firstName: caddie.firstName,
-      lastName: caddie.lastName,
-      status: caddie.status,
-    })
-    .from(caddie)
-    .where(eq(caddie.golfCourseId, scope.golfCourseId));
+  const caddies = await withScope(scope, (tx) =>
+    tx
+      .select({
+        id: caddie.id,
+        internalRef: caddie.internalRef,
+        firstName: caddie.firstName,
+        lastName: caddie.lastName,
+        status: caddie.status,
+      })
+      .from(caddie)
+      .where(eq(caddie.golfCourseId, scope.golfCourseId)),
+  );
 
   const parActivite = new Map(activite.map((a) => [a.caddieId, a]));
   const parEval = new Map(nbEvaluations.map((e) => [e.caddieId, Number(e.n)]));
@@ -213,22 +221,24 @@ export async function distributionNotes(
 ): Promise<Record<1 | 2 | 3 | 4 | 5, number>> {
   requireAdmin(scope);
 
-  const rows = await db
-    .select({
-      note: evaluationCriterionAnswer.rating,
-      n: sql<string>`count(*)`,
-    })
-    .from(evaluationCriterionAnswer)
-    .innerJoin(evaluation, eq(evaluation.id, evaluationCriterionAnswer.evaluationId))
-    .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
-    .where(
-      and(
-        eq(assignment.golfCourseId, scope.golfCourseId),
-        sql`${evaluationCriterionAnswer.rating} is not null`,
-        ...bornes(assignment.localDate, p),
-      ),
-    )
-    .groupBy(evaluationCriterionAnswer.rating);
+  const rows = await withScope(scope, (tx) =>
+    tx
+      .select({
+        note: evaluationCriterionAnswer.rating,
+        n: sql<string>`count(*)`,
+      })
+      .from(evaluationCriterionAnswer)
+      .innerJoin(evaluation, eq(evaluation.id, evaluationCriterionAnswer.evaluationId))
+      .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
+      .where(
+        and(
+          eq(assignment.golfCourseId, scope.golfCourseId),
+          sql`${evaluationCriterionAnswer.rating} is not null`,
+          ...bornes(assignment.localDate, p),
+        ),
+      )
+      .groupBy(evaluationCriterionAnswer.rating),
+  );
 
   const out = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   for (const r of rows) {
@@ -252,27 +262,33 @@ export async function kpiTerrain(scope: Scope, p: Periode = {}): Promise<KpiTerr
   const periode = bornes(assignment.localDate, p);
   const filtre = and(eq(assignment.golfCourseId, scope.golfCourseId), ...periode);
 
-  const agg = await db
-    .select({
-      parcours: sql<string>`avg(${evaluation.courseRating})`,
-      qualitePrix: sql<string>`avg(${evaluation.valueForMoney})`,
-      n: sql<string>`count(*)`,
-    })
-    .from(evaluation)
-    .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
-    .where(filtre);
+  const agg = await withScope(scope, (tx) =>
+    tx
+      .select({
+        parcours: sql<string>`avg(${evaluation.courseRating})`,
+        qualitePrix: sql<string>`avg(${evaluation.valueForMoney})`,
+        n: sql<string>`count(*)`,
+      })
+      .from(evaluation)
+      .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
+      .where(filtre),
+  );
 
-  const perception = await db
-    .select({ valeur: evaluation.pricePerception, n: sql<string>`count(*)` })
-    .from(evaluation)
-    .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
-    .where(and(filtre, sql`${evaluation.pricePerception} is not null`))
-    .groupBy(evaluation.pricePerception);
+  const perception = await withScope(scope, (tx) =>
+    tx
+      .select({ valeur: evaluation.pricePerception, n: sql<string>`count(*)` })
+      .from(evaluation)
+      .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
+      .where(and(filtre, sql`${evaluation.pricePerception} is not null`))
+      .groupBy(evaluation.pricePerception),
+  );
 
-  const clics = await db
-    .select({ n: sql<string>`count(*)` })
-    .from(googleReviewClick)
-    .where(eq(googleReviewClick.golfCourseId, scope.golfCourseId));
+  const clics = await withScope(scope, (tx) =>
+    tx
+      .select({ n: sql<string>`count(*)` })
+      .from(googleReviewClick)
+      .where(eq(googleReviewClick.golfCourseId, scope.golfCourseId)),
+  );
 
   const p0 = agg[0];
   return {

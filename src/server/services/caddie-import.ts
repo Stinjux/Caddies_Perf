@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import { caddie, caddiePersonalData } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { readCsv, type CsvReadResult } from "@/lib/csv";
@@ -147,15 +148,17 @@ export async function construireApercu(
   }
 
   // Doublons vis-a-vis des caddies DEJA enregistres sur ce terrain.
-  const existants = await db
-    .select({
-      id: caddie.id,
-      internalRef: caddie.internalRef,
-      firstName: caddie.firstName,
-      lastName: caddie.lastName,
-    })
-    .from(caddie)
-    .where(eq(caddie.golfCourseId, scope.golfCourseId));
+  const existants = await withScope(scope, (tx) =>
+    tx
+      .select({
+        id: caddie.id,
+        internalRef: caddie.internalRef,
+        firstName: caddie.firstName,
+        lastName: caddie.lastName,
+      })
+      .from(caddie)
+      .where(eq(caddie.golfCourseId, scope.golfCourseId)),
+  );
 
   const index = new Map(
     existants.map((e) => [`${e.lastName.toLowerCase()}|${e.firstName.toLowerCase()}`, e]),
@@ -221,7 +224,7 @@ export async function executerImport(
 
   const refs: string[] = [];
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     // Prochain numero disponible, jamais reattribue (FR-041).
     const tous = await tx
       .select({ internalRef: caddie.internalRef })

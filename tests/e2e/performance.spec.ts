@@ -20,6 +20,13 @@ for (const [nom, chemin, repere] of [
   test(`${nom} : affichage sous ${BUDGET_MS} ms`, async ({ page }) => {
     await connexion(page, ADMIN);
 
+    // PREMIER APPEL NON MESURE. En developpement, le serveur COMPILE la route
+    // au premier acces : on mesurerait alors le compilateur, pas la page. Ce
+    // detail a fait clignoter ce test pendant plusieurs seances, tantot vert
+    // tantot rouge selon les routes deja visitees par les tests precedents.
+    await page.goto(chemin);
+    await expect(page.getByRole("heading", { name: repere })).toBeVisible();
+
     const debut = Date.now();
     await page.goto(chemin);
     await expect(page.getByRole("heading", { name: repere })).toBeVisible();

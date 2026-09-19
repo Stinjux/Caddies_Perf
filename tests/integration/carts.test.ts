@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
+import { db } from "../helpers/raw-db";
 import { cart } from "@/db/schema";
 import {
   createCart,

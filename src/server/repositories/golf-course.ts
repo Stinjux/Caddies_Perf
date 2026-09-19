@@ -1,5 +1,6 @@
 import { eq, and, asc } from "drizzle-orm";
 import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import { golfCourse, accountGolfCourse } from "@/db/schema";
 import type { Scope } from "../scope";
 
@@ -30,19 +31,19 @@ export async function listCoursesForAccount(accountId: string): Promise<GolfCour
  * (FR-025).
  */
 export async function findCourseInScope(scope: Scope, id: string): Promise<GolfCourseRow | null> {
-  const rows = await db
-    .select()
-    .from(golfCourse)
-    .where(and(eq(golfCourse.id, id), eq(golfCourse.id, scope.golfCourseId)))
-    .limit(1);
+  const rows = await withScope(scope, (tx) =>
+    tx
+      .select()
+      .from(golfCourse)
+      .where(and(eq(golfCourse.id, id), eq(golfCourse.id, scope.golfCourseId)))
+      .limit(1),
+  );
   return rows[0] ?? null;
 }
 
 export async function getActiveCourse(scope: Scope): Promise<GolfCourseRow | null> {
-  const rows = await db
-    .select()
-    .from(golfCourse)
-    .where(eq(golfCourse.id, scope.golfCourseId))
-    .limit(1);
+  const rows = await withScope(scope, (tx) =>
+    tx.select().from(golfCourse).where(eq(golfCourse.id, scope.golfCourseId)).limit(1),
+  );
   return rows[0] ?? null;
 }

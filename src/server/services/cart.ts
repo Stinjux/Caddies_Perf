@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { eq, and, asc } from "drizzle-orm";
 import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import { cart } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { requireAdmin, type Scope } from "../scope";
@@ -31,20 +32,24 @@ export function genererJetonQr(): string {
 }
 
 export async function listCarts(scope: Scope): Promise<CartRow[]> {
-  return db
-    .select()
-    .from(cart)
-    .where(eq(cart.golfCourseId, scope.golfCourseId))
-    .orderBy(asc(cart.visibleNumber));
+  return withScope(scope, (tx) =>
+    tx
+      .select()
+      .from(cart)
+      .where(eq(cart.golfCourseId, scope.golfCourseId))
+      .orderBy(asc(cart.visibleNumber)),
+  );
 }
 
 /** Vue restreinte du Starter : ni jeton de QR code, ni horodatage (FR-020). */
 export async function listCartsForStarter(scope: Scope): Promise<StarterCartView[]> {
-  const rows = await db
-    .select({ id: cart.id, visibleNumber: cart.visibleNumber, status: cart.status })
-    .from(cart)
-    .where(eq(cart.golfCourseId, scope.golfCourseId))
-    .orderBy(asc(cart.visibleNumber));
+  const rows = await withScope(scope, (tx) =>
+    tx
+      .select({ id: cart.id, visibleNumber: cart.visibleNumber, status: cart.status })
+      .from(cart)
+      .where(eq(cart.golfCourseId, scope.golfCourseId))
+      .orderBy(asc(cart.visibleNumber)),
+  );
   return rows.map(toStarterCart);
 }
 
@@ -56,7 +61,7 @@ export async function createCart(scope: Scope, visibleNumber: string): Promise<s
 
   const id = uuidv7();
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const existe = await tx
       .select({ id: cart.id })
       .from(cart)
@@ -86,11 +91,13 @@ export async function createCart(scope: Scope, visibleNumber: string): Promise<s
 export async function setCartStatus(scope: Scope, id: string, status: CartStatus): Promise<void> {
   requireRole(scope, "admin", "starter");
 
-  const maj = await db
-    .update(cart)
-    .set({ status, updatedAt: new Date() })
-    .where(and(eq(cart.id, id), eq(cart.golfCourseId, scope.golfCourseId)))
-    .returning({ id: cart.id });
+  const maj = await withScope(scope, (tx) =>
+    tx
+      .update(cart)
+      .set({ status, updatedAt: new Date() })
+      .where(and(eq(cart.id, id), eq(cart.golfCourseId, scope.golfCourseId)))
+      .returning({ id: cart.id }),
+  );
 
   if (maj.length === 0) throw new NotFoundError();
 }

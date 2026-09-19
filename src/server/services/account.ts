@@ -1,5 +1,6 @@
 import { eq, and, ne, count } from "drizzle-orm";
 import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import { account, accountGolfCourse, session } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { hashPassword } from "../auth/password";
@@ -69,7 +70,7 @@ export async function createAccount(scope: Scope, input: AccountInput): Promise<
   const id = uuidv7();
   const passwordHash = await hashPassword(input.password);
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const existing = await tx
       .select({ id: account.id })
       .from(account)
@@ -107,7 +108,7 @@ export async function disableAccount(
 ): Promise<void> {
   requireAdmin(scope);
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const role = await tx
       .select({ role: accountGolfCourse.role })
       .from(accountGolfCourse)
@@ -150,7 +151,7 @@ export async function enableAccount(
 ): Promise<void> {
   requireAdmin(scope);
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const updated = await tx
       .update(account)
       .set({ status: "active", updatedAt: new Date(), version: expectedVersion + 1 })

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
+import { db } from "../../helpers/raw-db";
 import { caddie, caddiePersonalData, auditLog } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { readBirthYear, writeBirthYear, eraseBirthYear } from "@/server/pii";

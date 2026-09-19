@@ -1,5 +1,5 @@
 import { eq, and, desc, gte, lte, type SQL } from "drizzle-orm";
-import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import { auditLog, account } from "@/db/schema";
 import type { Scope } from "../scope";
 
@@ -23,19 +23,21 @@ export async function listAuditInScope(scope: Scope, filters: AuditFilters = {})
   if (filters.from) conditions.push(gte(auditLog.occurredAt, filters.from));
   if (filters.to) conditions.push(lte(auditLog.occurredAt, filters.to));
 
-  return db
-    .select({
-      id: auditLog.id,
-      action: auditLog.action,
-      targetType: auditLog.targetType,
-      targetId: auditLog.targetId,
-      occurredAt: auditLog.occurredAt,
-      actorFirstName: account.firstName,
-      actorLastName: account.lastName,
-    })
-    .from(auditLog)
-    .innerJoin(account, eq(account.id, auditLog.actorAccountId))
-    .where(and(...conditions))
-    .orderBy(desc(auditLog.occurredAt))
-    .limit(filters.limit ?? 200);
+  return withScope(scope, (tx) =>
+    tx
+      .select({
+        id: auditLog.id,
+        action: auditLog.action,
+        targetType: auditLog.targetType,
+        targetId: auditLog.targetId,
+        occurredAt: auditLog.occurredAt,
+        actorFirstName: account.firstName,
+        actorLastName: account.lastName,
+      })
+      .from(auditLog)
+      .innerJoin(account, eq(account.id, auditLog.actorAccountId))
+      .where(and(...conditions))
+      .orderBy(desc(auditLog.occurredAt))
+      .limit(filters.limit ?? 200),
+  );
 }

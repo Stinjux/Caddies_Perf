@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
+import { db } from "../helpers/raw-db";
 import { cart, booking, golfCourse } from "@/db/schema";
 import { createCart } from "@/server/services/cart";
 import { createCaddie } from "@/server/services/caddie";

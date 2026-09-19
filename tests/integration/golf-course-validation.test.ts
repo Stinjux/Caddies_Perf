@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { db } from "@/db";
+import { db } from "../helpers/raw-db";
 import { account } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { hashPassword } from "@/server/auth/password";

@@ -140,7 +140,7 @@ export default async function EvaluationPage({
     );
   }
 
-  const deja = await compterEvaluations(r.assignmentId);
+  const deja = await compterEvaluations(r.golfCourseId, r.assignmentId);
   if (deja >= MAX_REPONSES_PAR_AFFECTATION) {
     return (
       <Page dir={dir} accent={accent} terrain={r.courseName}>
@@ -157,7 +157,7 @@ export default async function EvaluationPage({
     async function pasMonCaddie() {
       "use server";
       if (!r.ok) return;
-      await signalerMauvaisCaddie(r.assignmentId);
+      await signalerMauvaisCaddie(r.golfCourseId, r.assignmentId);
       redirect(`/e/${token}?etape=mauvais&lang=${langue}`);
     }
 
@@ -232,6 +232,7 @@ export default async function EvaluationPage({
     let id: string;
     try {
       id = await soumettreEvaluation({
+        golfCourseId: r.golfCourseId,
         assignmentId: r.assignmentId,
         langue,
         notes: s.notes,

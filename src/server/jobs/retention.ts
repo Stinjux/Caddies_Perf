@@ -1,6 +1,7 @@
 import { and, lt, isNotNull, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { caddie, caddiePersonalData, evaluation, auditLog } from "@/db/schema";
+import { caddie, caddiePersonalData, evaluation, auditLog, golfCourse } from "@/db/schema";
+import { withCourse } from "@/db/scope-tx";
 import { uuidv7 } from "@/lib/uuid";
 
 /**
@@ -36,27 +37,35 @@ async function purgeBirthYears(now: Date, systemAccountId: string): Promise<numb
   const seuil = new Date(now);
   seuil.setFullYear(seuil.getFullYear() - RETENTION_YEARS_BIRTH_YEAR);
 
-  const expires = await db
-    .select({ caddieId: caddie.id, golfCourseId: caddie.golfCourseId })
-    .from(caddie)
-    .innerJoin(caddiePersonalData, eq(caddiePersonalData.caddieId, caddie.id))
-    .where(and(eq(caddie.status, "disabled"), lt(caddie.updatedAt, seuil)));
+  let effacees = 0;
 
-  for (const row of expires) {
-    await db.transaction(async (tx) => {
-      await tx.delete(caddiePersonalData).where(eq(caddiePersonalData.caddieId, row.caddieId));
-      await tx.insert(auditLog).values({
-        id: uuidv7(),
-        golfCourseId: row.golfCourseId,
-        actorAccountId: systemAccountId,
-        action: "retention.purge",
-        targetType: "caddie",
-        targetId: row.caddieId,
-      });
+  // La purge traverse tous les terrains, mais le RLS n'en laisse voir qu'un a
+  // la fois : on les parcourt donc un par un, ce qui est aussi la seule facon
+  // d'etre certain qu'aucune ligne d'un autre terrain ne soit touchee.
+  for (const terrain of await db.select({ id: golfCourse.id }).from(golfCourse)) {
+    await withCourse(terrain.id, async (tx) => {
+      const expires = await tx
+        .select({ caddieId: caddie.id, golfCourseId: caddie.golfCourseId })
+        .from(caddie)
+        .innerJoin(caddiePersonalData, eq(caddiePersonalData.caddieId, caddie.id))
+        .where(and(eq(caddie.status, "disabled"), lt(caddie.updatedAt, seuil)));
+
+      for (const row of expires) {
+        await tx.delete(caddiePersonalData).where(eq(caddiePersonalData.caddieId, row.caddieId));
+        await tx.insert(auditLog).values({
+          id: uuidv7(),
+          golfCourseId: row.golfCourseId,
+          actorAccountId: systemAccountId,
+          action: "retention.purge",
+          targetType: "caddie",
+          targetId: row.caddieId,
+        });
+      }
+      effacees += expires.length;
     });
   }
 
-  return expires.length;
+  return effacees;
 }
 
 /**
@@ -65,13 +74,20 @@ async function purgeBirthYears(now: Date, systemAccountId: string): Promise<numb
  * s'effaceraient d'elles-memes (FR-034c).
  */
 async function purgeComments(now: Date): Promise<number> {
-  const vides = await db
-    .update(evaluation)
-    .set({ comment: null })
-    .where(and(isNotNull(evaluation.comment), lt(evaluation.commentPurgeAt, now)))
-    .returning({ id: evaluation.id });
+  let vides = 0;
 
-  return vides.length;
+  for (const terrain of await db.select({ id: golfCourse.id }).from(golfCourse)) {
+    await withCourse(terrain.id, async (tx) => {
+      const lignes = await tx
+        .update(evaluation)
+        .set({ comment: null })
+        .where(and(isNotNull(evaluation.comment), lt(evaluation.commentPurgeAt, now)))
+        .returning({ id: evaluation.id });
+      vides += lignes.length;
+    });
+  }
+
+  return vides;
 }
 
 export async function runRetentionPurge(

@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { db } from "./raw-db";
 import { account, accountGolfCourse, golfCourse } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { hashPassword } from "@/server/auth/password";

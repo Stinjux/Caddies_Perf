@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
+import { db } from "../helpers/raw-db";
 import { session } from "@/db/schema";
 import { login, resolveSession } from "@/server/auth/current";
 import { disableAccount } from "@/server/services/account";

@@ -1,5 +1,6 @@
 import { eq, count } from "drizzle-orm";
 import { db } from "@/db";
+import { withCourse } from "@/db/scope-tx";
 import {
   evaluation,
   evaluationCriterionAnswer,
@@ -47,6 +48,9 @@ export type PricePerception =
   | "beaucoup_trop_eleve";
 
 export interface SoumissionEvaluation {
+  /** Terrain resolu depuis le jeton. Le client n'a pas de portee ; ce champ
+   *  la remplace pour que le RLS sache de quel terrain il s'agit. */
+  golfCourseId: string;
   assignmentId: string;
   langue: Langue;
   /** null signifie « non applicable » : exclu des moyennes, jamais 0. */
@@ -62,21 +66,25 @@ function noteValide(v: number | null | undefined): boolean {
 }
 
 /** @public-client-path — le client n'a pas de compte, donc pas de portée. */
-export async function compterEvaluations(assignmentId: string): Promise<number> {
-  const rows = await db
-    .select({ n: count() })
-    .from(evaluation)
-    .where(eq(evaluation.assignmentId, assignmentId));
+export async function compterEvaluations(
+  golfCourseId: string,
+  assignmentId: string,
+): Promise<number> {
+  const rows = await withCourse(golfCourseId, (tx) =>
+    tx.select({ n: count() }).from(evaluation).where(eq(evaluation.assignmentId, assignmentId)),
+  );
   return Number(rows[0]?.n ?? 0);
 }
 
 /** @public-client-path — le client n'a pas de compte, donc pas de portée. */
 export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<string> {
-  const aff = await db
-    .select({ id: assignment.id, golfCourseId: assignment.golfCourseId })
-    .from(assignment)
-    .where(eq(assignment.id, s.assignmentId))
-    .limit(1);
+  const aff = await withCourse(s.golfCourseId, (tx) =>
+    tx
+      .select({ id: assignment.id, golfCourseId: assignment.golfCourseId })
+      .from(assignment)
+      .where(eq(assignment.id, s.assignmentId))
+      .limit(1),
+  );
   if (aff.length === 0) throw new NotFoundError();
 
   for (const critere of CRITERES) {
@@ -88,7 +96,7 @@ export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<stri
     throw new ValidationError("note", "Chaque note doit être comprise entre 1 et 5 étoiles.");
   }
 
-  const deja = await compterEvaluations(s.assignmentId);
+  const deja = await compterEvaluations(s.golfCourseId, s.assignmentId);
   if (deja >= MAX_REPONSES_PAR_AFFECTATION) {
     throw new ValidationError(
       "limite",
@@ -100,7 +108,7 @@ export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<stri
   const maintenant = new Date();
   const commentaire = s.commentaire?.trim();
 
-  await db.transaction(async (tx) => {
+  await withCourse(s.golfCourseId, async (tx) => {
     await tx.insert(evaluation).values({
       id,
       golfCourseId: aff[0]!.golfCourseId,
@@ -135,18 +143,23 @@ export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<stri
  *
  * @public-client-path — le client n'a pas de compte, donc pas de portée.
  */
-export async function signalerMauvaisCaddie(assignmentId: string): Promise<void> {
-  const aff = await db
-    .select({ golfCourseId: assignment.golfCourseId })
-    .from(assignment)
-    .where(eq(assignment.id, assignmentId))
-    .limit(1);
-  if (aff.length === 0) throw new NotFoundError();
+export async function signalerMauvaisCaddie(
+  golfCourseId: string,
+  assignmentId: string,
+): Promise<void> {
+  await withCourse(golfCourseId, async (tx) => {
+    const aff = await tx
+      .select({ golfCourseId: assignment.golfCourseId })
+      .from(assignment)
+      .where(eq(assignment.id, assignmentId))
+      .limit(1);
+    if (aff.length === 0) throw new NotFoundError();
 
-  await db.insert(wrongCaddieReport).values({
-    id: uuidv7(),
-    golfCourseId: aff[0]!.golfCourseId,
-    assignmentId,
+    await tx.insert(wrongCaddieReport).values({
+      id: uuidv7(),
+      golfCourseId: aff[0]!.golfCourseId,
+      assignmentId,
+    });
   });
 }
 
@@ -160,11 +173,13 @@ export async function enregistrerClicGoogle(
   golfCourseId: string,
   evaluationId: string | null,
 ): Promise<void> {
-  await db.insert(googleReviewClick).values({
-    id: uuidv7(),
-    golfCourseId,
-    evaluationId,
-  });
+  await withCourse(golfCourseId, (tx) =>
+    tx.insert(googleReviewClick).values({
+      id: uuidv7(),
+      golfCourseId,
+      evaluationId,
+    }),
+  );
 }
 
 /**

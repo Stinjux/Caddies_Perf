@@ -1,5 +1,6 @@
 import { eq, and, ne, count } from "drizzle-orm";
 import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import { account, accountGolfCourse, session } from "@/db/schema";
 import { requireAdmin, type Scope } from "../scope";
 import { writeAudit } from "../audit/write";
@@ -19,14 +20,19 @@ export async function attachAccount(
 ): Promise<void> {
   requireAdmin(scope);
 
-  await db.transaction(async (tx) => {
-    const exists = await tx
-      .select({ id: account.id })
-      .from(account)
-      .where(eq(account.id, accountId))
-      .limit(1);
-    if (exists.length === 0) throw new NotFoundError();
+  // Verification HORS portee, et c'est necessaire : rattacher quelqu'un a ce
+  // terrain suppose precisement qu'il n'y est pas encore rattache. Sous portee,
+  // le RLS ne le verrait pas, et l'operation serait impossible par nature.
+  // Aucune information n'est divulguee au-dela de « cet identifiant existe » —
+  // que l'appelant tient deja, puisqu'il le fournit.
+  const exists = await db
+    .select({ id: account.id })
+    .from(account)
+    .where(eq(account.id, accountId))
+    .limit(1);
+  if (exists.length === 0) throw new NotFoundError();
 
+  await withScope(scope, async (tx) => {
     const already = await tx
       .select({ role: accountGolfCourse.role })
       .from(accountGolfCourse)
@@ -56,7 +62,7 @@ export async function attachAccount(
 export async function detachAccount(scope: Scope, accountId: string): Promise<void> {
   requireAdmin(scope);
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const link = await tx
       .select({ role: accountGolfCourse.role })
       .from(accountGolfCourse)

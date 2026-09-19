@@ -1,5 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import { caddie, caddiePersonalData } from "@/db/schema";
 import { requireAdmin, type Scope } from "../scope";
 import { writeAudit } from "../audit/write";
@@ -20,11 +21,13 @@ import { NotFoundError, ValidationError } from "../errors";
  */
 
 async function assertCaddieInScope(scope: Scope, caddieId: string): Promise<void> {
-  const rows = await db
-    .select({ id: caddie.id })
-    .from(caddie)
-    .where(and(eq(caddie.id, caddieId), eq(caddie.golfCourseId, scope.golfCourseId)))
-    .limit(1);
+  const rows = await withScope(scope, (tx) =>
+    tx
+      .select({ id: caddie.id })
+      .from(caddie)
+      .where(and(eq(caddie.id, caddieId), eq(caddie.golfCourseId, scope.golfCourseId)))
+      .limit(1),
+  );
   if (rows.length === 0) throw new NotFoundError();
 }
 
@@ -33,7 +36,7 @@ export async function readBirthYear(scope: Scope, caddieId: string): Promise<num
   requireAdmin(scope);
   await assertCaddieInScope(scope, caddieId);
 
-  return db.transaction(async (tx) => {
+  return withScope(scope, async (tx) => {
     const rows = await tx
       .select({ birthYear: caddiePersonalData.birthYear })
       .from(caddiePersonalData)
@@ -62,7 +65,7 @@ export async function writeBirthYear(
     );
   }
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     await tx
       .insert(caddiePersonalData)
       .values({ caddieId, birthYear })
@@ -83,7 +86,7 @@ export async function eraseBirthYear(scope: Scope, caddieId: string): Promise<vo
   requireAdmin(scope);
   await assertCaddieInScope(scope, caddieId);
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     await tx.delete(caddiePersonalData).where(eq(caddiePersonalData.caddieId, caddieId));
     await writeAudit(tx, scope, { action: "pii.erase", targetType: "caddie", targetId: caddieId });
   });

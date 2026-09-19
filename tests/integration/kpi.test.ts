@@ -65,7 +65,12 @@ async function parcours(
     await terminerAffectation(s, affId);
 
     if (parties[i]!.evaluer !== false) {
-      await soumettreEvaluation({ assignmentId: affId, langue: "fr", notes: parties[i]!.notes });
+      await soumettreEvaluation({
+        golfCourseId: s.golfCourseId,
+        assignmentId: affId,
+        langue: "fr",
+        notes: parties[i]!.notes,
+      });
     }
   }
   return caddieId;
@@ -219,6 +224,7 @@ describe("KPI du terrain — mesures séparées (FR-043)", () => {
     });
     await terminerAffectation(admin(), affId);
     await soumettreEvaluation({
+      golfCourseId: admin().golfCourseId,
       assignmentId: affId,
       langue: "fr",
       notes: notes5,

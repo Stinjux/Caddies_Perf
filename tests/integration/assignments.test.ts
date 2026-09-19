@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
+import { db } from "../helpers/raw-db";
 import { assignment, booking, cart } from "@/db/schema";
 import { createCart, setCartStatus } from "@/server/services/cart";
 import { createCaddie, setCaddieAvailability, setCaddieStatus } from "@/server/services/caddie";

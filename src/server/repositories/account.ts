@@ -1,5 +1,6 @@
 import { eq, and, asc } from "drizzle-orm";
 import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import { account, accountGolfCourse, golfCourse } from "@/db/schema";
 import type { Scope } from "../scope";
 
@@ -34,12 +35,14 @@ const PUBLIC_COLUMNS = {
 export async function listAccountsInScope(
   scope: Scope,
 ): Promise<(AccountSummary & { role: "admin" | "starter" })[]> {
-  const rows = await db
-    .select({ ...PUBLIC_COLUMNS, role: accountGolfCourse.role })
-    .from(accountGolfCourse)
-    .innerJoin(account, eq(account.id, accountGolfCourse.accountId))
-    .where(eq(accountGolfCourse.golfCourseId, scope.golfCourseId))
-    .orderBy(asc(account.lastName), asc(account.firstName));
+  const rows = await withScope(scope, (tx) =>
+    tx
+      .select({ ...PUBLIC_COLUMNS, role: accountGolfCourse.role })
+      .from(accountGolfCourse)
+      .innerJoin(account, eq(account.id, accountGolfCourse.accountId))
+      .where(eq(accountGolfCourse.golfCourseId, scope.golfCourseId))
+      .orderBy(asc(account.lastName), asc(account.firstName)),
+  );
   return rows;
 }
 
@@ -56,12 +59,14 @@ export async function findAccountInScope(
   scope: Scope,
   accountId: string,
 ): Promise<AccountSummary | null> {
-  const rows = await db
-    .select(PUBLIC_COLUMNS)
-    .from(account)
-    .innerJoin(accountGolfCourse, eq(accountGolfCourse.accountId, account.id))
-    .where(and(eq(account.id, accountId), eq(accountGolfCourse.golfCourseId, scope.golfCourseId)))
-    .limit(1);
+  const rows = await withScope(scope, (tx) =>
+    tx
+      .select(PUBLIC_COLUMNS)
+      .from(account)
+      .innerJoin(accountGolfCourse, eq(accountGolfCourse.accountId, account.id))
+      .where(and(eq(account.id, accountId), eq(accountGolfCourse.golfCourseId, scope.golfCourseId)))
+      .limit(1),
+  );
   return rows[0] ?? null;
 }
 

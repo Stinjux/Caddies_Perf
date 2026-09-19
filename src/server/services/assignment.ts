@@ -1,5 +1,6 @@
 import { eq, and, desc, sql } from "drizzle-orm";
 import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import { assignment, booking, cart, caddie } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { localDateFor } from "@/lib/timezone";
@@ -42,7 +43,7 @@ export async function creerAffectation(scope: Scope, input: AffectationInput): P
 
   const id = uuidv7();
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     // La voiturette et le caddie doivent appartenir au terrain actif. Les
     // clés composites le garantiraient de toute façon, mais un message clair
     // vaut mieux qu'une erreur de base de données.
@@ -135,7 +136,7 @@ export async function corrigerAffectation(
 ): Promise<void> {
   requireRole(scope, "starter", "admin");
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const a = await tx
       .select()
       .from(assignment)
@@ -169,7 +170,7 @@ export async function corrigerAffectation(
 export async function terminerAffectation(scope: Scope, id: string): Promise<void> {
   requireRole(scope, "starter", "admin");
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const a = await tx
       .select()
       .from(assignment)
@@ -192,7 +193,7 @@ export async function terminerAffectation(scope: Scope, id: string): Promise<voi
 export async function annulerAffectation(scope: Scope, id: string): Promise<void> {
   requireRole(scope, "starter", "admin");
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const a = await tx
       .select()
       .from(assignment)
@@ -216,25 +217,27 @@ export async function affectationsDuJour(scope: Scope) {
 
   const aujourdhui = localDateFor(new Date(), terrain.timezone);
 
-  return db
-    .select({
-      id: assignment.id,
-      bookingRef: booking.externalRef,
-      teeTime: booking.teeTime,
-      cartNumber: cart.visibleNumber,
-      caddieRef: caddie.internalRef,
-      caddieFirstName: caddie.firstName,
-      caddieLastName: caddie.lastName,
-      status: assignment.status,
-    })
-    .from(assignment)
-    .innerJoin(booking, eq(booking.id, assignment.bookingId))
-    .innerJoin(cart, eq(cart.id, assignment.cartId))
-    .innerJoin(caddie, eq(caddie.id, assignment.caddieId))
-    .where(
-      and(eq(assignment.golfCourseId, scope.golfCourseId), eq(assignment.localDate, aujourdhui)),
-    )
-    .orderBy(desc(assignment.startedAt));
+  return withScope(scope, (tx) =>
+    tx
+      .select({
+        id: assignment.id,
+        bookingRef: booking.externalRef,
+        teeTime: booking.teeTime,
+        cartNumber: cart.visibleNumber,
+        caddieRef: caddie.internalRef,
+        caddieFirstName: caddie.firstName,
+        caddieLastName: caddie.lastName,
+        status: assignment.status,
+      })
+      .from(assignment)
+      .innerJoin(booking, eq(booking.id, assignment.bookingId))
+      .innerJoin(cart, eq(cart.id, assignment.cartId))
+      .innerJoin(caddie, eq(caddie.id, assignment.caddieId))
+      .where(
+        and(eq(assignment.golfCourseId, scope.golfCourseId), eq(assignment.localDate, aujourdhui)),
+      )
+      .orderBy(desc(assignment.startedAt)),
+  );
 }
 
 /**
@@ -243,15 +246,17 @@ export async function affectationsDuJour(scope: Scope) {
  * comptent qu'une seule fois.
  */
 export async function joursTravailles(scope: Scope, caddieId: string): Promise<number> {
-  const rows = await db
-    .select({ n: sql<string>`count(distinct ${assignment.localDate})` })
-    .from(assignment)
-    .where(
-      and(
-        eq(assignment.golfCourseId, scope.golfCourseId),
-        eq(assignment.caddieId, caddieId),
-        eq(assignment.status, "completed"),
+  const rows = await withScope(scope, (tx) =>
+    tx
+      .select({ n: sql<string>`count(distinct ${assignment.localDate})` })
+      .from(assignment)
+      .where(
+        and(
+          eq(assignment.golfCourseId, scope.golfCourseId),
+          eq(assignment.caddieId, caddieId),
+          eq(assignment.status, "completed"),
+        ),
       ),
-    );
+  );
   return Number(rows[0]?.n ?? 0);
 }

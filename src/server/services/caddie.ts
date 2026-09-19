@@ -1,5 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
+import { withScope } from "@/db/scope-tx";
 import { caddie } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { requireAdmin, type Scope } from "../scope";
@@ -41,7 +42,7 @@ export async function createCaddie(scope: Scope, input: CaddieInput): Promise<st
   const id = uuidv7();
   const ref = input.internalRef.trim();
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const existe = await tx
       .select({ id: caddie.id })
       .from(caddie)
@@ -79,7 +80,7 @@ export async function updateCaddie(
   requireAdmin(scope);
   valider(input);
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const maj = await tx
       .update(caddie)
       .set({
@@ -125,7 +126,7 @@ export async function setCaddieStatus(
 ): Promise<void> {
   requireAdmin(scope);
 
-  await db.transaction(async (tx) => {
+  await withScope(scope, async (tx) => {
     const maj = await tx
       .update(caddie)
       .set({ status, updatedAt: new Date(), version: expectedVersion + 1 })
@@ -159,11 +160,13 @@ export async function setCaddieAvailability(
 ): Promise<void> {
   requireRole(scope, "admin", "starter");
 
-  const maj = await db
-    .update(caddie)
-    .set({ availability, updatedAt: new Date() })
-    .where(and(eq(caddie.id, id), eq(caddie.golfCourseId, scope.golfCourseId)))
-    .returning({ id: caddie.id });
+  const maj = await withScope(scope, (tx) =>
+    tx
+      .update(caddie)
+      .set({ availability, updatedAt: new Date() })
+      .where(and(eq(caddie.id, id), eq(caddie.golfCourseId, scope.golfCourseId)))
+      .returning({ id: caddie.id }),
+  );
 
   if (maj.length === 0) throw new NotFoundError();
 }

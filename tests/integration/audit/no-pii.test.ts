@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { db } from "@/db";
+import { db } from "../../helpers/raw-db";
 import { auditLog, caddie, caddiePersonalData } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { createCourse, updateCourse } from "@/server/services/golf-course";
