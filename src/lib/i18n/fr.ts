@@ -52,9 +52,16 @@ export const fr = {
   titreCommentaire: "Souhaitez-vous ajouter un commentaire ?",
   commentaireFacultatif: "Facultatif",
 
-  // Envoi
+  // Envoi et progression
   envoyer: "Envoyer mon évaluation",
+  continuer: "Continuer",
+  precedent: "Précédent",
   retour: "Retour",
+  etapeSur: (n: string, total: string) => `${n} / ${total}`,
+  echelleBasse: "Très insatisfaisant",
+  echelleHaute: "Excellent",
+  reponsesManquantes:
+    "Merci de répondre à toutes les questions. Vos réponses déjà données sont conservées.",
 
   // Remerciement
   merci: "Merci pour votre évaluation !",

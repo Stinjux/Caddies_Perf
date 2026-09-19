@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { redirect } from "next/navigation";
 import { resoudreJeton } from "@/server/services/qr-resolution";
 import {
@@ -7,9 +8,19 @@ import {
   compterEvaluations,
   MAX_REPONSES_PAR_AFFECTATION,
   CRITERES,
-  type Critere,
-  type PricePerception,
 } from "@/server/services/evaluation";
+import {
+  lireFormulaire,
+  encoder,
+  decoder,
+  champsManquants,
+  prixManquant,
+  premierEcranIncomplet,
+  versSoumission,
+  CHAMPS_NOTES,
+  type Reponses,
+  type ChampNote,
+} from "@/server/services/reponses";
 import { resoudreLangue, direction, NOMS_LANGUES, LANGUES_DISPONIBLES } from "@/lib/i18n";
 import { messages } from "@/lib/i18n/fr";
 import { AppError } from "@/server/errors";
@@ -17,25 +28,48 @@ import { AppError } from "@/server/errors";
 export const dynamic = "force-dynamic";
 
 /**
- * PARCOURS CLIENT (spéc. 4) — du scan du QR à l'envoi.
+ * PARCOURS CLIENT (spéc. 4).
  *
- * Aucun compte, aucune application à télécharger, moins de 30 secondes.
+ * Aucun compte, aucune application, moins de 30 secondes.
  *
- * Écrit SANS JavaScript client : des formulaires et des liens. Sur une
- * connexion mobile faible, au 18e trou, une page qui s'affiche vaut mieux
- * qu'une page qui attend un paquet.
+ * SANS JAVASCRIPT CLIENT. Au 18e trou, sur un réseau faible, une page qui
+ * s'affiche vaut mieux qu'une page qui attend un paquet.
+ *  - Les étoiles se remplissent en CSS : radios en ordre DOM inversé et
+ *    `:checked ~ label`. Le miroir arabe est automatique.
+ *  - Les cinq écrans sont révélés en CSS par des radios HORS du formulaire,
+ *    donc jamais envoyés. Zéro attente réseau entre les écrans.
+ *
+ * TOUTES LES NOTES SONT OBLIGATOIRES, le commentaire jamais. L'obligation
+ * vit côté serveur : un `required` sur un champ masqué bloquerait l'envoi en
+ * silence. En cas d'oubli, les réponses déjà données sont préservées et
+ * l'écran incomplet est rouvert.
  *
  * ANONYME : aucune donnée identifiante n'est demandée ni enregistrée.
  */
 
 type Etape = "accueil" | "questions" | "merci" | "termine" | "mauvais";
 
+const ECRANS: ChampNote[][] = [
+  [CHAMPS_NOTES[0], CHAMPS_NOTES[1]],
+  [CHAMPS_NOTES[2], CHAMPS_NOTES[3]],
+  [CHAMPS_NOTES[4], CHAMPS_NOTES[5]],
+  [CHAMPS_NOTES[6], CHAMPS_NOTES[7]],
+];
+const ROMAINS = ["I", "II", "III", "IV", "V"];
+
 export default async function EvaluationPage({
   params,
   searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ lang?: string; etape?: string; ev?: string; erreur?: string }>;
+  searchParams: Promise<{
+    lang?: string;
+    etape?: string;
+    ev?: string;
+    erreur?: string;
+    v?: string;
+    ecran?: string;
+  }>;
 }) {
   const { token } = await params;
   const sp = await searchParams;
@@ -48,9 +82,9 @@ export default async function EvaluationPage({
 
   if (!r.ok) {
     return (
-      <Cadre dir={dir}>
-        <p className="text-lg text-neutral-800">{t.echecs[r.raison]}</p>
-      </Cadre>
+      <Page dir={dir}>
+        <p className="mention">{t.echecs[r.raison]}</p>
+      </Page>
     );
   }
 
@@ -58,17 +92,17 @@ export default async function EvaluationPage({
 
   if (etape === "mauvais") {
     return (
-      <Cadre dir={dir} accent={accent} titre={r.courseName}>
-        <p className="text-lg text-neutral-800">{t.mauvaisCaddieMerci}</p>
-      </Cadre>
+      <Page dir={dir} accent={accent} terrain={r.courseName}>
+        <h1 className="titre">{t.mauvaisCaddieMerci}</h1>
+      </Page>
     );
   }
 
   if (etape === "termine") {
     return (
-      <Cadre dir={dir} accent={accent} titre={r.courseName}>
-        <p className="text-lg text-neutral-800">{t.termine}</p>
-      </Cadre>
+      <Page dir={dir} accent={accent} terrain={r.courseName}>
+        <h1 className="titre">{t.termine}</h1>
+      </Page>
     );
   }
 
@@ -81,40 +115,40 @@ export default async function EvaluationPage({
     }
 
     return (
-      <Cadre dir={dir} accent={accent} titre={r.courseName}>
-        <h2 className="text-2xl font-bold text-neutral-900">{t.merci}</h2>
-        <p className="mt-2 text-base text-neutral-700">{t.merciDetail}</p>
+      <Page dir={dir} accent={accent} terrain={r.courseName}>
+        <h1 className="titre titre--grand">{t.merci}</h1>
+        <p className="mention" style={{ marginBlockStart: "1rem" }}>
+          {t.merciDetail}
+        </p>
 
-        <p className="mt-8 text-lg font-medium text-neutral-900">{t.partagerGoogle}</p>
-        <div className="mt-4 space-y-3">
+        <hr className="filet" style={{ marginBlock: "2.5rem" }} />
+
+        <h2 className="titre" style={{ fontSize: "1.25rem" }}>
+          {t.partagerGoogle}
+        </h2>
+
+        <div className="actions">
           {r.googleReviewUrl && (
             <form action={clicGoogle}>
-              <button
-                type="submit"
-                className="w-full rounded-xl px-5 py-4 text-lg font-bold text-white"
-                style={{ backgroundColor: accent }}
-              >
+              <button type="submit" className="bouton">
                 {t.boutonGoogle}
               </button>
             </form>
           )}
-          <a
-            href={`/e/${token}?etape=termine&lang=${langue}`}
-            className="block w-full rounded-xl border-2 border-neutral-400 px-5 py-4 text-center text-lg font-medium text-neutral-800"
-          >
+          <a className="bouton bouton--fantome" href={`/e/${token}?etape=termine&lang=${langue}`}>
             {t.terminer}
           </a>
         </div>
-      </Cadre>
+      </Page>
     );
   }
 
   const deja = await compterEvaluations(r.assignmentId);
   if (deja >= MAX_REPONSES_PAR_AFFECTATION) {
     return (
-      <Cadre dir={dir} accent={accent} titre={r.courseName}>
-        <p className="text-lg text-neutral-800">{t.dejaEvalue}</p>
-      </Cadre>
+      <Page dir={dir} accent={accent} terrain={r.courseName}>
+        <h1 className="titre">{t.dejaEvalue}</h1>
+      </Page>
     );
   }
 
@@ -127,79 +161,70 @@ export default async function EvaluationPage({
     }
 
     return (
-      <Cadre dir={dir} accent={accent} titre={r.courseName}>
-        {LANGUES_DISPONIBLES.length > 1 && (
-          <div className="mb-6">
-            <p className="mb-2 text-sm text-neutral-600">{t.choisirLangue}</p>
-            <div className="flex flex-wrap gap-2">
-              {LANGUES_DISPONIBLES.map((l) => (
-                <a
-                  key={l}
-                  href={`/e/${token}?lang=${l}`}
-                  className={`rounded-lg border-2 px-4 py-2 text-base ${
-                    l === langue ? "border-neutral-900 font-bold" : "border-neutral-300"
-                  }`}
-                >
-                  {NOMS_LANGUES[l]}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <p className="text-sm text-neutral-500">{t.moinsDe30Secondes}</p>
-        <h2 className="mt-2 text-2xl font-bold text-neutral-900">
+      <Page dir={dir} accent={accent} terrain={r.courseName}>
+        <p className="mention">{t.moinsDe30Secondes}</p>
+        <h1 className="titre titre--grand" style={{ marginBlockStart: "1.5rem" }}>
           {t.bonCaddie(r.caddieFirstName)}
-        </h2>
+        </h1>
 
-        <div className="mt-8 space-y-3">
-          <a
-            href={`/e/${token}?etape=questions&lang=${langue}`}
-            className="block w-full rounded-xl px-5 py-5 text-center text-xl font-bold text-white"
-            style={{ backgroundColor: accent }}
-          >
+        <hr className="filet" />
+
+        <div className="actions">
+          <a className="bouton" href={`/e/${token}?etape=questions&lang=${langue}`}>
             {t.oui}
           </a>
           <form action={pasMonCaddie}>
-            <button
-              type="submit"
-              className="w-full rounded-xl border-2 border-neutral-400 px-5 py-4 text-base font-medium text-neutral-800"
-            >
+            <button type="submit" className="bouton bouton--fantome">
               {t.nonPasMonCaddie}
             </button>
           </form>
         </div>
-      </Cadre>
+
+        {LANGUES_DISPONIBLES.length > 1 && (
+          <>
+            <hr className="filet" style={{ marginBlockStart: "2.5rem" }} />
+            <p className="sur-titre">
+              {LANGUES_DISPONIBLES.map((l) => (
+                <a key={l} href={`/e/${token}?lang=${l}`} style={{ color: "inherit" }}>
+                  {NOMS_LANGUES[l]}{" "}
+                </a>
+              ))}
+            </p>
+          </>
+        )}
+      </Page>
     );
   }
 
-  // --- Questionnaire ---
+  // --- Questionnaire : cinq écrans, révélés en CSS ---
+  const precedentes = decoder(sp.v);
+  const ecranOuvert = Number(sp.ecran ?? 1);
+
   async function envoyer(formData: FormData) {
     "use server";
     if (!r.ok) return;
 
-    const lire = (nom: string): number | null => {
-      const v = String(formData.get(nom) ?? "");
-      if (v === "" || v === "na") return null;
-      const n = Number(v);
-      return Number.isInteger(n) ? n : null;
-    };
+    const reponses = lireFormulaire(formData);
+    const manquants = champsManquants(reponses);
 
-    const notes: Partial<Record<Critere, number | null>> = {};
-    for (const c of CRITERES) notes[c] = lire(c);
+    if (manquants.length > 0 || prixManquant(reponses)) {
+      const ecran = premierEcranIncomplet(reponses);
+      redirect(
+        `/e/${token}?etape=questions&lang=${langue}&erreur=1&ecran=${ecran}&v=${encodeURIComponent(encoder(reponses))}`,
+      );
+    }
 
-    const prix = String(formData.get("perceptionPrix") ?? "");
-
+    const s = versSoumission(reponses);
     let id: string;
     try {
       id = await soumettreEvaluation({
         assignmentId: r.assignmentId,
         langue,
-        notes,
-        commentaire: String(formData.get("commentaire") ?? ""),
-        noteParcours: lire("noteParcours"),
-        rapportQualitePrix: lire("rapportQualitePrix"),
-        perceptionPrix: prix ? (prix as PricePerception) : null,
+        notes: s.notes,
+        commentaire: reponses.commentaire,
+        noteParcours: s.noteParcours,
+        rapportQualitePrix: s.rapportQualitePrix,
+        perceptionPrix: reponses.perceptionPrix,
       });
     } catch (e) {
       const m = e instanceof AppError ? e.message : "Envoi impossible.";
@@ -210,149 +235,215 @@ export default async function EvaluationPage({
   }
 
   return (
-    <Cadre dir={dir} accent={accent} titre={r.courseName}>
-      {sp.erreur && (
-        <p
-          role="alert"
-          className="mb-4 rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 text-base text-red-900"
-        >
-          {sp.erreur}
-        </p>
-      )}
+    <>
+      {/* Navigation par étapes : HORS du formulaire, donc jamais envoyée. */}
+      {[1, 2, 3, 4, 5].map((n) => (
+        <input
+          key={n}
+          className="nav-etape"
+          type="radio"
+          name="etape-ui"
+          id={`e${n}`}
+          defaultChecked={n === ecranOuvert}
+        />
+      ))}
 
-      <form
-        action={envoyer}
-        // Le navigateur restaure les valeurs d'un formulaire identique deja
-        // rempli. Un client qui revient en arriere, ou qui rescanne la meme
-        // voiturette, verrait ses anciennes reponses pre-cochees — et une
-        // note pre-cochee biaise l'evaluation.
-        autoComplete="off"
-        className="space-y-8"
-      >
-        <section>
-          <h2 className="mb-4 text-xl font-bold text-neutral-900">{t.titreCriteres}</h2>
-          <div className="space-y-6">
-            {CRITERES.map((c) => (
-              <Etoiles key={c} nom={c} libelle={t.criteres[c]} t={t} accent={accent} />
-            ))}
-          </div>
-        </section>
+      <div className="page" dir={dir} style={{ "--accent": accent } as React.CSSProperties}>
+        <p className="sur-titre">{r.courseName}</p>
+        <hr className="filet filet--court" />
 
-        <section className="border-t-2 border-neutral-200 pt-6">
-          <Etoiles nom="noteParcours" libelle={t.titreParcours} t={t} accent={accent} />
-        </section>
+        {sp.erreur && (
+          <p role="alert" className="erreur">
+            {sp.erreur === "1" ? t.reponsesManquantes : sp.erreur}
+          </p>
+        )}
 
-        <section className="border-t-2 border-neutral-200 pt-6 space-y-6">
-          <Etoiles
-            nom="rapportQualitePrix"
-            libelle={t.titrePrixQualite(r.priceMad)}
-            t={t}
-            accent={accent}
-          />
-          <fieldset>
-            <legend className="mb-2 text-base font-medium text-neutral-900">
-              {t.titrePrixNiveau(r.priceMad)}
-            </legend>
-            <div className="space-y-2">
-              {(Object.keys(t.prix) as (keyof typeof t.prix)[]).map((k) => (
-                <label
-                  key={k}
-                  className="flex items-center gap-3 rounded-lg border-2 border-neutral-300 px-4 py-3"
-                >
-                  <input type="radio" name="perceptionPrix" value={k} className="h-5 w-5" />
-                  <span className="text-base">{t.prix[k]}</span>
-                </label>
+        <form action={envoyer} autoComplete="off">
+          {ECRANS.map((champs, i) => (
+            <Ecran key={i} numero={i + 1} accent={accent} t={t} token={token} langue={langue}>
+              {champs.map((champ) => (
+                <Etoiles
+                  key={champ}
+                  nom={champ}
+                  libelle={libelle(champ, t, r.priceMad)}
+                  t={t}
+                  valeur={precedentes.notes[champ]}
+                />
               ))}
-            </div>
-          </fieldset>
-        </section>
+            </Ecran>
+          ))}
 
-        <section className="border-t-2 border-neutral-200 pt-6">
-          <label className="block">
-            <span className="block text-base font-medium text-neutral-900">
-              {t.titreCommentaire}
-            </span>
-            <span className="mb-2 block text-sm text-neutral-500">{t.commentaireFacultatif}</span>
-            <textarea
-              name="commentaire"
-              rows={3}
-              maxLength={2000}
-              className="w-full rounded-lg border-2 border-neutral-300 px-3 py-3 text-base"
-            />
-          </label>
-        </section>
+          <Ecran numero={5} accent={accent} t={t} token={token} langue={langue} dernier>
+            <fieldset className="question">
+              <legend>{t.titrePrixNiveau(r.priceMad)}</legend>
+              <div className="choix">
+                {(Object.keys(t.prix) as (keyof typeof t.prix)[]).map((k) => (
+                  <label key={k}>
+                    <input
+                      type="radio"
+                      name="perceptionPrix"
+                      value={k}
+                      defaultChecked={precedentes.perceptionPrix === k}
+                    />
+                    {t.prix[k]}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-        <button
-          type="submit"
-          className="w-full rounded-xl px-5 py-5 text-xl font-bold text-white"
-          style={{ backgroundColor: accent }}
-        >
-          {t.envoyer}
-        </button>
-      </form>
-    </Cadre>
+            <fieldset className="question">
+              <legend>{t.titreCommentaire}</legend>
+              <p className="mention" style={{ marginBlockEnd: "0.75rem" }}>
+                {t.commentaireFacultatif}
+              </p>
+              <textarea name="commentaire" rows={3} maxLength={2000} />
+            </fieldset>
+          </Ecran>
+        </form>
+      </div>
+    </>
   );
 }
 
-/** Une note de 1 à 5, plus « non applicable » — exclu des moyennes. */
+function libelle(champ: ChampNote, t: ReturnType<typeof messages>, prix: number): string {
+  if (champ === "noteParcours") return t.titreParcours;
+  if (champ === "rapportQualitePrix") return t.titrePrixQualite(prix);
+  return t.criteres[champ as (typeof CRITERES)[number]];
+}
+
+function Ecran({
+  numero,
+  accent,
+  t,
+  children,
+  dernier,
+}: {
+  numero: number;
+  accent: string;
+  t: ReturnType<typeof messages>;
+  token: string;
+  langue: string;
+  children: React.ReactNode;
+  dernier?: boolean;
+}) {
+  return (
+    <section className={`ecran ecran-${numero}`}>
+      <div className="progression">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <span
+            key={n}
+            className={n <= numero ? "actif" : ""}
+            style={n <= numero ? { background: accent } : undefined}
+          />
+        ))}
+      </div>
+      <p className="compteur">{t.etapeSur(ROMAINS[numero - 1] ?? "", "V")}</p>
+
+      {children}
+
+      <div className="actions">
+        {dernier ? (
+          <button
+            type="submit"
+            className="bouton"
+            style={{ background: accent, borderColor: accent }}
+          >
+            {t.envoyer}
+          </button>
+        ) : (
+          <label
+            className="bouton"
+            htmlFor={`e${numero + 1}`}
+            style={{ background: accent, borderColor: accent }}
+          >
+            {t.continuer}
+          </label>
+        )}
+        {numero > 1 && (
+          <label className="retour" htmlFor={`e${numero - 1}`}>
+            ← {t.precedent}
+          </label>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Notation par étoiles. Les radios sont en ordre DOM INVERSÉ (5 → 1) et le
+ * rendu est remis à l'endroit par `row-reverse`, qui suit la direction
+ * d'écriture et se met donc en miroir tout seul en arabe.
+ */
 function Etoiles({
   nom,
   libelle,
   t,
-  accent,
+  valeur,
 }: {
   nom: string;
   libelle: string;
   t: ReturnType<typeof messages>;
-  accent: string;
+  valeur?: number | "na";
 }) {
   return (
-    <fieldset>
-      <legend className="mb-2 text-base font-medium text-neutral-900">{libelle}</legend>
-      <div className="flex flex-wrap gap-2">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <label
-            key={n}
-            className="flex min-w-14 flex-1 cursor-pointer flex-col items-center rounded-lg border-2 border-neutral-300 px-2 py-3 has-checked:border-neutral-900"
-            title={t.etoiles[n as 1 | 2 | 3 | 4 | 5]}
-          >
-            <input type="radio" name={nom} value={n} className="sr-only" />
-            <span className="text-2xl" style={{ color: accent }}>
+    <fieldset className="question">
+      <legend>{libelle}</legend>
+      <div className="etoiles">
+        {/* Fragment et non <span> : un element enveloppant briserait la
+            fraternite entre input et label, dont depend `:checked ~ label`. */}
+        {[5, 4, 3, 2, 1].map((n) => (
+          <Fragment key={n}>
+            <input
+              type="radio"
+              id={`${nom}-${n}`}
+              name={nom}
+              value={n}
+              defaultChecked={valeur === n}
+            />
+            <label htmlFor={`${nom}-${n}`} title={t.etoiles[n as 1 | 2 | 3 | 4 | 5]}>
               ★
-            </span>
-            <span className="text-xs text-neutral-600">{n}</span>
-          </label>
+            </label>
+          </Fragment>
         ))}
-        <label className="flex cursor-pointer items-center rounded-lg border-2 border-neutral-300 px-3 py-3 has-checked:border-neutral-900">
-          <input type="radio" name={nom} value="na" className="sr-only" />
-          <span className="text-sm text-neutral-600">{t.nonApplicable}</span>
+      </div>
+      <div className="echelle">
+        <span>{t.echelleBasse}</span>
+        <span>{t.echelleHaute}</span>
+      </div>
+      <div className="na">
+        <label>
+          <input type="radio" name={nom} value="na" defaultChecked={valeur === "na"} />
+          {t.nonApplicable}
         </label>
       </div>
     </fieldset>
   );
 }
 
-function Cadre({
+function Page({
   children,
   dir,
   accent,
-  titre,
+  terrain,
 }: {
   children: React.ReactNode;
   dir: "rtl" | "ltr";
   accent?: string;
-  titre?: string;
+  terrain?: string;
 }) {
   return (
-    <div dir={dir} className="min-h-dvh bg-white">
-      <div className="mx-auto max-w-lg px-5 py-8">
-        {titre && (
-          <p className="mb-6 text-sm font-medium" style={{ color: accent }}>
-            {titre}
-          </p>
-        )}
-        {children}
-      </div>
+    <div
+      className="page"
+      dir={dir}
+      style={accent ? ({ "--accent": accent } as React.CSSProperties) : undefined}
+    >
+      {terrain && (
+        <>
+          <p className="sur-titre">{terrain}</p>
+          <hr className="filet filet--court" />
+        </>
+      )}
+      {children}
     </div>
   );
 }

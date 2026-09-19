@@ -54,7 +54,11 @@ describe("aucune donnee personnelle reelle dans le code versionne", () => {
   const contenu = contenuVersionne();
 
   it("ne contient aucun numero de telephone marocain", () => {
-    expect(contenu).not.toMatch(/\+212\s?\d/);
+    // Un vrai numero marocain porte NEUF chiffres apres l'indicatif. Le motif
+    // court attrapait « U+2122 », qui est une plage Unicode de feuille de
+    // style — un faux positif qui aurait fini par etre ignore, et un garde-fou
+    // qu'on ignore ne garde plus rien.
+    expect(contenu).not.toMatch(/\+212[\s.-]?\d{9}/);
   });
 
   it("n'utilise que des adresses de courriel du domaine reserve example.invalid", () => {

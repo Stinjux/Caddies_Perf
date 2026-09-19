@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-18
 
-**Status**: Draft
+**Status**: Amendée le 2026-09-19
 
 **Input**: Spécification n°4 de CaddiePerf. Elle couvre le parcours du client de golf, du scan du QR code collé sur la voiturette jusqu'à l'envoi de son évaluation anonyme, l'interface en cinq langues, les questions sur la valeur perçue du prix et le renvoi vers les avis Google du terrain. Phases 13, 14, 18 et 19 du projet.
 
@@ -357,6 +357,48 @@ Ces points sont **signalés, non décidés ici**. Ils relèvent de la spécifica
 2. **Consigner un signalement d'affectation contestée.** FR-313 exige de consigner la réponse « Non, ce n'est pas mon caddie ». Aucune entité du modèle actuel n'accueille ce signal : ce n'est pas une évaluation, puisque aucune note n'est donnée. **Demande** : prévoir une trace anonyme rattachée au terrain et à l'affectation contestée, sur le modèle de `google_review_click`. Sans cette évolution, FR-313 ne peut pas être satisfaite et le terrain ne saura jamais qu'un client a signalé une erreur d'affectation.
 
 3. **Clarifier la portée de `google_review_click.evaluation_id`.** Ce champ est déclaré « NULL possible ». Le parcours de cette spécification ne propose le bouton Google qu'après un envoi réussi, donc toujours avec une évaluation. **Demande** : confirmer si un clic sans évaluation reste prévu — par exemple depuis un futur écran de fin de partie sans questionnaire — ou si le champ peut devenir obligatoire. Aucune décision n'est prise ici.
+
+## Amendement du 2026-09-19 — direction artistique et obligation des notes
+
+Décisions du propriétaire du produit, appliquées au parcours client.
+
+### Direction artistique
+
+- **FR-367** : Le parcours client DOIT porter une identité visuelle d'inspiration coloniale marocaine, dont le caractère vient du **lettrage** : capitales espacées à 0,2 em, filets de 1 pixel comme seul séparateur, symétrie centrée, hiérarchie par l'espace, aucun angle arrondi.
+- **FR-368** : La palette de structure DOIT être l'or laiton `#C59D5F`, l'ocre `#BA750D` et l'encre `#262526` sur fond `#F7F4EE`. **L'or laiton NE DOIT JAMAIS porter de texte** : son contraste de 2,29:1 sur le fond échoue aux seuils d'accessibilité, en texte courant comme en grand titre. Il est réservé aux filets, cadres et contours. L'ocre, à 3,39:1, n'est admis qu'en grand titre.
+- **FR-369** : Toute encre de texte DOIT être l'encre `#262526`, qui donne 13,91:1 sur le fond.
+- **FR-370** : La couleur de marque du terrain DOIT rester l'accent dominant : elle porte les actions et les valeurs saisies. L'identité coloniale est la structure commune, jamais un remplacement de l'identité du terrain.
+- **FR-371** : Les polices DOIVENT être servies depuis le projet, en `@font-face` local, avec une pile de repli système. **Aucune requête vers un service tiers**, y compris pour une police — une requête de police révèle l'adresse du client à un tiers.
+
+### Notation par étoiles
+
+- **FR-372** : La notation DOIT se remplir au clic : choisir la quatrième étoile remplit les quatre premières.
+- **FR-373** : Ce comportement DOIT être obtenu **sans JavaScript**, par des boutons radio en ordre inversé et un sélecteur de fratrie. Un parcours qui dépend d'un script échoue là où le réseau est faible, c'est-à-dire précisément au 18e trou.
+- **FR-374** : Le remplissage DOIT se mettre en miroir en écriture de droite à gauche, les étoiles se remplissant depuis la droite.
+
+### Progression par étapes
+
+- **FR-375** : Le questionnaire DOIT présenter **deux questions par écran**, sur cinq écrans, avec un indicateur de position et un compteur.
+- **FR-376** : Le passage d'un écran à l'autre NE DOIT PROVOQUER **aucun chargement de page**, afin qu'aucun écran ne devienne une occasion d'abandon sur réseau faible.
+- **FR-377** : Un retour à l'écran précédent DOIT être possible tant que l'envoi n'a pas eu lieu.
+
+### Obligation des notes
+
+- **FR-378** : **Toutes les notes sont obligatoires** : les six critères, la note du parcours, le rapport qualité-prix et la perception du prix. Le commentaire NE DOIT JAMAIS l'être.
+- **FR-379** : Une réponse « non applicable » COMPTE comme une réponse. Elle exprime un jugement — celui que le critère ne s'applique pas — et n'est pas un oubli.
+- **FR-380** : L'obligation DOIT être vérifiée **côté serveur**, et NON par l'attribut HTML `required`. Un champ obligatoire masqué par la progression en étapes bloquerait l'envoi **sans aucun message visible** : le client appuierait, rien ne se passerait, il abandonnerait.
+- **FR-381** : En cas de réponse manquante, le système DOIT **préserver toutes les réponses déjà données**, rouvrir le premier écran incomplet, et afficher un message indiquant que rien n'a été perdu.
+- **FR-382** : Le commentaire NE DOIT JAMAIS transiter par l'adresse Web lors de cette préservation : il finirait dans les journaux du serveur, ce qui reviendrait à journaliser une donnée client (FR-031).
+
+### Restauration par le navigateur
+
+- **FR-383** : Le formulaire DOIT désactiver la restauration automatique du navigateur. Sans cela, un client revenant en arrière ou rescannant la même voiturette verrait **ses anciennes réponses pré-cochées** — et une note pré-cochée dans un questionnaire qui se remplit en 30 secondes ne serait pas vérifiée.
+
+### Écriture de droite à gauche
+
+- **FR-384** : La mise en page DOIT employer des propriétés logiques et non des propriétés gauche/droite, afin que le miroir soit automatique.
+- **FR-385** : L'espacement des capitales DOIT être ramené à zéro en écriture de droite à gauche : il **brise les ligatures cursives** de l'arabe. La hiérarchie se reporte alors sur le corps et les filets.
+
 
 ## Success Criteria *(mandatory)*
 

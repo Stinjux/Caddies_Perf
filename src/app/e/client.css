@@ -7,7 +7,7 @@
 /* --- Polices auto-hébergées. Aucune requête vers un tiers. ---------------- */
 @font-face {
   font-family: "Gilda Display";
-  src: url("fonts/gilda-display-400-latin.woff2") format("woff2");
+  src: url("/fonts/gilda-display-400-latin.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
   unicode-range:
@@ -16,28 +16,28 @@
 }
 @font-face {
   font-family: "Gilda Display";
-  src: url("fonts/gilda-display-400-latin-ext.woff2") format("woff2");
+  src: url("/fonts/gilda-display-400-latin-ext.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
   unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF;
 }
 @font-face {
   font-family: "Public Sans";
-  src: url("fonts/public-sans-400-latin.woff2") format("woff2");
+  src: url("/fonts/public-sans-400-latin.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122;
 }
 @font-face {
   font-family: "Public Sans";
-  src: url("fonts/public-sans-600-latin.woff2") format("woff2");
+  src: url("/fonts/public-sans-600-latin.woff2") format("woff2");
   font-weight: 600;
   font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122;
 }
 @font-face {
   font-family: "Noto Naskh Arabic";
-  src: url("fonts/noto-naskh-arabic-400-arabic.woff2") format("woff2");
+  src: url("/fonts/noto-naskh-arabic-400-arabic.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
   unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF;
@@ -388,23 +388,4 @@ textarea {
 
 [dir="rtl"] .bouton {
   font-size: 1rem;
-}
-
-/* --- Cadre de démonstration ----------------------------------------------- */
-.demo {
-  background: #ddd8cf;
-  padding: 1.5rem;
-  font-family: var(--corps);
-}
-.demo h2 {
-  font-size: 0.75rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-block-end: 0.5rem;
-}
-.telephone {
-  inline-size: 375px;
-  margin-inline: auto;
-  background: var(--fond);
-  border: 1px solid #b9b2a5;
 }
