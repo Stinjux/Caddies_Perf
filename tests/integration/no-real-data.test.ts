@@ -53,6 +53,17 @@ describe("principe II — aucune donnee reelle dans le dépôt", () => {
   });
 });
 
+describe("la regle sur les assistants d'IA ne peut pas disparaitre en silence", () => {
+  it("la constitution interdit toute donnee reelle dans un prompt", () => {
+    // Une regle qu'aucun test ne garde finit par etre retiree sans que
+    // personne ne s'en apercoive. Celle-ci ne peut pas l'etre.
+    const constitution = readFileSync(".specify/memory/constitution.md", "utf8");
+    expect(constitution).toMatch(/assistants d'intelligence artificielle/i);
+    expect(constitution).toMatch(/prompt/i);
+    expect(constitution).toMatch(/base de \*\*développement\*\*|développement.*fixtures/i);
+  });
+});
+
 describe("aucune donnee personnelle reelle dans le code versionne", () => {
   const contenu = contenuVersionne();
 

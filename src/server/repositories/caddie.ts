@@ -3,6 +3,7 @@ import { withScope } from "@/db/scope-tx";
 import { caddie } from "@/db/schema";
 import type { Scope } from "../scope";
 import { toStarterCaddie, type StarterCaddieView } from "../serializers/starter";
+import { journaliserConsultation } from "../audit/consultation";
 
 /**
  * Depot des caddies.
@@ -14,13 +15,15 @@ import { toStarterCaddie, type StarterCaddieView } from "../serializers/starter"
 export type CaddieRow = typeof caddie.$inferSelect;
 
 export async function listCaddies(scope: Scope): Promise<CaddieRow[]> {
-  return withScope(scope, (tx) =>
+  const rows = await withScope(scope, (tx) =>
     tx
       .select()
       .from(caddie)
       .where(eq(caddie.golfCourseId, scope.golfCourseId))
       .orderBy(asc(caddie.internalRef)),
   );
+  await journaliserConsultation(scope, "caddie.list", "caddie");
+  return rows;
 }
 
 /** Vue RESTREINTE destinee au Starter : liste blanche de champs (FR-020). */
@@ -53,5 +56,6 @@ export async function findCaddie(scope: Scope, id: string): Promise<CaddieRow | 
       .where(and(eq(caddie.id, id), eq(caddie.golfCourseId, scope.golfCourseId)))
       .limit(1),
   );
+  if (rows[0]) await journaliserConsultation(scope, "caddie.read", "caddie", id);
   return rows[0] ?? null;
 }

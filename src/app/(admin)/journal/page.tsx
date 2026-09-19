@@ -33,6 +33,14 @@ const LIBELLES: Record<string, string> = {
   "pii.write": "Renseignements personnels modifiés",
   "pii.erase": "Renseignements personnels effacés",
   "retention.purge": "Purge à échéance",
+  // Consultations. Une lecture ne laisse aucune trace naturelle : sans ces
+  // entrées, on ne saurait jamais qui a regardé quoi.
+  "caddie.list": "Liste des caddies consultée",
+  "caddie.read": "Fiche caddie consultée",
+  "account.list": "Liste des comptes consultée",
+  "report.read": "Rapport consulté",
+  "report.export": "Rapport exporté",
+  "audit.read": "Journal consulté",
 };
 
 export default async function JournalPage({

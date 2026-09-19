@@ -29,6 +29,13 @@ Le dépôt Git, les tests, les fixtures, les captures d'écran et la documentati
 
 Une violation de ce principe est un incident, pas un oubli : le fichier est retiré de l'historique Git, pas seulement du dernier commit.
 
+**Cela s'étend aux assistants d'intelligence artificielle.** Aucune donnée réelle d'employé, de client ou de réservation ne doit figurer dans un prompt adressé à Claude ou à tout autre modèle — ni collée dans une conversation, ni lue depuis la base de production par un outil, ni jointe sous forme de fichier.
+
+- Un prompt est transmis à un tiers, traité hors du Maroc, et peut être conservé. Cela contredit à la fois ce principe et le principe III.
+- Pour illustrer un cas réel, on le **reformule avec des données fictives** : le comportement à corriger ne dépend jamais de l'identité de la personne concernée.
+- Un assistant connecté à une base de données doit l'être à la base de **développement**, peuplée de fixtures, jamais à celle de production.
+- Le doute se tranche dans le sens de l'abstention : un prompt envoyé ne se rappelle pas.
+
 ### III. Souveraineté des données — hébergement au Maroc
 
 L'application et sa base de données sont hébergées **au Maroc**.

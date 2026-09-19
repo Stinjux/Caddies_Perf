@@ -31,11 +31,26 @@ export type AuditAction =
   | "pii.read"
   | "pii.write"
   | "pii.erase"
-  | "retention.purge";
+  | "retention.purge"
+  // CONSULTATIONS. Une lecture ne laisse aucune trace naturelle : sans ces
+  // entrees, savoir QUI a regarde QUOI serait impossible apres coup.
+  //
+  // Toutes les lectures ne sont pas journalisees, et c'est deliberé : l'ecran
+  // du Starter, qui n'affiche qu'une liste blanche de champs sans donnee
+  // personnelle ni note, est rafraichi des dizaines de fois par jour. L'y
+  // inclure noierait le journal, et un journal que personne ne lit ne protege
+  // rien. Sont journalisees les consultations qui revelent plus que le strict
+  // necessaire operationnel.
+  | "caddie.list"
+  | "caddie.read"
+  | "account.list"
+  | "report.read"
+  | "report.export"
+  | "audit.read";
 
 export interface AuditEntry {
   readonly action: AuditAction;
-  readonly targetType: "golf_course" | "account" | "caddie" | "cart" | "evaluation";
+  readonly targetType: "golf_course" | "account" | "caddie" | "cart" | "evaluation" | "report";
   readonly targetId: string | null;
 }
 

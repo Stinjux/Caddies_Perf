@@ -2,6 +2,7 @@ import { eq, and, desc, gte, lte, type SQL } from "drizzle-orm";
 import { withScope } from "@/db/scope-tx";
 import { auditLog, account } from "@/db/schema";
 import type { Scope } from "../scope";
+import { journaliserConsultation } from "../audit/consultation";
 
 /**
  * Lecture du journal, TOUJOURS limitee au terrain de la portee (FR-039).
@@ -23,7 +24,7 @@ export async function listAuditInScope(scope: Scope, filters: AuditFilters = {})
   if (filters.from) conditions.push(gte(auditLog.occurredAt, filters.from));
   if (filters.to) conditions.push(lte(auditLog.occurredAt, filters.to));
 
-  return withScope(scope, (tx) =>
+  const entrees = await withScope(scope, (tx) =>
     tx
       .select({
         id: auditLog.id,
@@ -40,4 +41,12 @@ export async function listAuditInScope(scope: Scope, filters: AuditFilters = {})
       .orderBy(desc(auditLog.occurredAt))
       .limit(filters.limit ?? 200),
   );
+
+  // Consulter le journal est une consultation comme une autre. L'entree
+  // apparaitra au rafraichissement suivant, jamais dans la liste qu'elle
+  // decrit : c'est la seule facon d'eviter qu'un regard sur le journal
+  // s'auto-signale et brouille ce qu'il montre.
+  await journaliserConsultation(scope, "audit.read", "golf_course", scope.golfCourseId);
+
+  return entrees;
 }

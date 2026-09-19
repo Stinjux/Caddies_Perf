@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { withScope } from "@/db/scope-tx";
 import { account, accountGolfCourse, golfCourse } from "@/db/schema";
 import type { Scope } from "../scope";
+import { journaliserConsultation } from "../audit/consultation";
 
 /**
  * Depot des comptes.
@@ -43,6 +44,7 @@ export async function listAccountsInScope(
       .where(eq(accountGolfCourse.golfCourseId, scope.golfCourseId))
       .orderBy(asc(account.lastName), asc(account.firstName)),
   );
+  await journaliserConsultation(scope, "account.list", "account");
   return rows;
 }
 

@@ -1,4 +1,5 @@
 import type { Scope } from "../scope";
+import { journaliserConsultation } from "../audit/consultation";
 import { requireAdmin } from "../scope";
 import {
   kpiParCaddie,
@@ -42,6 +43,10 @@ function echapper(v: string): string {
 
 export async function exporterKpiCsv(scope: Scope, p: Periode = {}): Promise<string> {
   requireAdmin(scope);
+
+  // Un export EMPORTE les donnees hors de l'application : c'est la
+  // consultation dont la trace compte le plus.
+  await journaliserConsultation(scope, "report.export", "report");
 
   const kpis = await kpiParCaddie(scope, p);
   const lignes: string[] = [COLONNES.join(";")];

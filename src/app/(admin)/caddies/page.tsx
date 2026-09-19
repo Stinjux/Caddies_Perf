@@ -1,13 +1,27 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { requireScope } from "@/server/auth/context";
 import { listCaddies } from "@/server/repositories/caddie";
+import { archiverCaddie } from "@/server/services/caddie";
 
 export const dynamic = "force-dynamic";
 
 export default async function CaddiesPage() {
   const { scope } = await requireScope();
   if (scope.role !== "admin") redirect("/depart");
+
+  /**
+   * DÉPART D'UN CADDIE. Le numéro de version voyage avec le formulaire : deux
+   * administrateurs qui archivent le même caddie en même temps ne peuvent pas
+   * s'écraser en silence (FR-045).
+   */
+  async function archiver(formData: FormData) {
+    "use server";
+    const { scope: portee } = await requireScope();
+    await archiverCaddie(portee, String(formData.get("id")), Number(formData.get("version")));
+    revalidatePath("/caddies");
+  }
 
   const caddies = await listCaddies(scope);
 
@@ -60,6 +74,18 @@ export default async function CaddiesPage() {
                 >
                   Renseignements
                 </Link>
+                {c.status === "active" && (
+                  <form action={archiver}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <input type="hidden" name="version" value={c.version} />
+                    <button
+                      type="submit"
+                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700"
+                    >
+                      Départ
+                    </button>
+                  </form>
+                )}
               </div>
             </li>
           ))}

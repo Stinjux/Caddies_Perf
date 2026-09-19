@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { journaliserConsultation } from "@/server/audit/consultation";
 import { requireScope } from "@/server/auth/context";
 import {
   kpiParCaddie,
@@ -41,6 +42,10 @@ export default async function RapportsPage({
     au: sp.au ? new Date(sp.au) : undefined,
   };
   const minEvals = Number(sp.min ?? 0);
+
+  // Une seule entree par affichage : la page appelle quatre calculs, mais
+  // l'administrateur n'a consulte qu'un rapport.
+  await journaliserConsultation(scope, "report.read", "report");
 
   const [kpis, terrain, distribution] = await Promise.all([
     kpiParCaddie(scope, periode),
