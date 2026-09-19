@@ -41,7 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </form>
           </div>
         </div>
-        <nav className="mx-auto flex max-w-5xl gap-5 px-4 pb-3 text-sm">
+        <nav className="mx-auto flex max-w-5xl flex-wrap gap-x-5 gap-y-2 px-4 pb-3 text-sm">
           <Link href="/terrains" className="text-neutral-700">
             Terrains
           </Link>
