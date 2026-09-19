@@ -56,6 +56,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link href="/comptes" className="text-neutral-700">
                 Comptes
               </Link>
+              <Link href="/rapports" className="text-neutral-700">
+                Rapports
+              </Link>
               <Link href="/journal" className="text-neutral-700">
                 Journal
               </Link>
