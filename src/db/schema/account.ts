@@ -11,6 +11,19 @@ export const account = pgTable("account", {
   /** scrypt. N'est jamais renvoye par une lecture (FR-017). */
   passwordHash: text("password_hash").notNull(),
   status: accountStatus("status").notNull().default("active"),
+  /**
+   * SECOND FACTEUR (TOTP). Le secret n'est JAMAIS selectionne par les depots
+   * publics : comme passwordHash, il vit hors de PUBLIC_COLUMNS.
+   * Nul tant que le compte n'a pas termine son inscription.
+   */
+  totpSecret: text("totp_secret"),
+  totpEnrolledAt: timestamp("totp_enrolled_at", { withTimezone: true }),
+  /**
+   * Codes de secours, HACHES comme un mot de passe. Un code consomme est
+   * retire du tableau : sans cela, un papier photographie resterait valable
+   * indefiniment.
+   */
+  recoveryCodes: text("recovery_codes").array(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),

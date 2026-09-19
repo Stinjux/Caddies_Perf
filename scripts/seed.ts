@@ -62,9 +62,14 @@ for (const c of courses) {
 
 for (const a of accounts) {
   const id = uuidv7();
+  // Les administrateurs sont inscrits d'office au second facteur, avec un
+  // secret FICTIF partage : sans cela, le premier ecran apres connexion serait
+  // toujours celui de l'inscription, et les essais deviendraient penibles.
+  const secret = "totpSecret" in a ? (a.totpSecret as string) : null;
   await sql`
-    INSERT INTO account (id, email, first_name, last_name, password_hash)
-    VALUES (${id}, ${a.email}, ${a.firstName}, ${a.lastName}, ${await hash(a.password)})
+    INSERT INTO account (id, email, first_name, last_name, password_hash, totp_secret, totp_enrolled_at)
+    VALUES (${id}, ${a.email}, ${a.firstName}, ${a.lastName}, ${await hash(a.password)},
+            ${secret}, ${secret ? new Date() : null})
     ON CONFLICT (email) DO NOTHING
   `;
   for (const l of a.links) {

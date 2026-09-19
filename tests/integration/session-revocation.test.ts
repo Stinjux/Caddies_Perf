@@ -32,7 +32,7 @@ describe("révocation immédiate d'une session (FR-016)", () => {
       email: "cible@example.invalid",
       links: [{ courseId, role: "starter" }],
     });
-    const token = await login("cible@example.invalid", PASSWORD);
+    const token = (await login("cible@example.invalid", PASSWORD)).token;
     expect(await resolveSession(token)).not.toBeNull();
 
     const cible = (await resolveSession(token))!.accountId;
@@ -43,7 +43,7 @@ describe("révocation immédiate d'une session (FR-016)", () => {
 
   it("supprime physiquement la session de la base", async () => {
     await makeAccount({ email: "efface@example.invalid", links: [{ courseId, role: "starter" }] });
-    const token = await login("efface@example.invalid", PASSWORD);
+    const token = (await login("efface@example.invalid", PASSWORD)).token;
     const cible = (await resolveSession(token))!.accountId;
 
     await disableAccount(asAdmin(), cible, 1);
@@ -54,8 +54,8 @@ describe("révocation immédiate d'une session (FR-016)", () => {
 
   it("invalide toutes les sessions du compte, pas seulement la dernière", async () => {
     await makeAccount({ email: "multi@example.invalid", links: [{ courseId, role: "starter" }] });
-    const t1 = await login("multi@example.invalid", PASSWORD);
-    const t2 = await login("multi@example.invalid", PASSWORD);
+    const t1 = (await login("multi@example.invalid", PASSWORD)).token;
+    const t2 = (await login("multi@example.invalid", PASSWORD)).token;
 
     const cible = (await resolveSession(t1))!.accountId;
     await disableAccount(asAdmin(), cible, 1);
@@ -67,8 +67,8 @@ describe("révocation immédiate d'une session (FR-016)", () => {
   it("n'affecte pas les sessions des autres comptes", async () => {
     await makeAccount({ email: "a@example.invalid", links: [{ courseId, role: "starter" }] });
     await makeAccount({ email: "b@example.invalid", links: [{ courseId, role: "starter" }] });
-    const ta = await login("a@example.invalid", PASSWORD);
-    const tb = await login("b@example.invalid", PASSWORD);
+    const ta = (await login("a@example.invalid", PASSWORD)).token;
+    const tb = (await login("b@example.invalid", PASSWORD)).token;
 
     await disableAccount(asAdmin(), (await resolveSession(ta))!.accountId, 1);
 
@@ -80,7 +80,7 @@ describe("révocation immédiate d'une session (FR-016)", () => {
 describe("perte de portée après détachement (P-1)", () => {
   it("retire la portée quand le rattachement au terrain actif disparaît", async () => {
     await makeAccount({ email: "detache@example.invalid", links: [{ courseId, role: "starter" }] });
-    const token = await login("detache@example.invalid", PASSWORD);
+    const token = (await login("detache@example.invalid", PASSWORD)).token;
     expect((await resolveSession(token))?.scope).not.toBeNull();
 
     await detachAccount(asAdmin(), (await resolveSession(token))!.accountId);

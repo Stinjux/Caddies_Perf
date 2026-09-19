@@ -26,12 +26,18 @@ export interface SessionContext {
   scope: Scope | null;
 }
 
-export async function login(email: string, password: string): Promise<string> {
+export interface Connexion {
+  token: string;
+  secondFacteurRequis: boolean;
+}
+
+export async function login(email: string, password: string): Promise<Connexion> {
   const rows = await db
     .select({
       id: account.id,
       passwordHash: account.passwordHash,
       status: account.status,
+      totpEnrolledAt: account.totpEnrolledAt,
     })
     .from(account)
     .where(eq(account.email, email.trim().toLowerCase()))
@@ -67,16 +73,27 @@ export async function login(email: string, password: string): Promise<string> {
   const sole = links.length === 1 ? links[0]!.golfCourseId : null;
   const role = links.length === 1 ? links[0]!.role : "starter";
 
+  /**
+   * SECOND FACTEUR. La session est creee dans tous les cas — elle doit exister
+   * pour que le deuxieme ecran sache de qui il parle — mais elle n'authentifie
+   * RIEN tant que mfaPending vaut vrai : resolveSession la refuse.
+   *
+   * Faire autrement obligerait a promener l'identifiant du compte entre les
+   * deux ecrans, dans l'adresse ou un champ cache, ou il serait modifiable.
+   */
+  const secondFacteurRequis = found.totpEnrolledAt !== null;
+
   const { token, tokenHash } = createSessionToken();
   await db.insert(session).values({
     id: uuidv7(),
     tokenHash,
     accountId: found.id,
     activeGolfCourseId: sole,
+    mfaPending: secondFacteurRequis,
     expiresAt: sessionExpiry(role),
   });
 
-  return token;
+  return { token, secondFacteurRequis };
 }
 
 export async function resolveSession(token: string | undefined): Promise<SessionContext | null> {
@@ -90,6 +107,7 @@ export async function resolveSession(token: string | undefined): Promise<Session
       lastName: account.lastName,
       status: account.status,
       activeGolfCourseId: session.activeGolfCourseId,
+      mfaPending: session.mfaPending,
     })
     .from(session)
     .innerJoin(account, eq(account.id, session.accountId))
@@ -98,6 +116,11 @@ export async function resolveSession(token: string | undefined): Promise<Session
 
   const row = rows[0];
   if (!row) return null;
+
+  // Mot de passe verifie, code pas encore : ce n'est pas une authentification.
+  // La session est conservee — c'est elle qui portera le deuxieme ecran — mais
+  // elle n'ouvre aucune porte.
+  if (row.mfaPending) return null;
 
   // FR-016 : compte desactive depuis l'ouverture de session.
   if (row.status !== "active") {

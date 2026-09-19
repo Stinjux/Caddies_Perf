@@ -22,7 +22,7 @@ describe("sélection du terrain à la connexion (FR-012)", () => {
       links: [{ courseId: cedres, role: "starter" }],
     });
 
-    const token = await login("solo@example.invalid", PASSWORD);
+    const token = (await login("solo@example.invalid", PASSWORD)).token;
     const ctx = await resolveSession(token);
 
     expect(ctx?.activeGolfCourseId).toBe(cedres);
@@ -38,7 +38,7 @@ describe("sélection du terrain à la connexion (FR-012)", () => {
       ],
     });
 
-    const token = await login("double@example.invalid", PASSWORD);
+    const token = (await login("double@example.invalid", PASSWORD)).token;
     const ctx = await resolveSession(token);
 
     expect(ctx?.activeGolfCourseId).toBeNull();
@@ -64,7 +64,7 @@ describe("sélection du terrain à la connexion (FR-012)", () => {
       ],
     });
 
-    const token = await login("roles@example.invalid", PASSWORD);
+    const token = (await login("roles@example.invalid", PASSWORD)).token;
 
     await selectCourse(token, cedres);
     expect((await resolveSession(token))?.scope?.role).toBe("admin");
@@ -78,7 +78,7 @@ describe("sélection du terrain à la connexion (FR-012)", () => {
       email: "refus@example.invalid",
       links: [{ courseId: cedres, role: "admin" }],
     });
-    const token = await login("refus@example.invalid", PASSWORD);
+    const token = (await login("refus@example.invalid", PASSWORD)).token;
 
     await expect(selectCourse(token, atlas)).rejects.toThrow();
     expect((await resolveSession(token))?.activeGolfCourseId).toBe(cedres);
@@ -125,7 +125,7 @@ describe("connexion (FR-017)", () => {
       email: "sortie@example.invalid",
       links: [{ courseId: cedres, role: "admin" }],
     });
-    const token = await login("sortie@example.invalid", PASSWORD);
+    const token = (await login("sortie@example.invalid", PASSWORD)).token;
 
     expect(await resolveSession(token)).not.toBeNull();
     await logout(token);

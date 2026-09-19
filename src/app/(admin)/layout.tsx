@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { currentSession } from "@/server/auth/context";
 import { logout } from "@/server/auth/current";
+import { secondFacteurActif } from "@/server/auth/mfa";
 import { SESSION_COOKIE } from "@/server/auth/session";
 import { listLinksForAccount } from "@/server/repositories/account";
 import { CourseSwitcher } from "@/components/course-switcher";
@@ -11,6 +12,23 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const ctx = await currentSession();
   if (!ctx) redirect("/connexion");
   if (!ctx.scope) redirect("/choisir-terrain");
+
+  /**
+   * SECOND FACTEUR OBLIGATOIRE POUR LES ADMINISTRATEURS.
+   *
+   * Un compte administrateur donne acces aux noms des caddies, a leur annee
+   * de naissance et a toutes les evaluations. Un mot de passe seul ne suffit
+   * pas a garder cela.
+   *
+   * L'inscription barre la route a tout le reste : l'administrateur ne peut
+   * pas la remettre a plus tard, ce qui reviendrait a ne jamais la faire. La
+   * page /securite est la seule exception, sans quoi la redirection
+   * tournerait en boucle.
+   */
+  if (ctx.scope.role === "admin" && !(await secondFacteurActif(ctx.accountId))) {
+    const chemin = (await headers()).get("x-pathname") ?? "";
+    if (!chemin.startsWith("/securite")) redirect("/securite");
+  }
 
   const links = await listLinksForAccount(ctx.accountId);
 
