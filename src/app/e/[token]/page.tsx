@@ -220,7 +220,15 @@ export default async function EvaluationPage({
         </p>
       )}
 
-      <form action={envoyer} className="space-y-8">
+      <form
+        action={envoyer}
+        // Le navigateur restaure les valeurs d'un formulaire identique deja
+        // rempli. Un client qui revient en arriere, ou qui rescanne la meme
+        // voiturette, verrait ses anciennes reponses pre-cochees — et une
+        // note pre-cochee biaise l'evaluation.
+        autoComplete="off"
+        className="space-y-8"
+      >
         <section>
           <h2 className="mb-4 text-xl font-bold text-neutral-900">{t.titreCriteres}</h2>
           <div className="space-y-6">
