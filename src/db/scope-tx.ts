@@ -74,9 +74,7 @@ export function withCourse<T>(golfCourseId: string, fn: (tx: Tx) => PromiseLike<
   const courante = ambiante.getStore();
   if (courante) {
     if (courante.golfCourseId !== golfCourseId) {
-      throw new Error(
-        "Deux terrains dans une meme transaction : le cloisonnement serait rompu.",
-      );
+      throw new Error("Deux terrains dans une meme transaction : le cloisonnement serait rompu.");
     }
     return Promise.resolve(fn(courante.tx));
   }

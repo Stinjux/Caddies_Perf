@@ -14,7 +14,9 @@ import { SESSION_COOKIE } from "@/lib/session-cookie";
  */
 
 // Le parcours client (/e/<jeton>) est PUBLIC : aucun compte n'est requis.
-const PUBLIC = ["/connexion", "/e/", "/_next", "/favicon.ico"];
+// Le point d'aptitude est interroge par l'hebergeur, qui n'a pas de session :
+// le rediriger vers /connexion lui ferait conclure que l'application est morte.
+const PUBLIC = ["/connexion", "/e/", "/_next", "/favicon.ico", "/api/sante"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
