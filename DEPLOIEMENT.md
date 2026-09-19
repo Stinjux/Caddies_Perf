@@ -20,12 +20,12 @@ sert pas à exploiter un terrain.
 
 ## Ce que le déploiement met en place
 
-| Élément                                  | Où                                                     |
-| ---------------------------------------- | ------------------------------------------------------ |
-| Migrations, appliquées une fois chacune  | `scripts/migrate.mjs`, avant chaque démarrage          |
-| Rôle applicatif `caddieperf_app`         | créé par la migration `0001`, mot de passe au déploiement |
-| Row Level Security sur 14 tables         | migration `0004`                                       |
-| Point d'aptitude                         | `GET /api/sante` — interroge la base, ne révèle rien   |
+| Élément                                 | Où                                                        |
+| --------------------------------------- | --------------------------------------------------------- |
+| Migrations, appliquées une fois chacune | `scripts/migrate.mjs`, avant chaque démarrage             |
+| Rôle applicatif `caddieperf_app`        | créé par la migration `0001`, mot de passe au déploiement |
+| Row Level Security sur 14 tables        | migration `0004`                                          |
+| Point d'aptitude                        | `GET /api/sante` — interroge la base, ne révèle rien      |
 
 **Le point capital** : l'application ne doit **jamais** se connecter avec le
 compte propriétaire de la base. Un superutilisateur contourne le RLS _en
@@ -65,18 +65,27 @@ gabarit.
 Dans Railway → service → **Variables**. Les `${{...}}` sont des références
 résolues par Railway ; recopiez-les telles quelles.
 
-| Variable                  | Valeur                                                                                             |
-| ------------------------- | -------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`            | `${{Postgres.DATABASE_URL}}`                                                                         |
-| `APP_DB_PASSWORD`         | le secret généré à l'étape 2                                                                        |
-| `APP_DATABASE_URL`        | `postgresql://caddieperf_app:${{APP_DB_PASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}` |
-| `SESSION_SECRET`          | le secret généré à l'étape 2                                                                        |
-| `SESSION_TTL_HOURS_ADMIN` | `8`                                                                                                  |
-| `SESSION_TTL_HOURS_STARTER` | `24`                                                                                               |
-| `NODE_ENV`                | `production`                                                                                         |
+| Variable                    | Valeur                                                                                                                |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`              | `${{Postgres.DATABASE_URL}}`                                                                                          |
+| `APP_DB_PASSWORD`           | le secret généré à l'étape 2                                                                                          |
+| `APP_DATABASE_URL`          | `postgresql://caddieperf_app:${{APP_DB_PASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}` |
+| `SESSION_SECRET`            | le secret généré à l'étape 2                                                                                          |
+| `SESSION_TTL_HOURS_ADMIN`   | `8`                                                                                                                   |
+| `SESSION_TTL_HOURS_STARTER` | `24`                                                                                                                  |
+| `NODE_ENV`                  | `production`                                                                                                          |
+| `NPM_CONFIG_PRODUCTION`     | `false`                                                                                                               |
 
 `DATABASE_URL` sert **uniquement** aux migrations, qui doivent pouvoir modifier
 le schéma. L'application, elle, lit `APP_DATABASE_URL`.
+
+**`NPM_CONFIG_PRODUCTION=false` n'est pas une coquetterie.** Avec
+`NODE_ENV=production`, `npm ci` retire les `devDependencies` — vérifié sur npm
+11 : il supprime `typescript` et `tailwindcss`. Or `next build` en a besoin. Le
+déploiement échouerait alors à l'installation, avant même d'atteindre le code.
+Les deux variables vont donc ensemble : la première fait fonctionner les
+garde-fous qui lisent `NODE_ENV`, la seconde empêche qu'elle casse la
+construction.
 
 ### 4. Déployer
 
