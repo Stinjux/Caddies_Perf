@@ -13,58 +13,57 @@
   servent à prouver que la mise en page se met en miroir, que les ligatures
   cursives ne sont pas brisées, et que les étoiles se remplissent depuis la
   droite. La traduction réelle devra être approuvée avant intégration.
--->
-    <input class="nav-etape" type="radio" name="etape" id="e1" checked />
-    <input class="nav-etape" type="radio" name="etape" id="e2" />
-    <input class="nav-etape" type="radio" name="etape" id="e3" />
-    <input class="nav-etape" type="radio" name="etape" id="e4" />
-    <input class="nav-etape" type="radio" name="etape" id="e5" />
 
+  Deux questions suffisent à le démontrer ; la page réelle en défile neuf.
+-->
     <div class="page">
       <p class="sur-titre">غولف الأرز</p>
       <hr class="filet--court filet" />
 
       <form autocomplete="off">
-        <section class="ecran ecran-1">
-          <div class="progression">
-            <span class="actif"></span><span></span><span></span><span></span><span></span>
+        <fieldset class="question">
+          <legend>
+            <span class="numero">السؤال ١ من ٩</span>
+            الاستقبال والسلوك
+          </legend>
+          <div class="etoiles">
+            <input type="radio" id="a-5" name="a" value="5" required /><label for="a-5">★</label>
+            <input type="radio" id="a-4" name="a" value="4" checked required /><label for="a-4"
+              >★</label
+            >
+            <input type="radio" id="a-3" name="a" value="3" required /><label for="a-3">★</label>
+            <input type="radio" id="a-2" name="a" value="2" required /><label for="a-2">★</label>
+            <input type="radio" id="a-1" name="a" value="1" required /><label for="a-1">★</label>
           </div>
-          <p class="compteur">١ / ٥</p>
-
-          <fieldset class="question">
-            <legend>الاستقبال والسلوك</legend>
-            <div class="etoiles">
-              <input type="radio" id="a-5" name="a" value="5" /><label for="a-5">★</label>
-              <input type="radio" id="a-4" name="a" value="4" checked /><label for="a-4">★</label>
-              <input type="radio" id="a-3" name="a" value="3" /><label for="a-3">★</label>
-              <input type="radio" id="a-2" name="a" value="2" /><label for="a-2">★</label>
-              <input type="radio" id="a-1" name="a" value="1" /><label for="a-1">★</label>
-            </div>
-            <div class="echelle"><span>غير مُرضٍ إطلاقًا</span><span>ممتاز</span></div>
-            <div class="na">
-              <label><input type="radio" name="a" value="na" />لا ينطبق</label>
-            </div>
-          </fieldset>
-
-          <fieldset class="question">
-            <legend>معرفة القواعد وآداب اللعبة</legend>
-            <div class="etoiles">
-              <input type="radio" id="b-5" name="b" value="5" /><label for="b-5">★</label>
-              <input type="radio" id="b-4" name="b" value="4" /><label for="b-4">★</label>
-              <input type="radio" id="b-3" name="b" value="3" /><label for="b-3">★</label>
-              <input type="radio" id="b-2" name="b" value="2" checked /><label for="b-2">★</label>
-              <input type="radio" id="b-1" name="b" value="1" /><label for="b-1">★</label>
-            </div>
-            <div class="echelle"><span>غير مُرضٍ إطلاقًا</span><span>ممتاز</span></div>
-            <div class="na">
-              <label><input type="radio" name="b" value="na" />لا ينطبق</label>
-            </div>
-          </fieldset>
-
-          <div class="actions">
-            <label class="bouton" for="e2">متابعة</label>
+          <div class="echelle"><span>غير مُرضٍ إطلاقًا</span><span>ممتاز</span></div>
+          <div class="na">
+            <label><input type="radio" name="a" value="na" required />لا ينطبق</label>
           </div>
-        </section>
+        </fieldset>
+
+        <fieldset class="question">
+          <legend>
+            <span class="numero">السؤال ٢ من ٩</span>
+            معرفة القواعد وآداب اللعبة
+          </legend>
+          <div class="etoiles">
+            <input type="radio" id="b-5" name="b" value="5" required /><label for="b-5">★</label>
+            <input type="radio" id="b-4" name="b" value="4" required /><label for="b-4">★</label>
+            <input type="radio" id="b-3" name="b" value="3" required /><label for="b-3">★</label>
+            <input type="radio" id="b-2" name="b" value="2" checked required /><label for="b-2"
+              >★</label
+            >
+            <input type="radio" id="b-1" name="b" value="1" required /><label for="b-1">★</label>
+          </div>
+          <div class="echelle"><span>غير مُرضٍ إطلاقًا</span><span>ممتاز</span></div>
+          <div class="na">
+            <label><input type="radio" name="b" value="na" required />لا ينطبق</label>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" class="bouton">إرسال تقييمي</button>
+        </div>
       </form>
     </div>
   </body>

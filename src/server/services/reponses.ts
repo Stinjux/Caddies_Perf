@@ -3,14 +3,15 @@ import { CRITERES, type Critere, type PricePerception } from "./evaluation";
 /**
  * TRANSPORT DES RÉPONSES ENTRE DEUX AFFICHAGES (spéc. 4, FR-367 et suivantes).
  *
- * Pourquoi ce module existe : toutes les notes sont obligatoires, mais le
- * questionnaire avance par étapes révélées en CSS. Un attribut `required` sur
- * un champ masqué en `display:none` bloque l'envoi SANS AUCUN MESSAGE — le
- * client appuie, rien ne se passe, il abandonne.
+ * Le questionnaire tient sur une seule page défilante : rien n'est masqué,
+ * donc l'attribut `required` du navigateur fonctionne et désigne lui-même la
+ * question oubliée, sans aller-retour réseau.
  *
- * L'obligation vit donc côté serveur. Et comme il n'y a aucun JavaScript pour
- * conserver l'état, les réponses déjà données voyagent dans l'adresse et sont
- * réaffichées. Le client ne perd jamais son travail.
+ * Ce module reste le FILET. Le `required` natif n'est pas une garantie : un
+ * navigateur ancien, une extension ou un envoi forgé passent au travers.
+ * L'autorité demeure donc le serveur — et comme il n'y a aucun JavaScript
+ * pour conserver l'état, les réponses déjà données voyagent dans l'adresse et
+ * sont réaffichées. Le client ne perd jamais son travail.
  *
  * Encodage volontairement court : quinze caractères environ pour neuf
  * réponses, ce qui tient largement dans une adresse.
@@ -113,14 +114,17 @@ export function prixManquant(r: Reponses): boolean {
   return r.perceptionPrix === null;
 }
 
-/** Numéro de l'écran (1 à 5) portant le premier champ manquant. */
-export function premierEcranIncomplet(r: Reponses): number {
+/**
+ * Nom du premier champ sans réponse, dans l'ordre d'affichage.
+ *
+ * Sert d'ancre : la page se rouvre positionnée sur la question oubliée plutôt
+ * qu'en haut, ce qui éviterait au client de refaire défiler tout ce qu'il a
+ * déjà rempli. Renvoie `null` quand le formulaire est complet.
+ */
+export function premierChampManquant(r: Reponses): string | null {
   const manquants = champsManquants(r);
-  if (manquants.length > 0) {
-    const index = CHAMPS_NOTES.indexOf(manquants[0]!);
-    return Math.floor(index / 2) + 1;
-  }
-  return prixManquant(r) ? 5 : 1;
+  if (manquants.length > 0) return manquants[0]!;
+  return prixManquant(r) ? "perceptionPrix" : null;
 }
 
 /** Convertit vers la forme attendue par le service d'évaluation. */

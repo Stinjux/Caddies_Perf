@@ -4,7 +4,7 @@ import {
   decoder,
   champsManquants,
   prixManquant,
-  premierEcranIncomplet,
+  premierChampManquant,
   versSoumission,
   CHAMPS_NOTES,
   type Reponses,
@@ -13,9 +13,10 @@ import {
 /**
  * PRÉSERVATION DES RÉPONSES (spéc. 4, FR-367 et suivantes).
  *
- * Toutes les notes sont obligatoires, mais un `required` sur un champ masqué
- * bloquerait l'envoi sans message. L'obligation vit côté serveur, et les
- * réponses déjà données doivent survivre au refus.
+ * Le questionnaire tient sur une page défilante et le navigateur signale
+ * lui-même les oublis. Le serveur reste l'autorité : il revérifie tout, et
+ * les réponses déjà données doivent survivre au refus — sans quoi le client
+ * les ressaisirait une à une.
  */
 
 const vide: Reponses = { notes: {}, perceptionPrix: null, commentaire: "" };
@@ -99,31 +100,42 @@ describe("obligation des notes", () => {
   });
 });
 
-describe("retour sur le premier écran incomplet", () => {
-  it("ouvre l'écran I quand la première note manque", () => {
-    expect(premierEcranIncomplet(vide)).toBe(1);
+describe("ancre sur la première question sans réponse", () => {
+  it("désigne la première question quand rien n'est rempli", () => {
+    expect(premierChampManquant(vide)).toBe("accueil");
   });
 
-  it("ouvre l'écran II quand seules les deux premières sont données", () => {
+  it("désigne la troisième quand les deux premières sont données", () => {
     const partiel: Reponses = {
       notes: { accueil: 4, regles_etiquette: 2 },
       perceptionPrix: null,
       commentaire: "",
     };
-    expect(premierEcranIncomplet(partiel)).toBe(2);
+    expect(premierChampManquant(partiel)).toBe("connaissance_parcours");
   });
 
-  it("ouvre l'écran IV quand il ne manque que la note du parcours", () => {
+  it("désigne la note du parcours quand c'est la seule manquante", () => {
     const partiel: Reponses = {
       notes: { ...complet.notes, noteParcours: undefined },
       perceptionPrix: "plutot_bas",
       commentaire: "",
     };
-    expect(premierEcranIncomplet(partiel)).toBe(4);
+    expect(premierChampManquant(partiel)).toBe("noteParcours");
   });
 
-  it("ouvre l'écran V quand seul le prix manque", () => {
-    expect(premierEcranIncomplet({ ...complet, perceptionPrix: null })).toBe(5);
+  it("désigne la perception du prix quand seule elle manque", () => {
+    expect(premierChampManquant({ ...complet, perceptionPrix: null })).toBe("perceptionPrix");
+  });
+
+  it("ne désigne rien quand le formulaire est complet", () => {
+    expect(premierChampManquant(complet)).toBeNull();
+  });
+
+  it("nomme un champ qui existe réellement comme ancre dans la page", () => {
+    // Une ancre inventée renverrait le client en haut de page sans qu'aucun
+    // test ne s'en aperçoive. Le nom doit être celui d'un champ du formulaire.
+    const ancre = premierChampManquant(vide);
+    expect([...CHAMPS_NOTES, "perceptionPrix"]).toContain(ancre);
   });
 });
 

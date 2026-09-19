@@ -15,10 +15,9 @@ import {
   decoder,
   champsManquants,
   prixManquant,
-  premierEcranIncomplet,
+  premierChampManquant,
   versSoumission,
   CHAMPS_NOTES,
-  type Reponses,
   type ChampNote,
 } from "@/server/services/reponses";
 import { resoudreLangue, direction, NOMS_LANGUES, LANGUES_DISPONIBLES } from "@/lib/i18n";
@@ -33,29 +32,28 @@ export const dynamic = "force-dynamic";
  * Aucun compte, aucune application, moins de 30 secondes.
  *
  * SANS JAVASCRIPT CLIENT. Au 18e trou, sur un réseau faible, une page qui
- * s'affiche vaut mieux qu'une page qui attend un paquet.
- *  - Les étoiles se remplissent en CSS : radios en ordre DOM inversé et
- *    `:checked ~ label`. Le miroir arabe est automatique.
- *  - Les cinq écrans sont révélés en CSS par des radios HORS du formulaire,
- *    donc jamais envoyés. Zéro attente réseau entre les écrans.
+ * s'affiche vaut mieux qu'une page qui attend un paquet. Les étoiles se
+ * remplissent en CSS : radios en ordre DOM inversé et `:checked ~ label`.
+ * Le miroir arabe est automatique.
  *
- * TOUTES LES NOTES SONT OBLIGATOIRES, le commentaire jamais. L'obligation
- * vit côté serveur : un `required` sur un champ masqué bloquerait l'envoi en
- * silence. En cas d'oubli, les réponses déjà données sont préservées et
- * l'écran incomplet est rouvert.
+ * UNE SEULE PAGE DÉFILANTE. Les neuf questions se suivent, un seul envoi.
+ * Rien n'étant masqué, l'attribut `required` du navigateur redevient
+ * utilisable : il désigne la question oubliée sans aller-retour réseau.
+ * Attention — une radio masquée que le navigateur ne peut pas focaliser
+ * bloquerait l'envoi SANS AUCUN MESSAGE ; c'est pourquoi les radios des
+ * étoiles sont ancrées sous leur rangée (voir `.etoiles input` dans le CSS).
+ *
+ * Le serveur reste l'autorité : il revérifie tout, et en cas d'oubli il
+ * renvoie la page positionnée sur la question manquante, réponses conservées.
+ * Le commentaire n'est jamais obligatoire.
  *
  * ANONYME : aucune donnée identifiante n'est demandée ni enregistrée.
  */
 
 type Etape = "accueil" | "questions" | "merci" | "termine" | "mauvais";
 
-const ECRANS: ChampNote[][] = [
-  [CHAMPS_NOTES[0], CHAMPS_NOTES[1]],
-  [CHAMPS_NOTES[2], CHAMPS_NOTES[3]],
-  [CHAMPS_NOTES[4], CHAMPS_NOTES[5]],
-  [CHAMPS_NOTES[6], CHAMPS_NOTES[7]],
-];
-const ROMAINS = ["I", "II", "III", "IV", "V"];
+/** Huit notes étoilées, puis la perception du prix. Le commentaire est libre. */
+const TOTAL_QUESTIONS = CHAMPS_NOTES.length + 1;
 
 export default async function EvaluationPage({
   params,
@@ -68,7 +66,6 @@ export default async function EvaluationPage({
     ev?: string;
     erreur?: string;
     v?: string;
-    ecran?: string;
   }>;
 }) {
   const { token } = await params;
@@ -152,6 +149,10 @@ export default async function EvaluationPage({
     );
   }
 
+  /**
+   * L'accueil reste un écran à part : le client doit pouvoir dire « ce n'est
+   * pas mon caddie » AVANT d'avoir répondu à neuf questions pour rien.
+   */
   if (etape === "accueil") {
     async function pasMonCaddie() {
       "use server";
@@ -196,21 +197,34 @@ export default async function EvaluationPage({
     );
   }
 
-  // --- Questionnaire : cinq écrans, révélés en CSS ---
+  // --- Questionnaire : une seule page défilante ---
   const precedentes = decoder(sp.v);
-  const ecranOuvert = Number(sp.ecran ?? 1);
+
+  /**
+   * Les oublis se déduisent des réponses conservées — inutile de les répéter
+   * dans l'adresse. Le marquage n'a lieu qu'au retour d'un envoi incomplet :
+   * un formulaire vierge n'est pas un formulaire fautif.
+   */
+  const oublis = new Set<string>(
+    sp.erreur === "1"
+      ? [
+          ...champsManquants(precedentes),
+          ...(prixManquant(precedentes) ? ["perceptionPrix"] : []),
+        ]
+      : [],
+  );
 
   async function envoyer(formData: FormData) {
     "use server";
     if (!r.ok) return;
 
     const reponses = lireFormulaire(formData);
-    const manquants = champsManquants(reponses);
 
-    if (manquants.length > 0 || prixManquant(reponses)) {
-      const ecran = premierEcranIncomplet(reponses);
+    if (champsManquants(reponses).length > 0 || prixManquant(reponses)) {
+      const ancre = premierChampManquant(reponses);
       redirect(
-        `/e/${token}?etape=questions&lang=${langue}&erreur=1&ecran=${ecran}&v=${encodeURIComponent(encoder(reponses))}`,
+        `/e/${token}?etape=questions&lang=${langue}&erreur=1&v=${encodeURIComponent(encoder(reponses))}` +
+          (ancre ? `#${ancre}` : ""),
       );
     }
 
@@ -235,73 +249,72 @@ export default async function EvaluationPage({
   }
 
   return (
-    <>
-      {/* Navigation par étapes : HORS du formulaire, donc jamais envoyée. */}
-      {[1, 2, 3, 4, 5].map((n) => (
-        <input
-          key={n}
-          className="nav-etape"
-          type="radio"
-          name="etape-ui"
-          id={`e${n}`}
-          defaultChecked={n === ecranOuvert}
-        />
-      ))}
+    <div className="page" dir={dir} style={{ "--accent": accent } as React.CSSProperties}>
+      <p className="sur-titre">{r.courseName}</p>
+      <hr className="filet filet--court" />
 
-      <div className="page" dir={dir} style={{ "--accent": accent } as React.CSSProperties}>
-        <p className="sur-titre">{r.courseName}</p>
-        <hr className="filet filet--court" />
+      {sp.erreur && (
+        <p role="alert" className="erreur">
+          {sp.erreur === "1" ? t.reponsesManquantes : sp.erreur}
+        </p>
+      )}
 
-        {sp.erreur && (
-          <p role="alert" className="erreur">
-            {sp.erreur === "1" ? t.reponsesManquantes : sp.erreur}
-          </p>
-        )}
+      <form action={envoyer} autoComplete="off">
+        {CHAMPS_NOTES.map((champ, i) => (
+          <Etoiles
+            key={champ}
+            nom={champ}
+            numero={i + 1}
+            libelle={libelle(champ, t, r.priceMad)}
+            t={t}
+            valeur={precedentes.notes[champ]}
+            oublie={oublis.has(champ)}
+          />
+        ))}
 
-        <form action={envoyer} autoComplete="off">
-          {ECRANS.map((champs, i) => (
-            <Ecran key={i} numero={i + 1} accent={accent} t={t} token={token} langue={langue}>
-              {champs.map((champ) => (
-                <Etoiles
-                  key={champ}
-                  nom={champ}
-                  libelle={libelle(champ, t, r.priceMad)}
-                  t={t}
-                  valeur={precedentes.notes[champ]}
+        <fieldset
+          id="perceptionPrix"
+          className={`question${oublis.has("perceptionPrix") ? " question--oublie" : ""}`}
+        >
+          <legend>
+            <Numero n={TOTAL_QUESTIONS} t={t} oublie={oublis.has("perceptionPrix")} />
+            {t.titrePrixNiveau(r.priceMad)}
+          </legend>
+          <div className="choix">
+            {(Object.keys(t.prix) as (keyof typeof t.prix)[]).map((k) => (
+              <label key={k}>
+                <input
+                  type="radio"
+                  name="perceptionPrix"
+                  value={k}
+                  required
+                  defaultChecked={precedentes.perceptionPrix === k}
                 />
-              ))}
-            </Ecran>
-          ))}
+                {t.prix[k]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
-          <Ecran numero={5} accent={accent} t={t} token={token} langue={langue} dernier>
-            <fieldset className="question">
-              <legend>{t.titrePrixNiveau(r.priceMad)}</legend>
-              <div className="choix">
-                {(Object.keys(t.prix) as (keyof typeof t.prix)[]).map((k) => (
-                  <label key={k}>
-                    <input
-                      type="radio"
-                      name="perceptionPrix"
-                      value={k}
-                      defaultChecked={precedentes.perceptionPrix === k}
-                    />
-                    {t.prix[k]}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+        <fieldset className="question">
+          <legend>{t.titreCommentaire}</legend>
+          <p className="mention" style={{ marginBlockEnd: "0.75rem" }}>
+            {t.commentaireFacultatif}
+          </p>
+          <textarea name="commentaire" rows={3} maxLength={2000} />
+        </fieldset>
 
-            <fieldset className="question">
-              <legend>{t.titreCommentaire}</legend>
-              <p className="mention" style={{ marginBlockEnd: "0.75rem" }}>
-                {t.commentaireFacultatif}
-              </p>
-              <textarea name="commentaire" rows={3} maxLength={2000} />
-            </fieldset>
-          </Ecran>
-        </form>
-      </div>
-    </>
+        <div className="actions">
+          <button
+            type="submit"
+            className="bouton"
+            style={{ background: accent, borderColor: accent }}
+          >
+            {t.envoyer}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -311,61 +324,21 @@ function libelle(champ: ChampNote, t: ReturnType<typeof messages>, prix: number)
   return t.criteres[champ as (typeof CRITERES)[number]];
 }
 
-function Ecran({
-  numero,
-  accent,
+/** Repère de position : sur une page défilante, le client ne voit pas la fin. */
+function Numero({
+  n,
   t,
-  children,
-  dernier,
+  oublie,
 }: {
-  numero: number;
-  accent: string;
+  n: number;
   t: ReturnType<typeof messages>;
-  token: string;
-  langue: string;
-  children: React.ReactNode;
-  dernier?: boolean;
+  oublie?: boolean;
 }) {
   return (
-    <section className={`ecran ecran-${numero}`}>
-      <div className="progression">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <span
-            key={n}
-            className={n <= numero ? "actif" : ""}
-            style={n <= numero ? { background: accent } : undefined}
-          />
-        ))}
-      </div>
-      <p className="compteur">{t.etapeSur(ROMAINS[numero - 1] ?? "", "V")}</p>
-
-      {children}
-
-      <div className="actions">
-        {dernier ? (
-          <button
-            type="submit"
-            className="bouton"
-            style={{ background: accent, borderColor: accent }}
-          >
-            {t.envoyer}
-          </button>
-        ) : (
-          <label
-            className="bouton"
-            htmlFor={`e${numero + 1}`}
-            style={{ background: accent, borderColor: accent }}
-          >
-            {t.continuer}
-          </label>
-        )}
-        {numero > 1 && (
-          <label className="retour" htmlFor={`e${numero - 1}`}>
-            ← {t.precedent}
-          </label>
-        )}
-      </div>
-    </section>
+    <span className="numero">
+      {t.questionSur(n, TOTAL_QUESTIONS)}
+      {oublie && <span className="numero__oubli"> — {t.questionOubliee}</span>}
+    </span>
   );
 }
 
@@ -373,21 +346,31 @@ function Ecran({
  * Notation par étoiles. Les radios sont en ordre DOM INVERSÉ (5 → 1) et le
  * rendu est remis à l'endroit par `row-reverse`, qui suit la direction
  * d'écriture et se met donc en miroir tout seul en arabe.
+ *
+ * `required` porte sur tout le groupe : « non applicable » y répond aussi,
+ * puisque c'est une réponse — celle que le critère ne s'applique pas.
  */
 function Etoiles({
   nom,
+  numero,
   libelle,
   t,
   valeur,
+  oublie,
 }: {
   nom: string;
+  numero: number;
   libelle: string;
   t: ReturnType<typeof messages>;
   valeur?: number | "na";
+  oublie?: boolean;
 }) {
   return (
-    <fieldset className="question">
-      <legend>{libelle}</legend>
+    <fieldset id={nom} className={`question${oublie ? " question--oublie" : ""}`}>
+      <legend>
+        <Numero n={numero} t={t} oublie={oublie} />
+        {libelle}
+      </legend>
       <div className="etoiles">
         {/* Fragment et non <span> : un element enveloppant briserait la
             fraternite entre input et label, dont depend `:checked ~ label`. */}
@@ -398,6 +381,7 @@ function Etoiles({
               id={`${nom}-${n}`}
               name={nom}
               value={n}
+              required
               defaultChecked={valeur === n}
             />
             <label htmlFor={`${nom}-${n}`} title={t.etoiles[n as 1 | 2 | 3 | 4 | 5]}>
@@ -412,7 +396,7 @@ function Etoiles({
       </div>
       <div className="na">
         <label>
-          <input type="radio" name={nom} value="na" defaultChecked={valeur === "na"} />
+          <input type="radio" name={nom} value="na" required defaultChecked={valeur === "na"} />
           {t.nonApplicable}
         </label>
       </div>

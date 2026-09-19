@@ -129,37 +129,47 @@ body {
   color: var(--encre);
 }
 
-/* --- Progression ---------------------------------------------------------- */
-.progression {
-  display: flex;
-  gap: 0.375rem;
-  justify-content: center;
-  margin-block-end: 0.75rem;
-}
-
-.progression span {
-  block-size: 2px;
-  inline-size: 1.75rem;
-  background: var(--laiton);
-  opacity: 0.35;
-}
-
-.progression span.actif {
-  background: var(--accent);
-  opacity: 1;
-}
-
-.compteur {
+/* --- Numérotation ---------------------------------------------------------
+   Sur une page défilante, le client ne voit pas où s'arrête le questionnaire.
+   Le numéro le lui dit, question après question.
+   -------------------------------------------------------------------------- */
+.numero {
+  display: block;
   font-size: 0.6875rem;
   letter-spacing: var(--capitales);
   text-transform: uppercase;
-  text-align: center;
-  margin-block-end: 2rem;
+  opacity: 0.6;
+  margin-block-end: 0.5rem;
+}
+
+.numero__oubli {
+  color: var(--ocre);
+  opacity: 1;
 }
 
 /* --- Question ------------------------------------------------------------- */
 .question {
   margin-block-end: 2.5rem;
+  /* L'ancre `#champ` amène ici : sans marge, la question touche le bord. */
+  scroll-margin-block-start: 1.5rem;
+}
+
+/* Question restée sans réponse, au retour d'un envoi incomplet. */
+.question--oublie {
+  border-inline-start: 3px solid var(--ocre);
+  padding-inline-start: 1rem;
+}
+
+/* Le marquage vient du serveur et ne se met pas à jour tout seul : dès que le
+   client répond, il mentirait. `:has()` l'efface au clic, sans JavaScript. Un
+   navigateur qui ignore `:has()` garde la mention — inexacte, mais inoffensive,
+   puisque le serveur, lui, acceptera la réponse. */
+.question--oublie:has(input:checked) {
+  border-inline-start-color: transparent;
+}
+
+.question--oublie:has(input:checked) .numero__oubli {
+  display: none;
 }
 
 .question legend {
@@ -182,12 +192,26 @@ body {
   flex-direction: row-reverse;
   justify-content: center;
   gap: 0.25rem;
+  position: relative;
 }
 
+/* Les radios sont invisibles mais RESTENT focalisables et de taille non nulle :
+   un contrôle `required` que le navigateur ne peut pas atteindre bloquerait
+   l'envoi sans aucun message. Ancrées ici, elles placent l'infobulle de
+   validation juste sous la rangée d'étoiles, là où le client regarde. */
 .etoiles input {
   position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: 50%;
+  inline-size: 1px;
+  block-size: 1px;
   opacity: 0;
   pointer-events: none;
+  /* Le navigateur fait défiler jusqu'à la radio pour poser son infobulle.
+     Sans cette marge, il la colle au bord haut et la question et ses étoiles
+     sortent de l'écran : le client lit « sélectionnez une option » sans voir
+     de quelle question il s'agit. */
+  scroll-margin-block-start: 8rem;
 }
 
 .etoiles label {
@@ -312,19 +336,6 @@ body {
   margin-block-start: 2rem;
 }
 
-.retour {
-  display: flex;
-  justify-content: center;
-  min-block-size: 44px;
-  align-items: center;
-  font-size: 0.6875rem;
-  letter-spacing: var(--capitales);
-  text-transform: uppercase;
-  cursor: pointer;
-  text-decoration: none;
-  color: var(--encre);
-}
-
 textarea {
   inline-size: 100%;
   min-block-size: 6rem;
@@ -344,27 +355,6 @@ textarea {
   margin-block-end: 1.5rem;
 }
 
-/* --- Étapes en CSS pur ----------------------------------------------------
-   Les boutons radio de navigation sont HORS du <form>, donc jamais envoyés.
-   Les <label for> fonctionnent à travers tout le document.
-   -------------------------------------------------------------------------- */
-.nav-etape {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-.ecran {
-  display: none;
-}
-
-#e1:checked ~ .page .ecran-1,
-#e2:checked ~ .page .ecran-2,
-#e3:checked ~ .page .ecran-3,
-#e4:checked ~ .page .ecran-4,
-#e5:checked ~ .page .ecran-5 {
-  display: block;
-}
-
 /* --- Arabe : le letter-spacing brise les ligatures cursives --------------- */
 [dir="rtl"] {
   --titre: "Noto Naskh Arabic", serif;
@@ -372,9 +362,8 @@ textarea {
 }
 
 [dir="rtl"] .sur-titre,
-[dir="rtl"] .compteur,
+[dir="rtl"] .numero,
 [dir="rtl"] .bouton,
-[dir="rtl"] .retour,
 [dir="rtl"] .na label,
 [dir="rtl"] .echelle {
   letter-spacing: 0;
@@ -382,7 +371,7 @@ textarea {
 }
 
 [dir="rtl"] .sur-titre,
-[dir="rtl"] .compteur {
+[dir="rtl"] .numero {
   font-size: 0.8125rem;
 }
 
