@@ -11,7 +11,7 @@ import { test, expect, type Response } from "@playwright/test";
  * masquage visuel.
  */
 
-const STARTER = { email: "starter.cedres@example.invalid", password: "MotDePasseFictif2!" };
+import { connexion, STARTER } from "./helpers";
 
 /** Valeurs qui ne doivent JAMAIS atteindre un Starter. */
 const INTERDITS = [
@@ -47,11 +47,7 @@ test("aucune donnée personnelle dans le trafic d'une journée de Starter", asyn
   });
 
   // Journee de travail : connexion, ecran de depart, navigation.
-  await page.goto("/connexion");
-  await page.getByRole("textbox").first().fill(STARTER.email);
-  await page.locator('input[type="password"]').fill(STARTER.password);
-  await page.getByRole("button", { name: "Se connecter" }).click();
-  await page.waitForURL(/depart|terrains|choisir-terrain/);
+  await connexion(page, STARTER);
 
   await page.goto("/depart");
   await expect(page.getByRole("heading", { name: /Golf des Cèdres/ })).toBeVisible();
@@ -76,22 +72,14 @@ test("aucune donnée personnelle dans le trafic d'une journée de Starter", asyn
 });
 
 test("le Starter ne voit aucun lien vers l'administration", async ({ page }) => {
-  await page.goto("/connexion");
-  await page.getByRole("textbox").first().fill(STARTER.email);
-  await page.locator('input[type="password"]').fill(STARTER.password);
-  await page.getByRole("button", { name: "Se connecter" }).click();
-  await page.waitForURL(/depart|terrains/);
+  await connexion(page, STARTER);
 
   await page.goto("/depart");
   await expect(page.getByRole("link", { name: "Comptes" })).toHaveCount(0);
 });
 
 test("un accès direct à l'administration renvoie le Starter vers son écran", async ({ page }) => {
-  await page.goto("/connexion");
-  await page.getByRole("textbox").first().fill(STARTER.email);
-  await page.locator('input[type="password"]').fill(STARTER.password);
-  await page.getByRole("button", { name: "Se connecter" }).click();
-  await page.waitForURL(/depart|terrains/);
+  await connexion(page, STARTER);
 
   await page.goto("/comptes");
   await expect(page).not.toHaveURL(/comptes/);

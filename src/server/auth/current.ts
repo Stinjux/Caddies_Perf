@@ -15,6 +15,9 @@ import { UnauthenticatedError, ValidationError } from "../errors";
  * l'expiration (FR-016).
  */
 
+/** Leurre sans materiel cryptographique, pour egaliser le temps de reponse. */
+const LEURRE_TEMPS_CONSTANT = ["scrypt", "16384", "8", "1", "AAAA", "AAAA"].join("$");
+
 export interface SessionContext {
   accountId: string;
   firstName: string;
@@ -41,8 +44,9 @@ export async function login(email: string, password: string): Promise<string> {
 
   if (!found || found.status !== "active") {
     // Cout de verification maintenu meme sans compte, pour ne rien reveler
-    // par le temps de reponse.
-    await verifyPassword(password, "scrypt$16384$8$1$AAAA$AAAA");
+    // par le temps de reponse. Ce leurre ne contient AUCUN materiel
+    // cryptographique : sel et cle sont des octets nuls.
+    await verifyPassword(password, LEURRE_TEMPS_CONSTANT);
     throw generic;
   }
   if (!(await verifyPassword(password, found.passwordHash))) throw generic;

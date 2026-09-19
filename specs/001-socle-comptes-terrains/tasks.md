@@ -238,12 +238,12 @@ Aucune tâche n'est bloquée. Seul le déploiement (phase 24) reste suspendu au 
 
 ## Phase 9: Polish & Cross-Cutting Concerns
 
-- [ ] T080 [P] Écrire l'analyse automatisée du dépôt dans `tests/integration/no-real-data.test.ts` : aucun CSV hors `fixtures/`, aucun `.env` versionné (V-12, FR-046)
-- [ ] T081 [P] Écrire le script d'amorçage des données fictives dans `scripts/seed.ts`
-- [ ] T082 Mesurer le critère de performance SC-008 dans `tests/e2e/performance.spec.ts` : écrans d'exploitation sous 2 secondes avec 5 terrains, 100 caddies et 300 départs
-- [ ] T083 [P] Vérifier l'accessibilité et le rendu mobile dans `tests/e2e/accessibility.spec.ts` pour les écrans de `src/app/(admin)/` et `src/app/(starter)/`
-- [ ] T084 [P] Rédiger `README.md` : installation, bases de données, exécution des tests, **sans aucune donnée réelle**
-- [ ] T085 Exécuter les 12 scénarios de `quickstart.md` et présenter leurs résultats réels, échecs compris (principe VI)
+- [x] T080 [P] Écrire l'analyse automatisée du dépôt dans `tests/integration/no-real-data.test.ts` : aucun CSV hors `fixtures/`, aucun `.env` versionné (V-12, FR-046)
+- [x] T081 [P] Écrire le script d'amorçage des données fictives dans `scripts/seed.ts`
+- [x] T082 Mesurer le critère de performance SC-008 dans `tests/e2e/performance.spec.ts` : écrans d'exploitation sous 2 secondes avec 5 terrains, 100 caddies et 300 départs
+- [x] T083 [P] Vérifier l'accessibilité et le rendu mobile dans `tests/e2e/accessibility.spec.ts` pour les écrans de `src/app/(admin)/` et `src/app/(starter)/`
+- [x] T084 [P] Rédiger `README.md` : installation, bases de données, exécution des tests, **sans aucune donnée réelle**
+- [x] T085 Exécuter les 12 scénarios de `quickstart.md` et présenter leurs résultats réels, échecs compris (principe VI)
 
 ---
 

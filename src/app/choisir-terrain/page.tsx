@@ -20,7 +20,7 @@ export default async function ChoisirTerrainPage() {
     const token = store.get(SESSION_COOKIE)?.value;
     if (!token) redirect("/connexion");
     await selectCourse(token, String(formData.get("golfCourseId")));
-    redirect("/terrains");
+    redirect("/");
   }
 
   return (

@@ -21,7 +21,10 @@ async function connexion(formData: FormData) {
 
   const store = await cookies();
   store.set(SESSION_COOKIE, token, sessionCookieOptions);
-  redirect("/terrains");
+  // La racine oriente selon le role et le nombre de terrains rattaches.
+  // Rediriger directement vers /terrains provoquerait une double redirection
+  // visible pour un compte rattache a plusieurs terrains.
+  redirect("/");
 }
 
 export default async function ConnexionPage({

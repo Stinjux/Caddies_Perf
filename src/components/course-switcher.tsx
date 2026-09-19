@@ -25,7 +25,7 @@ export async function CourseSwitcher({
     if (!token) redirect("/connexion");
 
     await selectCourse(token, String(formData.get("golfCourseId")));
-    redirect("/terrains");
+    redirect("/");
   }
 
   const active = courses.find((c) => c.golfCourseId === activeId);
