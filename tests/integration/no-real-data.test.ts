@@ -53,6 +53,37 @@ describe("principe II — aucune donnee reelle dans le dépôt", () => {
   });
 });
 
+/** Le code de l'application et le gabarit d'environnement, rien d'autre. */
+function sourcesEtEnvironnement(): string {
+  return tracked()
+    .filter((f) => f === ".env.example" || (f.startsWith("src/") && /\.(ts|tsx|css)$/.test(f)))
+    .map((f) => readFileSync(f, "utf8"))
+    .join("\n");
+}
+
+describe("aucun secret ne part dans le navigateur", () => {
+  it("ne declare aucune variable NEXT_PUBLIC_", () => {
+    // Tout ce qui porte ce prefixe est INCORPORE au code envoye au navigateur.
+    // Le projet n'en a aucune, et n'en a pas besoin : rien de ce qu'il connait
+    // n'a a etre lu par le client. Ce test existe pour que cela reste vrai le
+    // jour ou quelqu'un voudra « juste exposer une petite cle ».
+    // On n'inspecte que le CODE et le gabarit d'environnement, pas le depot
+    // entier : ce fichier-ci contient les chaines qu'il cherche, et se serait
+    // signale lui-meme. C'est le quatrieme motif trop large de ce projet.
+    expect(sourcesEtEnvironnement()).not.toContain("NEXT_PUBLIC_");
+  });
+
+  it("n'expose aucune cle publique de service tiers", () => {
+    // Les noms usuels d'une cle cliente chez les fournisseurs habituels.
+    // Le projet parle a PostgreSQL en direct, depuis le serveur : aucune de
+    // ces cles n'a de raison d'exister ici.
+    const contenu = sourcesEtEnvironnement();
+    for (const motif of ["anonKey", "ANON_KEY", "publishableKey", "PUBLISHABLE_KEY", "apiKey:"]) {
+      expect(contenu).not.toContain(motif);
+    }
+  });
+});
+
 describe("la regle sur les assistants d'IA ne peut pas disparaitre en silence", () => {
   it("la constitution interdit toute donnee reelle dans un prompt", () => {
     // Une regle qu'aucun test ne garde finit par etre retiree sans que
