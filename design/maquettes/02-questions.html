@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CaddiePerf — Questionnaire</title>
+<link rel="stylesheet" href="caddieperf.css">
+</head>
+<body>
+
+<!-- Navigation par etapes : HORS du <form>, donc jamais envoyee au serveur.
+     Les <label for> fonctionnent a travers tout le document. Zero JavaScript,
+     zero attente reseau entre les ecrans. -->
+<input class="nav-etape" type="radio" name="etape" id="e1" checked>
+<input class="nav-etape" type="radio" name="etape" id="e2">
+<input class="nav-etape" type="radio" name="etape" id="e3">
+<input class="nav-etape" type="radio" name="etape" id="e4">
+<input class="nav-etape" type="radio" name="etape" id="e5">
+
+<div class="page">
+  <p class="sur-titre">Golf des Cèdres</p>
+  <hr class="filet--court filet">
+
+  <form method="post" action="03-merci.html" autocomplete="off">
+    <section class="ecran ecran-1">
+      <div class="progression"><span class="actif"></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span></div>
+      <p class="compteur">I / V</p>
+      <fieldset class="question">
+        <legend>Accueil et attitude</legend>
+        <div class="etoiles">
+          <input type="radio" id="accueil-5" name="accueil" value="5"><label for="accueil-5" title="5">★</label>
+          <input type="radio" id="accueil-4" name="accueil" value="4"><label for="accueil-4" title="4">★</label>
+          <input type="radio" id="accueil-3" name="accueil" value="3"><label for="accueil-3" title="3">★</label>
+          <input type="radio" id="accueil-2" name="accueil" value="2"><label for="accueil-2" title="2">★</label>
+          <input type="radio" id="accueil-1" name="accueil" value="1"><label for="accueil-1" title="1">★</label>
+        </div>
+        <div class="echelle"><span>Très insatisfaisant</span><span>Excellent</span></div>
+        <div class="na"><label><input type="radio" name="accueil" value="na">Non applicable</label></div>
+      </fieldset>
+      <fieldset class="question">
+        <legend>Connaissance des règles et de l'étiquette</legend>
+        <div class="etoiles">
+          <input type="radio" id="regles-5" name="regles" value="5"><label for="regles-5" title="5">★</label>
+          <input type="radio" id="regles-4" name="regles" value="4"><label for="regles-4" title="4">★</label>
+          <input type="radio" id="regles-3" name="regles" value="3"><label for="regles-3" title="3">★</label>
+          <input type="radio" id="regles-2" name="regles" value="2"><label for="regles-2" title="2">★</label>
+          <input type="radio" id="regles-1" name="regles" value="1"><label for="regles-1" title="1">★</label>
+        </div>
+        <div class="echelle"><span>Très insatisfaisant</span><span>Excellent</span></div>
+        <div class="na"><label><input type="radio" name="regles" value="na">Non applicable</label></div>
+      </fieldset>
+      <div class="actions">
+        <label class="bouton" for="e2">Continuer</label>
+        
+      </div>
+    </section>
+    <section class="ecran ecran-2">
+      <div class="progression"><span class="actif"></span><span class="actif"></span><span class=""></span><span class=""></span><span class=""></span></div>
+      <p class="compteur">II / V</p>
+      <fieldset class="question">
+        <legend>Connaissance du parcours</legend>
+        <div class="etoiles">
+          <input type="radio" id="parcours-5" name="parcours" value="5"><label for="parcours-5" title="5">★</label>
+          <input type="radio" id="parcours-4" name="parcours" value="4"><label for="parcours-4" title="4">★</label>
+          <input type="radio" id="parcours-3" name="parcours" value="3"><label for="parcours-3" title="3">★</label>
+          <input type="radio" id="parcours-2" name="parcours" value="2"><label for="parcours-2" title="2">★</label>
+          <input type="radio" id="parcours-1" name="parcours" value="1"><label for="parcours-1" title="1">★</label>
+        </div>
+        <div class="echelle"><span>Très insatisfaisant</span><span>Excellent</span></div>
+        <div class="na"><label><input type="radio" name="parcours" value="na">Non applicable</label></div>
+      </fieldset>
+      <fieldset class="question">
+        <legend>Lecture des verts</legend>
+        <div class="etoiles">
+          <input type="radio" id="verts-5" name="verts" value="5"><label for="verts-5" title="5">★</label>
+          <input type="radio" id="verts-4" name="verts" value="4"><label for="verts-4" title="4">★</label>
+          <input type="radio" id="verts-3" name="verts" value="3"><label for="verts-3" title="3">★</label>
+          <input type="radio" id="verts-2" name="verts" value="2"><label for="verts-2" title="2">★</label>
+          <input type="radio" id="verts-1" name="verts" value="1"><label for="verts-1" title="1">★</label>
+        </div>
+        <div class="echelle"><span>Très insatisfaisant</span><span>Excellent</span></div>
+        <div class="na"><label><input type="radio" name="verts" value="na">Non applicable</label></div>
+      </fieldset>
+      <div class="actions">
+        <label class="bouton" for="e3">Continuer</label>
+        <label class="retour" for="e1">← Précédent</label>
+      </div>
+    </section>
+    <section class="ecran ecran-3">
+      <div class="progression"><span class="actif"></span><span class="actif"></span><span class="actif"></span><span class=""></span><span class=""></span></div>
+      <p class="compteur">III / V</p>
+      <fieldset class="question">
+        <legend>Capacité à communiquer clairement avec vous</legend>
+        <div class="etoiles">
+          <input type="radio" id="communication-5" name="communication" value="5"><label for="communication-5" title="5">★</label>
+          <input type="radio" id="communication-4" name="communication" value="4"><label for="communication-4" title="4">★</label>
+          <input type="radio" id="communication-3" name="communication" value="3"><label for="communication-3" title="3">★</label>
+          <input type="radio" id="communication-2" name="communication" value="2"><label for="communication-2" title="2">★</label>
+          <input type="radio" id="communication-1" name="communication" value="1"><label for="communication-1" title="1">★</label>
+        </div>
+        <div class="echelle"><span>Très insatisfaisant</span><span>Excellent</span></div>
+        <div class="na"><label><input type="radio" name="communication" value="na">Non applicable</label></div>
+      </fieldset>
+      <fieldset class="question">
+        <legend>Expérience générale</legend>
+        <div class="etoiles">
+          <input type="radio" id="experience-5" name="experience" value="5"><label for="experience-5" title="5">★</label>
+          <input type="radio" id="experience-4" name="experience" value="4"><label for="experience-4" title="4">★</label>
+          <input type="radio" id="experience-3" name="experience" value="3"><label for="experience-3" title="3">★</label>
+          <input type="radio" id="experience-2" name="experience" value="2"><label for="experience-2" title="2">★</label>
+          <input type="radio" id="experience-1" name="experience" value="1"><label for="experience-1" title="1">★</label>
+        </div>
+        <div class="echelle"><span>Très insatisfaisant</span><span>Excellent</span></div>
+        <div class="na"><label><input type="radio" name="experience" value="na">Non applicable</label></div>
+      </fieldset>
+      <div class="actions">
+        <label class="bouton" for="e4">Continuer</label>
+        <label class="retour" for="e2">← Précédent</label>
+      </div>
+    </section>
+    <section class="ecran ecran-4">
+      <div class="progression"><span class="actif"></span><span class="actif"></span><span class="actif"></span><span class="actif"></span><span class=""></span></div>
+      <p class="compteur">IV / V</p>
+      <fieldset class="question">
+        <legend>Dans l'ensemble, comment évaluez-vous votre expérience sur notre terrain aujourd'hui ?</legend>
+        <div class="etoiles">
+          <input type="radio" id="terrain-5" name="terrain" value="5"><label for="terrain-5" title="5">★</label>
+          <input type="radio" id="terrain-4" name="terrain" value="4"><label for="terrain-4" title="4">★</label>
+          <input type="radio" id="terrain-3" name="terrain" value="3"><label for="terrain-3" title="3">★</label>
+          <input type="radio" id="terrain-2" name="terrain" value="2"><label for="terrain-2" title="2">★</label>
+          <input type="radio" id="terrain-1" name="terrain" value="1"><label for="terrain-1" title="1">★</label>
+        </div>
+        <div class="echelle"><span>Très insatisfaisant</span><span>Excellent</span></div>
+        <div class="na"><label><input type="radio" name="terrain" value="na">Non applicable</label></div>
+      </fieldset>
+      <fieldset class="question">
+        <legend>Compte tenu de la qualité du service reçu, comment évaluez-vous le rapport qualité-prix du service de caddie à 200 MAD ?</legend>
+        <div class="etoiles">
+          <input type="radio" id="qualiteprix-5" name="qualiteprix" value="5"><label for="qualiteprix-5" title="5">★</label>
+          <input type="radio" id="qualiteprix-4" name="qualiteprix" value="4"><label for="qualiteprix-4" title="4">★</label>
+          <input type="radio" id="qualiteprix-3" name="qualiteprix" value="3"><label for="qualiteprix-3" title="3">★</label>
+          <input type="radio" id="qualiteprix-2" name="qualiteprix" value="2"><label for="qualiteprix-2" title="2">★</label>
+          <input type="radio" id="qualiteprix-1" name="qualiteprix" value="1"><label for="qualiteprix-1" title="1">★</label>
+        </div>
+        <div class="echelle"><span>Très insatisfaisant</span><span>Excellent</span></div>
+        <div class="na"><label><input type="radio" name="qualiteprix" value="na">Non applicable</label></div>
+      </fieldset>
+      <div class="actions">
+        <label class="bouton" for="e5">Continuer</label>
+        <label class="retour" for="e3">← Précédent</label>
+      </div>
+    </section>
+    <section class="ecran ecran-5">
+      <div class="progression"><span class="actif"></span><span class="actif"></span><span class="actif"></span><span class="actif"></span><span class="actif"></span></div>
+      <p class="compteur">V / V</p>
+      <fieldset class="question">
+        <legend>Comment considérez-vous le prix de 200 MAD pour ce service de caddie ?</legend>
+        <div class="choix">
+          <label><input type="radio" name="prixniveau" value="beaucoup_trop_bas">Beaucoup trop bas</label>
+          <label><input type="radio" name="prixniveau" value="plutot_bas">Plutôt bas</label>
+          <label><input type="radio" name="prixniveau" value="juste">Juste et raisonnable</label>
+          <label><input type="radio" name="prixniveau" value="plutot_eleve">Plutôt élevé</label>
+          <label><input type="radio" name="prixniveau" value="beaucoup_trop_eleve">Beaucoup trop élevé</label>
+        </div>
+      </fieldset>
+      <fieldset class="question">
+        <legend>Souhaitez-vous ajouter un commentaire ?</legend>
+        <p class="mention" style="margin-block-end:.75rem">Facultatif</p>
+        <textarea name="commentaire" rows="3" maxlength="2000"></textarea>
+      </fieldset>
+      <div class="actions">
+        <button class="bouton" type="submit">Envoyer mon évaluation</button>
+        <label class="retour" for="e4">← Précédent</label>
+      </div>
+    </section>
+  </form>
+</div>
+</body>
+</html>
