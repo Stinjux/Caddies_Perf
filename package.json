@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "seed": "node --experimental-strip-types scripts/seed.ts",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:amorcer": "node --experimental-strip-types scripts/amorcer.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",

@@ -107,7 +107,31 @@ La réponse attendue est `caddieperf_app`, `rolsuper: false`,
 `rolbypassrls: false`. **Tout autre résultat signifie que le cloisonnement entre
 terrains ne s'applique pas**, quelles que soient les apparences.
 
-### 6. Peupler avec des données fictives (facultatif)
+### 6. Créer le premier administrateur
+
+Une installation neuve est **inaccessible** : créer un compte exige une portée,
+qui exige un compte. Ce script casse ce cercle, une fois et une seule.
+
+```bash
+railway run --service caddieperf sh -c 'AMORCE_EMAIL="vous@example.invalid" AMORCE_MOT_DE_PASSE="…" AMORCE_PRENOM="…" AMORCE_NOM="…" AMORCE_TERRAIN="Nom du parcours" npm run db:amorcer'
+```
+
+Il refuse : un mot de passe de moins de douze caractères, une adresse
+invalide, **les mots de passe de démonstration publiés dans le dépôt**, et
+toute exécution sur une base qui contient déjà un compte. Le mot de passe
+n'est ni affiché ni journalisé.
+
+À la première connexion, l'application exigera l'inscription au second
+facteur avant de donner accès à quoi que ce soit : prévoyez une application
+d'authentification et de quoi noter les huit codes de secours.
+
+Les comptes suivants se créent depuis l'écran « Comptes ».
+
+### 7. Peupler avec des données fictives — à éviter sur une instance visible
+
+**Le dépôt est public, et il contient les mots de passe de ces comptes ainsi
+que leur secret TOTP partagé.** N'importe qui l'ayant lu peut alors entrer.
+Ne lancez ceci que sur une instance jetable.
 
 ```bash
 railway run npm run seed

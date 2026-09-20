@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { champsMetier } from "../helpers/champs-metier";
 import postgres from "postgres";
 import { eq } from "drizzle-orm";
 import { db } from "../helpers/raw-db";
@@ -231,7 +232,7 @@ describe("purge des années de naissance (FR-034)", () => {
 
     const entries = await db.select().from(auditLog).where(eq(auditLog.action, "retention.purge"));
     expect(entries).toHaveLength(1);
-    expect(JSON.stringify(entries)).not.toContain("1975");
+    expect(champsMetier(entries)).not.toContain("1975");
   });
 });
 

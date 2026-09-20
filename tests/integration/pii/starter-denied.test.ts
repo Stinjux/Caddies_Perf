@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { champsMetier } from "../../helpers/champs-metier";
 import { eq } from "drizzle-orm";
 import { db } from "../../helpers/raw-db";
 import { caddie, caddiePersonalData, auditLog } from "@/db/schema";
@@ -96,7 +97,7 @@ describe("accès administrateur : autorisé mais toujours journalisé (FR-036)",
   it("ne consigne JAMAIS la valeur lue dans le journal (FR-037)", async () => {
     await readBirthYear(asAdmin(), caddieCedres);
     const entries = await db.select().from(auditLog);
-    expect(JSON.stringify(entries)).not.toContain("1988");
+    expect(champsMetier(entries)).not.toContain("1988");
   });
 
   it("journalise l'écriture et la correction", async () => {

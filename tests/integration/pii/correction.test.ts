@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { champsMetier } from "../../helpers/champs-metier";
 import { eq } from "drizzle-orm";
 import { db } from "../../helpers/raw-db";
 import { caddie, caddiePersonalData, auditLog } from "@/db/schema";
@@ -78,7 +79,7 @@ describe("correction d'une année de naissance", () => {
     await writeBirthYear(scope(), caddieId, 1988);
     await writeBirthYear(scope(), caddieId, 1990);
 
-    const journal = JSON.stringify(await db.select().from(auditLog));
+    const journal = champsMetier(await db.select().from(auditLog));
     expect(journal).not.toContain("1988");
     expect(journal).not.toContain("1990");
   });

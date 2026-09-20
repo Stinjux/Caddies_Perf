@@ -1,0 +1,123 @@
+import postgres from "postgres";
+import { hashPassword } from "../src/server/auth/password.ts";
+import { uuidv7 } from "../src/lib/uuid.ts";
+
+/**
+ * AMORCAGE — CREE LE TOUT PREMIER ADMINISTRATEUR ET SON TERRAIN.
+ *
+ * Sans lui, une installation neuve est inaccessible : creer un compte exige
+ * une portee, qui exige un compte. Les deux se demandent l'un l'autre, et le
+ * seul outil qui cassait ce cercle etait `npm run seed` — qui pose des comptes
+ * dont les mots de passe sont publics dans le depot.
+ *
+ * IL IMPORTE LA VRAIE FONCTION DE HACHAGE, contrairement a seed.ts qui la
+ * reimplemente pour rester autonome. Ici la correction prime sur
+ * l'independance : si les deux formats divergeaient un jour, l'unique
+ * administrateur ne pourrait plus se connecter, et personne d'autre non plus.
+ *
+ * IL NE S'EXECUTE QU'UNE FOIS. Des qu'un compte existe, il refuse — un second
+ * passage ne peut donc ni ecraser un administrateur, ni en ajouter un dans le
+ * dos des autres.
+ *
+ * LE MOT DE PASSE N'EST JAMAIS AFFICHE NI JOURNALISE. Il arrive par
+ * l'environnement, et rien de ce que ce script ecrit ne permet de le retrouver.
+ *
+ * Usage :
+ *   AMORCE_EMAIL=... AMORCE_MOT_DE_PASSE=... AMORCE_PRENOM=... AMORCE_NOM=... \
+ *   AMORCE_TERRAIN=... node --experimental-strip-types scripts/amorcer.ts
+ */
+
+function requis(nom: string): string {
+  const valeur = process.env[nom]?.trim();
+  if (!valeur) {
+    console.error(`${nom} est absente.`);
+    process.exit(1);
+  }
+  return valeur;
+}
+
+const url = process.env.DATABASE_URL;
+if (!url) {
+  console.error("DATABASE_URL est absente : impossible d'amorcer.");
+  process.exit(1);
+}
+
+const email = requis("AMORCE_EMAIL").toLowerCase();
+const motDePasse = requis("AMORCE_MOT_DE_PASSE");
+const prenom = requis("AMORCE_PRENOM");
+const nom = requis("AMORCE_NOM");
+const terrain = requis("AMORCE_TERRAIN");
+const fuseau = process.env.AMORCE_FUSEAU?.trim() || "Africa/Casablanca";
+
+// Memes regles que createAccount() : un compte cree ici doit pouvoir etre
+// modifie ensuite par l'application sans etre rejete par sa propre validation.
+if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+  console.error("AMORCE_EMAIL n'est pas une adresse valide.");
+  process.exit(1);
+}
+if (motDePasse.length < 12) {
+  console.error("AMORCE_MOT_DE_PASSE doit compter au moins 12 caracteres.");
+  process.exit(1);
+}
+
+/**
+ * Refus des mots de passe FICTIFS du depot. Ils sont publics : les accepter
+ * ici reviendrait a ouvrir l'installation a quiconque a lu le code.
+ */
+if (/^MotDePasseFictif\d*!?$/i.test(motDePasse)) {
+  console.error(
+    "Ce mot de passe est celui des comptes de demonstration, publie dans le depot.\n" +
+      "Choisissez-en un autre : n'importe qui pourrait entrer.",
+  );
+  process.exit(1);
+}
+
+const sql = postgres(url, { max: 1, onnotice: () => {} });
+
+try {
+  const [compte] = await sql<{ total: string }[]>`SELECT count(*) AS total FROM account`;
+  const total = compte?.total ?? "0";
+  if (Number(total) > 0) {
+    console.error(
+      `La base compte deja ${total} compte(s) : l'amorcage est inutile et n'aura pas lieu.\n` +
+        "Creez les comptes suivants depuis l'ecran « Comptes » de l'application.",
+    );
+    process.exit(1);
+  }
+
+  const hache = await hashPassword(motDePasse);
+  const idCompte = uuidv7();
+  const idTerrain = uuidv7();
+
+  // Un seul aller-retour : un terrain sans administrateur, ou un administrateur
+  // sans terrain, seraient tous deux inutilisables et il faudrait tout reprendre
+  // a la main en SQL.
+  await sql.begin(async (tx) => {
+    await tx`
+      INSERT INTO golf_course (id, name, timezone)
+      VALUES (${idTerrain}, ${terrain}, ${fuseau})
+    `;
+    await tx`
+      INSERT INTO account (id, email, first_name, last_name, password_hash)
+      VALUES (${idCompte}, ${email}, ${prenom}, ${nom}, ${hache})
+    `;
+    await tx`
+      INSERT INTO account_golf_course (account_id, golf_course_id, role)
+      VALUES (${idCompte}, ${idTerrain}, 'admin')
+    `;
+    await tx`
+      INSERT INTO audit_log (id, golf_course_id, actor_account_id, action, target_type, target_id)
+      VALUES (${uuidv7()}, ${idTerrain}, ${idCompte}, 'course.create', 'golf_course', ${idTerrain})
+    `;
+  });
+
+  console.log(`\nAdministrateur cree : ${email}`);
+  console.log(`Terrain cree        : ${terrain} (${fuseau})`);
+  console.log(
+    "\nA la premiere connexion, l'application exigera l'inscription au second\n" +
+      "facteur avant de donner acces a quoi que ce soit. Prevoyez une application\n" +
+      "d'authentification et de quoi noter les codes de secours.",
+  );
+} finally {
+  await sql.end();
+}

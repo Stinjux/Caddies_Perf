@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { champsMetier } from "../../helpers/champs-metier";
 import { eq } from "drizzle-orm";
 import { db } from "../../helpers/raw-db";
 import { caddie, caddiePersonalData, auditLog } from "@/db/schema";
@@ -116,16 +117,7 @@ describe("les trois colonnes interdites sont rejetées", () => {
 
     const rows = await db.select().from(caddie).where(eq(caddie.golfCourseId, courseId));
 
-    // On inspecte les VALEURS METIER, pas le JSON entier : un identifiant
-    // aleatoire finit tot ou tard par contenir « 38 » et fait echouer un test
-    // qui n'a rien constate. Un garde-fou qui crie a tort finit par etre
-    // ignore — c'est la troisieme fois dans ce projet.
-    const { id, golfCourseId, createdAt, updatedAt, ...metier } = rows[0]!;
-    void id;
-    void golfCourseId;
-    void createdAt;
-    void updatedAt;
-    expect(JSON.stringify(metier)).not.toContain("38");
+    expect(champsMetier(rows)).not.toContain("38");
 
     const annee = await readBirthYear(scope(), rows[0]!.id);
     expect(annee).toBe(new Date().getFullYear() - 38);
