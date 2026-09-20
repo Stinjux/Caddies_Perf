@@ -59,6 +59,10 @@ export default defineRailway(() => {
       SESSION_TTL_HOURS_STARTER: preserve(),
       NODE_ENV: preserve(),
       NPM_CONFIG_PRODUCTION: preserve(),
+      // Adresse publique encodee dans les QR codes des voiturettes. Absente,
+      // les etiquettes imprimees pointent vers localhost et ne menent nulle
+      // part — on ne s'en apercoit qu'au 18e trou, devant un client.
+      PUBLIC_BASE_URL: preserve(),
       // Consigne d'amorcage du premier administrateur. Absentes, elles ne
       // declenchent rien ; posees sur une base vide, elles creent le compte
       // une fois. Le mot de passe se retire une fois le compte cree.

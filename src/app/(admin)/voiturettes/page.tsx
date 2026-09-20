@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireScope } from "@/server/auth/context";
 import { listCarts, createCart } from "@/server/services/cart";
@@ -23,14 +24,25 @@ export default async function VoiturettesPage({
 
   const { erreur, imprimer } = await searchParams;
   const voiturettes = await listCarts(scope);
-  const base = process.env.PUBLIC_BASE_URL ?? "http://localhost:3200";
+  /**
+   * ADRESSE ENCODEE DANS LES QR CODES.
+   *
+   * En production, PAS DE VALEUR PAR DEFAUT. Se rabattre sur localhost
+   * produirait des etiquettes muettes : elles s'impriment, se collent, et ne
+   * revelent leur inutilite qu'au 18e trou, devant un client. Mieux vaut
+   * refuser d'afficher un QR code que d'en imprimer cent faux.
+   */
+  const base =
+    process.env.PUBLIC_BASE_URL ??
+    (process.env.NODE_ENV === "production" ? null : "http://localhost:3200");
 
   // Les QR ne sont rendus qu'à la demande : 100 images ralentiraient la liste.
-  const qrs = imprimer
-    ? await Promise.all(
-        voiturettes.map(async (v) => [v.id, await qrDataUrl(base, v.qrToken)] as const),
-      )
-    : [];
+  const qrs =
+    imprimer && base
+      ? await Promise.all(
+          voiturettes.map(async (v) => [v.id, await qrDataUrl(base, v.qrToken)] as const),
+        )
+      : [];
   const parId = new Map(qrs);
 
   async function ajouter(formData: FormData) {
@@ -49,12 +61,20 @@ export default async function VoiturettesPage({
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-neutral-900">Voiturettes</h1>
-        <a
-          href={imprimer ? "/voiturettes" : "/voiturettes?imprimer=1"}
-          className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm text-neutral-700"
-        >
-          {imprimer ? "Masquer les QR codes" : "Afficher les QR codes"}
-        </a>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={imprimer ? "/voiturettes" : "/voiturettes?imprimer=1"}
+            className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm text-neutral-700"
+          >
+            {imprimer ? "Masquer les QR codes" : "Afficher les QR codes"}
+          </a>
+          <Link
+            href="/voiturettes/etiquettes"
+            className="rounded-lg bg-[var(--color-brand)] px-4 py-2.5 text-sm font-medium text-white"
+          >
+            Planche d&apos;étiquettes
+          </Link>
+        </div>
       </div>
 
       {erreur && (
@@ -66,7 +86,18 @@ export default async function VoiturettesPage({
         </p>
       )}
 
-      {imprimer && (
+      {imprimer && !base && (
+        <p
+          role="alert"
+          className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        >
+          Les QR codes ne peuvent pas être produits : l&apos;adresse publique du site (
+          <code>PUBLIC_BASE_URL</code>) n&apos;est pas configurée. Les imprimer sans elle donnerait
+          des étiquettes qui ne mènent nulle part.
+        </p>
+      )}
+
+      {imprimer && base && (
         <p className="mb-4 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-600">
           Chaque QR code est <strong>permanent</strong> : il reste valable après un entretien ou un
           changement de statut. Il ne contient qu&apos;un identifiant opaque — ni nom, ni numéro de

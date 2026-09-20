@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import { hashPassword } from "../src/server/auth/password.ts";
+import { hashPassword, verifyPassword } from "../src/server/auth/password.ts";
 import { uuidv7 } from "../src/lib/uuid.ts";
 
 /**
@@ -97,6 +97,62 @@ try {
   const [compte] = await sql<{ total: string }[]>`SELECT count(*) AS total FROM account`;
   const total = compte?.total ?? "0";
   if (Number(total) > 0) {
+    /**
+     * REINITIALISATION PAR L'OPERATEUR.
+     *
+     * L'application n'offre AUCUN ecran de changement de mot de passe : un
+     * administrateur qui perd le sien est enferme dehors, definitivement.
+     * Ce mode est la seule issue, et il exige un acces aux variables de
+     * l'hebergeur — c'est-a-dire le meme niveau de privilege que celui qui a
+     * installe le service.
+     *
+     * Il ne cree rien et ne touche a RIEN d'autre : ni le second facteur, ni
+     * les donnees, ni les autres comptes. Seul le mot de passe du compte
+     * nomme par AMORCE_EMAIL est remplace.
+     */
+    if (process.env.AMORCE_REINITIALISER === "1") {
+      const sqlControle = postgres(url, { max: 1, onnotice: () => {} });
+      const hacheNeuf = await hashPassword(motDePasse);
+      const maj = await sql`
+        UPDATE account SET password_hash = ${hacheNeuf}, updated_at = now()
+        WHERE email = ${email}
+        RETURNING id
+      `;
+      await sql.end();
+      if (maj.length === 0) {
+        console.error(`Aucun compte a l'adresse ${email} : rien n'a ete reinitialise.`);
+        process.exit(1);
+      }
+      console.log(`  * mot de passe reinitialise pour ${email}`);
+
+      /**
+       * CONTROLE IMMEDIAT. Ecrire un hache ne prouve pas qu'on pourra se
+       * connecter avec : il faut le relire et le verifier avec la fonction
+       * meme qu'utilise l'ouverture de session. Sans cela, on croit avoir
+       * repare et on decouvre le contraire a l'ecran de connexion.
+       */
+      const relu = await sqlControle`
+        SELECT password_hash AS hache, status, email FROM account WHERE email = ${email}
+      `;
+      const ligne = relu[0] as { hache: string; status: string; email: string } | undefined;
+      const rattachements = await sqlControle`
+        SELECT count(*) AS n FROM account_golf_course agc
+        JOIN account a ON a.id = agc.account_id WHERE a.email = ${email}
+      `;
+      console.log(
+        "  * controle : mot de passe verifie =",
+        ligne ? await verifyPassword(motDePasse, ligne.hache) : "compte introuvable",
+        "| statut =",
+        ligne?.status,
+        "| adresse stockee =",
+        JSON.stringify(ligne?.email),
+        "| terrains rattaches =",
+        (rattachements[0] as { n: string } | undefined)?.n,
+      );
+      await sqlControle.end();
+      process.exit(0);
+    }
+
     await sql.end();
     rienAFaire(`${total} compte(s) existent deja, rien a creer`);
   }
