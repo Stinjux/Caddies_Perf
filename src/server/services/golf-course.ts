@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import { withScope, withCourse } from "@/db/scope-tx";
@@ -70,6 +71,8 @@ export async function createCourse(actorAccountId: string, input: CourseInput): 
     await tx.insert(golfCourse).values({
       id,
       name: input.name.trim(),
+      // Jeton opaque et PERMANENT : il vit sur une affiche, au depart.
+      qrToken: randomBytes(32).toString("base64url"),
       address: input.address ?? null,
       timezone: input.timezone,
       logoPath: input.logoPath ?? null,

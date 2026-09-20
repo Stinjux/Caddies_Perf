@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { randomBytes } from "node:crypto";
 import { hashPassword, verifyPassword } from "../src/server/auth/password.ts";
 import { uuidv7 } from "../src/lib/uuid.ts";
 
@@ -165,9 +166,11 @@ try {
   // sans terrain, seraient tous deux inutilisables et il faudrait tout reprendre
   // a la main en SQL.
   await sql.begin(async (tx) => {
+    // Le terrain nait avec son QR : c'est lui que le client scanne au depart,
+    // et il est PERMANENT — la meme affiche vaut d'une saison a l'autre.
     await tx`
-      INSERT INTO golf_course (id, name, timezone)
-      VALUES (${idTerrain}, ${terrain}, ${fuseau})
+      INSERT INTO golf_course (id, name, timezone, qr_token)
+      VALUES (${idTerrain}, ${terrain}, ${fuseau}, ${randomBytes(32).toString("base64url")})
     `;
     await tx`
       INSERT INTO account (id, email, first_name, last_name, password_hash)

@@ -10,9 +10,10 @@ export const fr = {
   // Écran d'accueil
   choisirLangue: "Choisissez votre langue",
   moinsDe30Secondes: "Moins de 30 secondes",
-  bonCaddie: (prenom: string) => `Évaluez-vous bien ${prenom} ?`,
-  oui: "Oui",
-  nonPasMonCaddie: "Non, ce n'est pas mon caddie",
+  choisissezCaddie: "Quel caddie vous a accompagné ?",
+  choisirDansLaListe: "Choisissez dans la liste",
+  commencer: "Commencer l'évaluation",
+  caddieNonChoisi: "Merci de choisir votre caddie dans la liste.",
 
   // Critères
   titreCriteres: "Comment évaluez-vous votre caddie sur les aspects suivants ?",
@@ -72,18 +73,11 @@ export const fr = {
 
   // Situations particulières
   echecs: {
-    jeton_inconnu: "Ce code ne correspond à aucune voiturette. Vérifiez auprès du départ.",
-    aucune_affectation:
-      "Aucune partie n'est associée à cette voiturette pour le moment. Si vous venez de terminer votre parcours, signalez-le au départ.",
-    plusieurs_affectations:
-      "Plusieurs parties sont associées à cette voiturette. Merci de vous adresser au départ pour évaluer votre caddie.",
-    reservation_annulee: "Cette partie a été annulée. Aucune évaluation n'est possible.",
-    partie_trop_ancienne:
-      "Le délai pour évaluer cette partie est dépassé. Merci de votre compréhension.",
+    jeton_inconnu: "Ce code ne correspond à aucun parcours. Vérifiez auprès du départ.",
+    aucun_caddie:
+      "Aucun caddie n'est disponible à l'évaluation pour le moment. Signalez-le au départ.",
   },
-  dejaEvalue: "Cette partie a déjà reçu le nombre maximal d'évaluations. Merci !",
-  mauvaisCaddieMerci:
-    "Merci de nous l'avoir signalé. Adressez-vous au départ pour évaluer le bon caddie.",
+  dejaEvalue: "Vous avez déjà évalué ce caddie aujourd'hui. Merci !",
 } as const;
 
 export type Messages = typeof fr;

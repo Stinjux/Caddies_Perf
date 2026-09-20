@@ -59,7 +59,3 @@ export const ADMIN_MULTI = {
   password: "MotDePasseFictif4!",
 };
 
-export const STARTER = {
-  email: "starter.cedres@example.invalid",
-  password: "MotDePasseFictif2!",
-};

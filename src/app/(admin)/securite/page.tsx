@@ -36,7 +36,7 @@ export default async function SecuritePage({
   searchParams: Promise<{ erreur?: string }>;
 }) {
   const { ctx, scope } = await requireScope();
-  if (scope.role !== "admin") redirect("/depart");
+  if (scope.role !== "admin") redirect("/");
 
   const { erreur } = await searchParams;
   const store = await cookies();

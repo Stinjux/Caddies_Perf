@@ -113,3 +113,40 @@ describe("codes de secours", () => {
     for (const c of codes) expect(c).toMatch(/^[0-9A-F]{5}-[0-9A-F]{5}$/);
   });
 });
+
+describe("fonctionne au Maroc, y compris pendant le Ramadan", () => {
+  /**
+   * Le Maroc vit a UTC+1 toute l'annee SAUF pendant le Ramadan, ou il
+   * repasse a UTC+0. Ce saut a deja fait echouer un test de ce projet.
+   *
+   * Le TOTP y est insensible par construction : il compte les secondes
+   * ecoulees depuis l'epoque Unix, un instant absolu que nul fuseau ne
+   * decale. Ces tests le PROUVENT plutot que de le supposer — c'est la
+   * difference entre « cela devrait marcher » et « cela marche ».
+   */
+  const secret = genererSecret();
+
+  it("donne le meme code quel que soit le fuseau declare", () => {
+    const instant = Date.UTC(2026, 2, 15, 12, 0, 0);
+    // Deux objets Date construits differemment, un seul et meme instant.
+    expect(codeActuel(secret, new Date(instant))).toBe(
+      codeActuel(secret, new Date(new Date(instant).toISOString())),
+    );
+  });
+
+  it("reste valable au basculement UTC+1 → UTC+0 du Ramadan", () => {
+    // 2026 : le Maroc passe a UTC+0 pour le mois de Ramadan. Un code emis
+    // une seconde avant le basculement doit rester accepte juste apres.
+    const avant = new Date(Date.UTC(2026, 1, 17, 1, 59, 59));
+    const apres = new Date(avant.getTime() + 1000);
+    expect(codeValide(secret, codeActuel(secret, avant), apres)).toBe(true);
+  });
+
+  it("refuse un code d'il y a une heure, meme a l'heure du changement", () => {
+    // Le garde-fou doit rester serre : un decalage d'une heure n'est pas
+    // une derive d'horloge, c'est un code perime.
+    const t = new Date(Date.UTC(2026, 1, 17, 2, 0, 0));
+    const ilYaUneHeure = new Date(t.getTime() - 3_600_000);
+    expect(codeValide(secret, codeActuel(secret, ilYaUneHeure), t)).toBe(false);
+  });
+});

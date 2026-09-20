@@ -35,9 +35,6 @@ beforeEach(async () => {
 
 async function seedEvaluation(opts: { comment: string; purgeAt: Date }) {
   const caddieId = uuidv7();
-  const cartId = uuidv7();
-  const bookingId = uuidv7();
-  const assignmentId = uuidv7();
   const evaluationId = uuidv7();
 
   await db.insert(caddie).values({
@@ -47,19 +44,10 @@ async function seedEvaluation(opts: { comment: string; purgeAt: Date }) {
     firstName: "Prenom",
     lastName: "Fictif",
   });
-  await sql`INSERT INTO cart (id, golf_course_id, visible_number, qr_token)
-            VALUES (${cartId}, ${courseId}, ${cartId.slice(0, 4)}, ${"jeton-" + cartId})`;
-  await sql`INSERT INTO booking (id, golf_course_id, external_ref, tee_time, source)
-            VALUES (${bookingId}, ${courseId}, ${"RES-" + bookingId.slice(0, 4)}, now(), 'manual')`;
-  await sql`INSERT INTO assignment
-              (id, golf_course_id, booking_id, cart_id, caddie_id, local_date, started_at,
-               ended_at, status, created_by_account_id)
-            VALUES (${assignmentId}, ${courseId}, ${bookingId}, ${cartId}, ${caddieId},
-                    CURRENT_DATE, now(), now(), 'completed', ${adminId})`;
   await sql`INSERT INTO evaluation
-              (id, golf_course_id, assignment_id, language, comment, course_rating,
+              (id, golf_course_id, caddie_id, language, comment, course_rating,
                value_for_money, price_perception, comment_purge_at)
-            VALUES (${evaluationId}, ${courseId}, ${assignmentId}, 'fr', ${opts.comment},
+            VALUES (${evaluationId}, ${courseId}, ${caddieId}, 'fr', ${opts.comment},
                     4, 5, 'juste_et_raisonnable', ${opts.purgeAt})`;
   await sql`INSERT INTO evaluation_criterion_answer (evaluation_id, criterion, rating)
             VALUES (${evaluationId}, 'accueil', 5)`;

@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { db } from "./raw-db";
 import { account, accountGolfCourse, golfCourse } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
@@ -9,7 +10,12 @@ export const PASSWORD = "MotDePasseFictif123!";
 
 export async function makeCourse(name: string, timezone = "Africa/Casablanca"): Promise<string> {
   const id = uuidv7();
-  await db.insert(golfCourse).values({ id, name, timezone });
+  await db.insert(golfCourse).values({
+    id,
+    name,
+    timezone,
+    qrToken: randomBytes(32).toString("base64url"),
+  });
   return id;
 }
 

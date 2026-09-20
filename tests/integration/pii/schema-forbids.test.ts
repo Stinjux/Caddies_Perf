@@ -69,18 +69,16 @@ describe("V-5 — le schema est incapable de recevoir des donnees interdites", (
 });
 
 describe("V-3 — cloisonnement garanti par la base", () => {
-  it("impose une cle etrangere composite par terrain sur chaque lien d'affectation", async () => {
+  it("impose une cle etrangere composite par terrain sur le lien evaluation-caddie", async () => {
     const rows = await sql<{ conname: string }[]>`
       SELECT conname FROM pg_constraint
       WHERE contype = 'f' AND conname LIKE '%same_course%'
       ORDER BY conname
     `;
     expect(rows.map((r) => r.conname)).toEqual([
-      "fk_assignment_booking_same_course",
-      "fk_assignment_caddie_same_course",
-      "fk_assignment_cart_same_course",
-      "fk_evaluation_assignment_same_course",
-      "fk_wrong_caddie_assignment_same_course",
+      // Un seul lien subsiste : l'evaluation designe le caddie. Voiturettes,
+      // affectations et reservations ont disparu avec le QR par voiturette.
+      "fk_evaluation_caddie_same_course",
     ]);
   });
 });

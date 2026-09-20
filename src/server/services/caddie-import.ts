@@ -21,6 +21,7 @@ import { ValidationError } from "../errors";
  */
 
 export const COLONNES_SOURCE = [
+  "numéro de caddie",
   "nom",
   "prénom",
   "âge",
@@ -31,12 +32,17 @@ export const COLONNES_SOURCE = [
 ] as const;
 
 /** Index des colonnes LUES PUIS REJETEES. Jamais stockees (FR-028, FR-028b). */
-export const COLONNES_REJETEES = [3, 5, 6] as const;
+// Le numero de caddie occupe desormais la premiere case : tous les index
+// glissent d'un cran. Taille d'habits, force et adresse restent lues puis
+// jetees — la base n'a aucune colonne pour les recevoir (FR-028).
+export const COLONNES_REJETEES = [4, 6, 7] as const;
 
 export type LigneStatut = "valide" | "invalide" | "doublon";
 
 export interface LigneImport {
   numero: number;
+  /** Le numero porte par le caddie, lu dans la PREMIERE case du fichier. */
+  caddieRef: string;
   statut: LigneStatut;
   lastName: string;
   firstName: string;
@@ -112,32 +118,35 @@ export async function construireApercu(
     const cells = lu.rows[i]!;
     const erreurs: string[] = [];
 
-    if (cells.length < 2) {
-      erreurs.push("Ligne incomplète : le nom et le prénom sont obligatoires.");
+    if (cells.length < 3) {
+      erreurs.push("Ligne incomplète : le numéro, le nom et le prénom sont obligatoires.");
     }
 
-    const lastName = (cells[0] ?? "").trim();
-    const firstName = (cells[1] ?? "").trim();
+    const caddieRef = (cells[0] ?? "").trim();
+    const lastName = (cells[1] ?? "").trim();
+    const firstName = (cells[2] ?? "").trim();
+    if (!caddieRef) erreurs.push("Numéro de caddie manquant.");
     if (!lastName) erreurs.push("Nom manquant.");
     if (!firstName) erreurs.push("Prénom manquant.");
 
-    const age = ageVersAnneeNaissance((cells[2] ?? "").trim());
+    const age = ageVersAnneeNaissance((cells[3] ?? "").trim());
     if (age.erreur) erreurs.push(age.erreur);
 
-    const anc = ancienneteValide((cells[4] ?? "").trim());
+    const anc = ancienneteValide((cells[5] ?? "").trim());
     if (anc.erreur) erreurs.push(anc.erreur);
 
     // Doublon a l'interieur du fichier lui-meme.
-    const cle = `${lastName.toLowerCase()}|${firstName.toLowerCase()}`;
+    const cle = caddieRef.toLowerCase();
     const dejaVu = vusDansLeFichier.get(cle);
     if (dejaVu !== undefined) {
-      erreurs.push(`Doublon dans le fichier : déjà présent ligne ${dejaVu}.`);
-    } else if (lastName && firstName) {
+      erreurs.push(`Numéro déjà utilisé ligne ${dejaVu} du fichier.`);
+    } else if (caddieRef) {
       vusDansLeFichier.set(cle, i + 1);
     }
 
     lignes.push({
       numero: i + 1,
+      caddieRef,
       statut: erreurs.length > 0 ? "invalide" : "valide",
       lastName,
       firstName,
@@ -160,18 +169,19 @@ export async function construireApercu(
       .where(eq(caddie.golfCourseId, scope.golfCourseId)),
   );
 
-  const index = new Map(
-    existants.map((e) => [`${e.lastName.toLowerCase()}|${e.firstName.toLowerCase()}`, e]),
-  );
+  // Le NUMERO fait l'identite : c'est lui que le caddie porte et que le
+  // client choisit. Deux personnes homonymes sont deux caddies distincts ;
+  // deux fois le meme numero serait une collision, pas un homonyme.
+  const index = new Map(existants.map((e) => [e.internalRef.toLowerCase(), e]));
 
   for (const l of lignes) {
     if (l.statut !== "valide") continue;
-    const trouve = index.get(`${l.lastName.toLowerCase()}|${l.firstName.toLowerCase()}`);
+    const trouve = index.get(l.caddieRef.toLowerCase());
     if (trouve) {
       l.statut = "doublon";
       l.doublonDe = trouve.id;
       l.doublonRef = trouve.internalRef;
-      l.erreurs.push(`Un caddie du même nom existe déjà : ${trouve.internalRef}.`);
+      l.erreurs.push(`Le numéro ${trouve.internalRef} est déjà attribué.`);
     }
   }
 
@@ -225,23 +235,13 @@ export async function executerImport(
   const refs: string[] = [];
 
   await withScope(scope, async (tx) => {
-    // Prochain numero disponible, jamais reattribue (FR-041).
-    const tous = await tx
-      .select({ internalRef: caddie.internalRef })
-      .from(caddie)
-      .where(eq(caddie.golfCourseId, scope.golfCourseId));
-
-    let prochain =
-      tous.reduce((max, c) => {
-        const n = Number(c.internalRef.replace(/\D/g, ""));
-        return Number.isFinite(n) && n > max ? n : max;
-      }, 0) + 1;
-
+    // Le numero n'est plus engendre : il vient du fichier, parce que c'est
+    // celui que le caddie porte deja sur le terrain.
     const aujourdhui = new Date().toISOString().slice(0, 10);
 
     for (const l of aCreer) {
       const id = uuidv7();
-      const ref = `C-${String(prochain++).padStart(4, "0")}`;
+      const ref = l.caddieRef;
       refs.push(ref);
 
       await tx.insert(caddie).values({

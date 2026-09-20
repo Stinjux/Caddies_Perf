@@ -27,7 +27,10 @@ export default defineRailway(() => {
      * connecterait sinon en superutilisateur, qui contourne le RLS en
      * silence.
      */
-    preDeploy: "node scripts/migrate.mjs && node --experimental-strip-types scripts/amorcer.ts",
+    preDeploy:
+      "node scripts/migrate.mjs" +
+      " && node --experimental-strip-types scripts/amorcer.ts" +
+      " && node --experimental-strip-types scripts/demo.ts",
 
     /**
      * La sonde interroge la base. Une version qui ne peut pas la joindre
@@ -71,6 +74,10 @@ export default defineRailway(() => {
       AMORCE_PRENOM: preserve(),
       AMORCE_NOM: preserve(),
       AMORCE_TERRAIN: preserve(),
+      AMORCE_REINITIALISER: preserve(),
+      // Jeu de demonstration : une voiturette scannable et son affectation,
+      // toutes fictives. A retirer avant tout usage reel.
+      DEMO: preserve(),
     },
   });
 

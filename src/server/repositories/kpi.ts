@@ -1,12 +1,6 @@
 import { sql, eq, and, gte, lte, type SQL } from "drizzle-orm";
 import { withScope } from "@/db/scope-tx";
-import {
-  assignment,
-  evaluation,
-  evaluationCriterionAnswer,
-  caddie,
-  googleReviewClick,
-} from "@/db/schema";
+import { caddie, evaluation, evaluationCriterionAnswer, googleReviewClick } from "@/db/schema";
 import type { Scope } from "../scope";
 import { requireAdmin } from "../scope";
 
@@ -43,20 +37,28 @@ export interface KpiCaddie {
   firstName: string;
   lastName: string;
   status: "active" | "disabled";
-  joursTravailles: number;
-  affectationsTerminees: number;
+  /**
+   * JOURS TRAVAILLES ET TAUX DE REPONSE ONT DISPARU, et ne peuvent pas
+   * revenir : plus personne n'enregistre qu'un caddie a travaille. Sans
+   * denominateur, un taux serait une invention. Le nombre d'evaluations
+   * reste, et le seuil de pertinence dit s'il suffit.
+   */
   evaluations: number;
-  tauxReponse: number | null;
   moyenneParCritere: Record<string, number | null>;
   moyenneCompetences: number | null;
   experienceGenerale: number | null;
   scoreFinal: number | null;
 }
 
-function bornes(colonne: typeof assignment.localDate, p: Periode): SQL[] {
+/**
+ * La periode porte sur la date de SOUMISSION de l'evaluation. Il n'existe
+ * plus de date de partie : le client scanne le QR du terrain, pas une
+ * affectation datee.
+ */
+function bornes(p: Periode): SQL[] {
   const out: SQL[] = [];
-  if (p.du) out.push(gte(colonne, p.du.toISOString().slice(0, 10)));
-  if (p.au) out.push(lte(colonne, p.au.toISOString().slice(0, 10)));
+  if (p.du) out.push(gte(evaluation.submittedAt, p.du));
+  if (p.au) out.push(lte(evaluation.submittedAt, p.au));
   return out;
 }
 
@@ -78,21 +80,8 @@ export function scoreFinal(
 export async function kpiParCaddie(scope: Scope, p: Periode = {}): Promise<KpiCaddie[]> {
   requireAdmin(scope);
 
-  const filtreTerrain = eq(assignment.golfCourseId, scope.golfCourseId);
-  const periode = bornes(assignment.localDate, p);
-
-  // Jours travaillés et affectations terminées, par caddie.
-  const activite = await withScope(scope, (tx) =>
-    tx
-      .select({
-        caddieId: assignment.caddieId,
-        jours: sql<string>`count(distinct ${assignment.localDate})`,
-        terminees: sql<string>`count(*)`,
-      })
-      .from(assignment)
-      .where(and(filtreTerrain, eq(assignment.status, "completed"), ...periode))
-      .groupBy(assignment.caddieId),
-  );
+  const filtreTerrain = eq(evaluation.golfCourseId, scope.golfCourseId);
+  const periode = bornes(p);
 
   // Moyennes par critère, calculées sur les seules réponses renseignées :
   // AVG ignore les valeurs nulles, ce qui applique exactement la règle du
@@ -100,25 +89,23 @@ export async function kpiParCaddie(scope: Scope, p: Periode = {}): Promise<KpiCa
   const notes = await withScope(scope, (tx) =>
     tx
       .select({
-        caddieId: assignment.caddieId,
+        caddieId: evaluation.caddieId,
         criterion: evaluationCriterionAnswer.criterion,
         moyenne: sql<string>`avg(${evaluationCriterionAnswer.rating})`,
         n: sql<string>`count(${evaluationCriterionAnswer.rating})`,
       })
       .from(evaluationCriterionAnswer)
       .innerJoin(evaluation, eq(evaluation.id, evaluationCriterionAnswer.evaluationId))
-      .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
       .where(and(filtreTerrain, ...periode))
-      .groupBy(assignment.caddieId, evaluationCriterionAnswer.criterion),
+      .groupBy(evaluation.caddieId, evaluationCriterionAnswer.criterion),
   );
 
   const nbEvaluations = await withScope(scope, (tx) =>
     tx
-      .select({ caddieId: assignment.caddieId, n: sql<string>`count(*)` })
+      .select({ caddieId: evaluation.caddieId, n: sql<string>`count(*)` })
       .from(evaluation)
-      .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
       .where(and(filtreTerrain, ...periode))
-      .groupBy(assignment.caddieId),
+      .groupBy(evaluation.caddieId),
   );
 
   const caddies = await withScope(scope, (tx) =>
@@ -134,12 +121,9 @@ export async function kpiParCaddie(scope: Scope, p: Periode = {}): Promise<KpiCa
       .where(eq(caddie.golfCourseId, scope.golfCourseId)),
   );
 
-  const parActivite = new Map(activite.map((a) => [a.caddieId, a]));
   const parEval = new Map(nbEvaluations.map((e) => [e.caddieId, Number(e.n)]));
 
   return caddies.map((c) => {
-    const act = parActivite.get(c.id);
-    const terminees = Number(act?.terminees ?? 0);
     const evals = parEval.get(c.id) ?? 0;
 
     const moyennes: Record<string, number | null> = {};
@@ -160,10 +144,7 @@ export async function kpiParCaddie(scope: Scope, p: Periode = {}): Promise<KpiCa
       firstName: c.firstName,
       lastName: c.lastName,
       status: c.status,
-      joursTravailles: Number(act?.jours ?? 0),
-      affectationsTerminees: terminees,
       evaluations: evals,
-      tauxReponse: terminees > 0 ? evals / terminees : null,
       moyenneParCritere: moyennes,
       moyenneCompetences,
       experienceGenerale: experience,
@@ -229,12 +210,11 @@ export async function distributionNotes(
       })
       .from(evaluationCriterionAnswer)
       .innerJoin(evaluation, eq(evaluation.id, evaluationCriterionAnswer.evaluationId))
-      .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
-      .where(
+            .where(
         and(
-          eq(assignment.golfCourseId, scope.golfCourseId),
+          eq(evaluation.golfCourseId, scope.golfCourseId),
           sql`${evaluationCriterionAnswer.rating} is not null`,
-          ...bornes(assignment.localDate, p),
+          ...bornes(p),
         ),
       )
       .groupBy(evaluationCriterionAnswer.rating),
@@ -259,8 +239,8 @@ export interface KpiTerrain {
 export async function kpiTerrain(scope: Scope, p: Periode = {}): Promise<KpiTerrain> {
   requireAdmin(scope);
 
-  const periode = bornes(assignment.localDate, p);
-  const filtre = and(eq(assignment.golfCourseId, scope.golfCourseId), ...periode);
+  const periode = bornes(p);
+  const filtre = and(eq(evaluation.golfCourseId, scope.golfCourseId), ...periode);
 
   const agg = await withScope(scope, (tx) =>
     tx
@@ -270,16 +250,14 @@ export async function kpiTerrain(scope: Scope, p: Periode = {}): Promise<KpiTerr
         n: sql<string>`count(*)`,
       })
       .from(evaluation)
-      .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
-      .where(filtre),
+            .where(filtre),
   );
 
   const perception = await withScope(scope, (tx) =>
     tx
       .select({ valeur: evaluation.pricePerception, n: sql<string>`count(*)` })
       .from(evaluation)
-      .innerJoin(assignment, eq(assignment.id, evaluation.assignmentId))
-      .where(and(filtre, sql`${evaluation.pricePerception} is not null`))
+            .where(and(filtre, sql`${evaluation.pricePerception} is not null`))
       .groupBy(evaluation.pricePerception),
   );
 

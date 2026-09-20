@@ -32,11 +32,6 @@ const scope = () => testScope({ accountId: adminId, golfCourseId: courseId, role
 
 /** Construit un historique complet : affectations terminees et evaluations. */
 async function seedHistorique() {
-  const cartId = uuidv7();
-  const bookingIds = [uuidv7(), uuidv7()];
-
-  await sql`INSERT INTO cart (id, golf_course_id, visible_number, qr_token)
-            VALUES (${cartId}, ${courseId}, '12', ${"jeton-" + cartId})`;
 
   // Une valeur null represente une reponse « non applicable » (FR-043).
   const notes: (number | null)[][] = [
@@ -45,21 +40,12 @@ async function seedHistorique() {
   ];
 
   for (let i = 0; i < 2; i++) {
-    const bookingId = bookingIds[i]!;
-    const assignmentId = uuidv7();
     const evaluationId = uuidv7();
 
-    await sql`INSERT INTO booking (id, golf_course_id, external_ref, tee_time, source)
-              VALUES (${bookingId}, ${courseId}, ${"RES-" + i}, now(), 'manual')`;
-    await sql`INSERT INTO assignment
-                (id, golf_course_id, booking_id, cart_id, caddie_id, local_date, started_at,
-                 ended_at, status, created_by_account_id)
-              VALUES (${assignmentId}, ${courseId}, ${bookingId}, ${cartId}, ${caddieId},
-                      CURRENT_DATE, now(), now(), 'completed', ${adminId})`;
     await sql`INSERT INTO evaluation
-                (id, golf_course_id, assignment_id, language, comment, course_rating,
+                (id, golf_course_id, caddie_id, language, comment, course_rating,
                  value_for_money, price_perception, comment_purge_at)
-              VALUES (${evaluationId}, ${courseId}, ${assignmentId}, 'fr',
+              VALUES (${evaluationId}, ${courseId}, ${caddieId}, 'fr',
                       ${"Commentaire fictif " + i}, 4, 4, 'juste_et_raisonnable',
                       now() + interval '2 years')`;
 
@@ -84,21 +70,13 @@ async function moyennes() {
     SELECT a.criterion, AVG(a.rating)::text AS moyenne, COUNT(a.rating)::text AS n
     FROM evaluation_criterion_answer a
     JOIN evaluation e ON e.id = a.evaluation_id
-    JOIN assignment s ON s.id = e.assignment_id
-    WHERE s.caddie_id = ${caddieId} AND a.rating IS NOT NULL
+    WHERE e.caddie_id = ${caddieId} AND a.rating IS NOT NULL
     GROUP BY a.criterion
     ORDER BY a.criterion
   `;
   return rows;
 }
 
-async function joursTravailles(): Promise<number> {
-  const rows = await sql<{ n: string }[]>`
-    SELECT COUNT(DISTINCT local_date)::text AS n FROM assignment
-    WHERE caddie_id = ${caddieId} AND status = 'completed'
-  `;
-  return Number(rows[0]!.n);
-}
 
 beforeEach(async () => {
   await resetDb();
@@ -126,21 +104,12 @@ describe("V-8 — les statistiques survivent à l'effacement (SC-009)", () => {
     expect(await moyennes()).toEqual(avant);
   });
 
-  it("laisse le décompte des jours travaillés inchangé (FR-044)", async () => {
-    const avant = await joursTravailles();
-    expect(avant).toBe(1); // deux réservations le même jour ne comptent qu'une fois
-
-    await eraseBirthYear(scope(), caddieId);
-
-    expect(await joursTravailles()).toBe(avant);
-  });
-
-  it("conserve les affectations et les évaluations", async () => {
+  it("conserve les évaluations reçues", async () => {
     const avant =
-      await sql`SELECT count(*)::text AS n FROM assignment WHERE caddie_id = ${caddieId}`;
+      await sql`SELECT count(*)::text AS n FROM evaluation WHERE caddie_id = ${caddieId}`;
     await eraseBirthYear(scope(), caddieId);
     const apres =
-      await sql`SELECT count(*)::text AS n FROM assignment WHERE caddie_id = ${caddieId}`;
+      await sql`SELECT count(*)::text AS n FROM evaluation WHERE caddie_id = ${caddieId}`;
 
     expect(apres).toEqual(avant);
     expect(Number(apres[0]!.n)).toBe(2);

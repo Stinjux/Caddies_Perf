@@ -19,7 +19,7 @@ export default async function ImportPage({
   searchParams: Promise<{ erreur?: string; crees?: string; remplaces?: string; ignores?: string }>;
 }) {
   const { scope } = await requireScope();
-  if (scope.role !== "admin") redirect("/depart");
+  if (scope.role !== "admin") redirect("/");
 
   const { erreur, crees, remplaces, ignores } = await searchParams;
 

@@ -43,13 +43,14 @@ function fichier(contenu: string, encoding: "utf-8" | "windows-1252" = "utf-8") 
   return { bytes, size: bytes.length, name: "caddies.csv" };
 }
 
-const EN_TETE = "nom;prénom;âge;taille d'habits;ancienneté;force;adresse du domicile";
+const EN_TETE =
+  "numéro de caddie;nom;prénom;âge;taille d'habits;ancienneté;force;adresse du domicile";
 
 describe("détection du format", () => {
   it("détecte l'en-tête, le point-virgule et l'UTF-8", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;L;6;forte;Rue Inventée 1`),
+      fichier(`${EN_TETE}\n001;Fictif;Hassan;38;L;6;forte;Rue Inventée 1`),
     );
     expect(a.hasHeader).toBe(true);
     expect(a.separator).toBe(";");
@@ -68,7 +69,7 @@ describe("détection du format", () => {
   });
 
   it("accepte un fichier SANS ligne d'en-tête", async () => {
-    const a = await construireApercu(scope(), fichier("Fictif;Hassan;38;L;6;forte;Rue 1"));
+    const a = await construireApercu(scope(), fichier("101;Fictif;Hassan;38;L;6;forte;Rue 1"));
     expect(a.hasHeader).toBe(false);
     expect(a.resume.total).toBe(1);
     expect(a.lignes[0]?.lastName).toBe("Fictif");
@@ -77,7 +78,7 @@ describe("détection du format", () => {
   it("détecte l'encodage Windows-1252 d'un export tableur", async () => {
     const a = await construireApercu(
       scope(),
-      fichier("Fictif;André;40;L;5;forte;Rue 1", "windows-1252"),
+      fichier("102;Fictif;André;40;L;5;forte;Rue 1", "windows-1252"),
     );
     expect(a.encoding).toBe("windows-1252");
     expect(a.lignes[0]?.firstName).toBe("André");
@@ -88,7 +89,7 @@ describe("les trois colonnes interdites sont rejetées", () => {
   it("annonce explicitement ce qui ne sera pas conservé", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;XL;6;très forte;Rue Inventée 1`),
+      fichier(`${EN_TETE}\n002;Fictif;Hassan;38;XL;6;très forte;Rue Inventée 1`),
     );
     expect(a.colonnesRejetees).toEqual(["taille d'habits", "force", "adresse du domicile"]);
   });
@@ -96,7 +97,7 @@ describe("les trois colonnes interdites sont rejetées", () => {
   it("n'écrit NI taille d'habits, NI force, NI adresse en base", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;XL;6;très forte;Rue Inventée 1`),
+      fichier(`${EN_TETE}\n003;Fictif;Hassan;38;XL;6;très forte;Rue Inventée 1`),
     );
     await executerImport(scope(), a, new Map());
 
@@ -111,7 +112,7 @@ describe("les trois colonnes interdites sont rejetées", () => {
   it("convertit l'âge en année de naissance, rangée à part", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;XL;6;forte;Rue 1`),
+      fichier(`${EN_TETE}\n004;Fictif;Hassan;38;XL;6;forte;Rue 1`),
     );
     await executerImport(scope(), a, new Map());
 
@@ -128,7 +129,7 @@ describe("validation des lignes", () => {
   it("signale un nom ou un prénom manquant", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\n;Hassan;38;L;6;forte;Rue 1\nFictif;;25;M;2;moyenne;Rue 2`),
+      fichier(`${EN_TETE}\n005;;Hassan;38;L;6;forte;Rue 1\n006;Fictif;;25;M;2;moyenne;Rue 2`),
     );
     expect(a.resume.invalides).toBe(2);
     expect(a.lignes[0]?.erreurs.join()).toMatch(/Nom manquant/);
@@ -138,7 +139,7 @@ describe("validation des lignes", () => {
   it("signale un âge aberrant", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;150;L;6;forte;Rue 1`),
+      fichier(`${EN_TETE}\n007;Fictif;Hassan;150;L;6;forte;Rue 1`),
     );
     expect(a.lignes[0]?.statut).toBe("invalide");
     expect(a.lignes[0]?.erreurs.join()).toMatch(/Âge invalide/);
@@ -147,17 +148,17 @@ describe("validation des lignes", () => {
   it("signale une ancienneté invalide", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;L;abc;forte;Rue 1`),
+      fichier(`${EN_TETE}\n008;Fictif;Hassan;38;L;abc;forte;Rue 1`),
     );
     expect(a.lignes[0]?.erreurs.join()).toMatch(/Ancienneté invalide/);
   });
 
-  it("détecte un doublon à l'intérieur du fichier", async () => {
+  it("refuse deux fois le même numéro dans le fichier", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;L;6;forte;Rue 1\nFictif;Hassan;38;L;6;forte;Rue 1`),
+      fichier(`${EN_TETE}\n009;Fictif;Hassan;38;L;6;forte;Rue 1\n009;Autre;Omar;30;M;2;moyenne;Rue 2`),
     );
-    expect(a.lignes[1]?.erreurs.join()).toMatch(/Doublon dans le fichier/);
+    expect(a.lignes[1]?.erreurs.join()).toMatch(/Numéro déjà utilisé/);
   });
 
   it("refuse un fichier vide", async () => {
@@ -183,7 +184,7 @@ describe("doublons vis-à-vis des caddies déjà enregistrés", () => {
   beforeEach(async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;L;6;forte;Rue 1`),
+      fichier(`${EN_TETE}\n011;Fictif;Hassan;38;L;6;forte;Rue 1`),
     );
     await executerImport(scope(), a, new Map());
   });
@@ -191,16 +192,16 @@ describe("doublons vis-à-vis des caddies déjà enregistrés", () => {
   it("signale le doublon et nomme le caddie existant", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;L;7;forte;Rue 1`),
+      fichier(`${EN_TETE}\n011;Fictif;Hassan;38;L;7;forte;Rue 1`),
     );
     expect(a.resume.doublons).toBe(1);
-    expect(a.lignes[0]?.doublonRef).toBe("C-0001");
+    expect(a.lignes[0]?.doublonRef).toBe("011");
   });
 
   it("IGNORE le doublon par défaut : aucune décision, aucune écriture", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;L;7;forte;Rue 1`),
+      fichier(`${EN_TETE}\n011;Fictif;Hassan;38;L;7;forte;Rue 1`),
     );
     await expect(executerImport(scope(), a, new Map())).rejects.toThrow(/Aucune ligne/);
 
@@ -211,7 +212,7 @@ describe("doublons vis-à-vis des caddies déjà enregistrés", () => {
   it("remplace quand l'administrateur le décide ligne par ligne", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;L;7;forte;Rue 1`),
+      fichier(`${EN_TETE}\n011;Fictif;Hassan;38;L;7;forte;Rue 1`),
     );
     const rapport = await executerImport(scope(), a, new Map([[1, "remplacer"]]));
 
@@ -225,19 +226,19 @@ describe("doublons vis-à-vis des caddies déjà enregistrés", () => {
 });
 
 describe("exécution de l'import", () => {
-  it("attribue des identifiants internes successifs et jamais réattribués", async () => {
+  it("reprend les numéros du fichier, sans jamais en inventer", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;L;6;forte;R1\nFictif;Omar;25;M;2;moyenne;R2`),
+      fichier(`${EN_TETE}\n015;Fictif;Hassan;38;L;6;forte;R1\n016;Fictif;Omar;25;M;2;moyenne;R2`),
     );
     const rapport = await executerImport(scope(), a, new Map());
 
     expect(rapport.crees).toBe(2);
-    expect(rapport.refs).toEqual(["C-0001", "C-0002"]);
+    expect(rapport.refs).toEqual(["015", "016"]);
   });
 
   it("n'écrit RIEN si la transaction échoue — aucune importation partielle", async () => {
-    const a = await construireApercu(scope(), fichier(`${EN_TETE}\nFictif;Hassan;38;L;6;forte;R1`));
+    const a = await construireApercu(scope(), fichier(`${EN_TETE}\n017;Fictif;Hassan;38;L;6;forte;R1`));
     // On force un conflit en détournant l'identifiant vers une valeur invalide.
     a.lignes[0]!.birthYear = 1800;
 
@@ -252,7 +253,7 @@ describe("exécution de l'import", () => {
   it("journalise chaque création", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\nFictif;Hassan;38;L;6;forte;R1\nFictif;Omar;25;M;2;moyenne;R2`),
+      fichier(`${EN_TETE}\n018;Fictif;Hassan;38;L;6;forte;R1\n019;Fictif;Omar;25;M;2;moyenne;R2`),
     );
     await executerImport(scope(), a, new Map());
 
@@ -261,7 +262,7 @@ describe("exécution de l'import", () => {
   });
 
   it("produit une liste d'erreurs téléchargeable", async () => {
-    const a = await construireApercu(scope(), fichier(`${EN_TETE}\n;Hassan;38;L;6;forte;R1`));
+    const a = await construireApercu(scope(), fichier(`${EN_TETE}\n020;;Hassan;38;L;6;forte;R1`));
     const csv = rapportErreursCsv(a);
     expect(csv.split("\n")[0]).toBe("ligne;statut;nom;prenom;erreurs");
     expect(csv).toMatch(/Nom manquant/);
@@ -271,7 +272,7 @@ describe("exécution de l'import", () => {
 describe("permissions", () => {
   it("interdit l'import à un Starter (FR-020)", async () => {
     await expect(
-      construireApercu(starter(), fichier(`${EN_TETE}\nFictif;Hassan;38;L;6;forte;R1`)),
+      construireApercu(starter(), fichier(`${EN_TETE}\n021;Fictif;Hassan;38;L;6;forte;R1`)),
     ).rejects.toThrow(/droits/);
   });
 });

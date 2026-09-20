@@ -22,10 +22,10 @@ const COLONNES = [
   "prenom",
   "nom",
   "statut",
-  "jours_travailles",
-  "affectations_terminees",
+  // Ni jours travailles ni taux de reponse : plus personne n'enregistre
+  // qu'un caddie a travaille. Une colonne vide vaudrait mieux qu'un chiffre
+  // invente, mais une colonne absente vaut mieux qu'une colonne vide.
   "evaluations",
-  "taux_reponse",
   "moyenne_competences",
   "experience_generale",
   "score_final",
@@ -59,10 +59,7 @@ export async function exporterKpiCsv(scope: Scope, p: Periode = {}): Promise<str
         echapper(k.firstName),
         echapper(k.lastName),
         k.status === "active" ? "actif" : "désactivé",
-        String(k.joursTravailles),
-        String(k.affectationsTerminees),
         String(k.evaluations),
-        nombre(k.tauxReponse, 3),
         nombre(k.moyenneCompetences),
         nombre(k.experienceGenerale),
         nombre(k.scoreFinal),

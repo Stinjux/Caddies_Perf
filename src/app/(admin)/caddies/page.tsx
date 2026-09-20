@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CaddiesPage() {
   const { scope } = await requireScope();
-  if (scope.role !== "admin") redirect("/depart");
+  if (scope.role !== "admin") redirect("/");
 
   /**
    * DÉPART D'UN CADDIE. Le numéro de version voyage avec le formulaire : deux

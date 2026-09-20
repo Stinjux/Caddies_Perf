@@ -1,23 +1,13 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../helpers/raw-db";
-import {
-  evaluation,
-  evaluationCriterionAnswer,
-  wrongCaddieReport,
-  googleReviewClick,
-  cart,
-} from "@/db/schema";
-import { createCart } from "@/server/services/cart";
+import { evaluation, evaluationCriterionAnswer, googleReviewClick } from "@/db/schema";
 import { createCaddie } from "@/server/services/caddie";
-import { creerAffectation } from "@/server/services/assignment";
 import {
   soumettreEvaluation,
-  signalerMauvaisCaddie,
   enregistrerClicGoogle,
   compterEvaluations,
   calculerScore,
-  MAX_REPONSES_PAR_AFFECTATION,
   CRITERES,
 } from "@/server/services/evaluation";
 import { resetDb } from "../helpers/reset-db";
@@ -28,25 +18,17 @@ import { makeCourse, makeAccount } from "../helpers/fixtures";
 
 let cedres: string;
 let compteId: string;
-let affectationId: string;
+let caddieId: string;
 
 beforeEach(async () => {
   await resetDb();
   cedres = await makeCourse("Golf des Cèdres");
   compteId = await makeAccount({ links: [{ courseId: cedres, role: "admin" }] });
-  const v = await createCart(scope(), "12");
-  const c = await createCaddie(scope(), {
-    internalRef: "C-0001",
+  caddieId = await createCaddie(scope(), {
+    internalRef: "12",
     firstName: "Hassan",
     lastName: "Fictif",
   });
-  affectationId = await creerAffectation(scope(), {
-    bookingRef: "RES-001",
-    teeTime: new Date(),
-    cartId: v,
-    caddieId: c,
-  });
-  void cart;
 });
 
 function scope() {
@@ -66,7 +48,7 @@ describe("soumission d'une évaluation", () => {
   it("enregistre les six critères", async () => {
     const id = await soumettreEvaluation({
       golfCourseId: cedres,
-      assignmentId: affectationId,
+      caddieId: caddieId,
       langue: "fr",
       notes: notesCompletes,
     });
@@ -81,7 +63,7 @@ describe("soumission d'une évaluation", () => {
   it("conserve les trois mesures SÉPARÉMENT (FR-043)", async () => {
     const id = await soumettreEvaluation({
       golfCourseId: cedres,
-      assignmentId: affectationId,
+      caddieId: caddieId,
       langue: "fr",
       notes: notesCompletes,
       noteParcours: 4,
@@ -98,7 +80,7 @@ describe("soumission d'une évaluation", () => {
   it("mémorise le tarif affiché au moment de la réponse (FR-048)", async () => {
     const id = await soumettreEvaluation({
       golfCourseId: cedres,
-      assignmentId: affectationId,
+      caddieId: caddieId,
       langue: "fr",
       notes: notesCompletes,
     });
@@ -109,7 +91,7 @@ describe("soumission d'une évaluation", () => {
   it("n'enregistre AUCUNE donnée identifiante (FR-032)", async () => {
     const id = await soumettreEvaluation({
       golfCourseId: cedres,
-      assignmentId: affectationId,
+      caddieId: caddieId,
       langue: "fr",
       notes: notesCompletes,
       commentaire: "Commentaire fictif",
@@ -117,7 +99,7 @@ describe("soumission d'une évaluation", () => {
 
     const rows = await db.select().from(evaluation).where(eq(evaluation.id, id));
     expect(Object.keys(rows[0]!).sort()).toEqual([
-      "assignmentId",
+      "caddieId",
       "comment",
       "commentPurgeAt",
       "courseRating",
@@ -134,7 +116,7 @@ describe("soumission d'une évaluation", () => {
   it("fixe l'échéance de purge du commentaire à deux ans (FR-034c)", async () => {
     const id = await soumettreEvaluation({
       golfCourseId: cedres,
-      assignmentId: affectationId,
+      caddieId: caddieId,
       langue: "fr",
       notes: notesCompletes,
       commentaire: "Commentaire fictif",
@@ -147,7 +129,7 @@ describe("soumission d'une évaluation", () => {
   it("accepte une évaluation sans commentaire — il est facultatif", async () => {
     const id = await soumettreEvaluation({
       golfCourseId: cedres,
-      assignmentId: affectationId,
+      caddieId: caddieId,
       langue: "fr",
       notes: notesCompletes,
     });
@@ -158,7 +140,7 @@ describe("soumission d'une évaluation", () => {
   it("accepte « non applicable » sur un critère", async () => {
     const id = await soumettreEvaluation({
       golfCourseId: cedres,
-      assignmentId: affectationId,
+      caddieId: caddieId,
       langue: "fr",
       notes: { ...notesCompletes, lecture_verts: null },
     });
@@ -173,7 +155,7 @@ describe("soumission d'une évaluation", () => {
     await expect(
       soumettreEvaluation({
         golfCourseId: cedres,
-        assignmentId: affectationId,
+        caddieId: caddieId,
         langue: "fr",
         notes: { accueil: 9 },
       }),
@@ -184,7 +166,7 @@ describe("soumission d'une évaluation", () => {
     await expect(
       soumettreEvaluation({
         golfCourseId: cedres,
-        assignmentId: "00000000-0000-7000-8000-000000000000",
+        caddieId: "00000000-0000-7000-8000-000000000000",
         langue: "fr",
         notes: notesCompletes,
       }),
@@ -192,64 +174,11 @@ describe("soumission d'une évaluation", () => {
   });
 });
 
-describe("FR-051 — quatre réponses au maximum", () => {
-  it("accepte quatre évaluations puis refuse la cinquième", async () => {
-    for (let i = 0; i < MAX_REPONSES_PAR_AFFECTATION; i++) {
-      await soumettreEvaluation({
-        golfCourseId: cedres,
-        assignmentId: affectationId,
-        langue: "fr",
-        notes: notesCompletes,
-      });
-    }
-    expect(await compterEvaluations(cedres, affectationId)).toBe(4);
-
-    await expect(
-      soumettreEvaluation({
-        golfCourseId: cedres,
-        assignmentId: affectationId,
-        langue: "fr",
-        notes: notesCompletes,
-      }),
-    ).rejects.toThrow(/nombre maximal/);
-
-    expect(await compterEvaluations(cedres, affectationId)).toBe(4);
-  });
-});
-
-describe("FR-047 — « ce n'est pas mon caddie »", () => {
-  it("enregistre le signal, anonymement", async () => {
-    await signalerMauvaisCaddie(cedres, affectationId);
-
-    const rows = await db.select().from(wrongCaddieReport);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.assignmentId).toBe(affectationId);
-    expect(Object.keys(rows[0]!).sort()).toEqual([
-      "assignmentId",
-      "golfCourseId",
-      "id",
-      "reportedAt",
-    ]);
-  });
-
-  it("n'empêche pas une évaluation ultérieure du bon caddie", async () => {
-    await signalerMauvaisCaddie(cedres, affectationId);
-    await expect(
-      soumettreEvaluation({
-        golfCourseId: cedres,
-        assignmentId: affectationId,
-        langue: "fr",
-        notes: notesCompletes,
-      }),
-    ).resolves.toMatch(/^[0-9a-f-]{36}$/);
-  });
-});
-
 describe("clics vers Google Reviews", () => {
   it("mesure le clic, sans prétendre qu'un avis a été publié", async () => {
     const id = await soumettreEvaluation({
       golfCourseId: cedres,
-      assignmentId: affectationId,
+      caddieId: caddieId,
       langue: "fr",
       notes: notesCompletes,
     });

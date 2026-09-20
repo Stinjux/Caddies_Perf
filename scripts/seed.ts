@@ -54,8 +54,9 @@ for (const c of courses) {
   const id = uuidv7();
   ids.set(c.key, id);
   await sql`
-    INSERT INTO golf_course (id, name, address, timezone, brand_color_primary, brand_color_secondary, google_review_url)
-    VALUES (${id}, ${c.name}, ${c.address}, ${c.timezone}, ${c.brandColorPrimary}, ${c.brandColorSecondary}, ${c.googleReviewUrl})
+    INSERT INTO golf_course (id, name, address, timezone, qr_token, brand_color_primary, brand_color_secondary, google_review_url)
+    VALUES (${id}, ${c.name}, ${c.address}, ${c.timezone}, ${randomBytes(32).toString("base64url")},
+            ${c.brandColorPrimary}, ${c.brandColorSecondary}, ${c.googleReviewUrl})
     ON CONFLICT DO NOTHING
   `;
 }

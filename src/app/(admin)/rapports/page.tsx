@@ -34,7 +34,7 @@ export default async function RapportsPage({
   searchParams: Promise<{ du?: string; au?: string; min?: string; statut?: string }>;
 }) {
   const { scope } = await requireScope();
-  if (scope.role !== "admin") redirect("/depart");
+  if (scope.role !== "admin") redirect("/");
 
   const sp = await searchParams;
   const periode = {
@@ -152,9 +152,7 @@ export default async function RapportsPage({
             <thead className="border-b border-neutral-200 text-left text-neutral-600">
               <tr>
                 <th className="px-4 py-3">Caddie</th>
-                <th className="px-4 py-3">Jours</th>
                 <th className="px-4 py-3">Évals</th>
-                <th className="px-4 py-3">Taux</th>
                 <th className="px-4 py-3">Compétences</th>
                 <th className="px-4 py-3">Expérience</th>
                 <th className="px-4 py-3">Score</th>
@@ -177,11 +175,7 @@ export default async function RapportsPage({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">{k.joursTravailles}</td>
                     <td className="px-4 py-3">{k.evaluations}</td>
-                    <td className="px-4 py-3">
-                      {k.tauxReponse !== null ? `${Math.round(k.tauxReponse * 100)} %` : "—"}
-                    </td>
                     <td className="px-4 py-3">{k.moyenneCompetences?.toFixed(2) ?? "—"}</td>
                     <td className="px-4 py-3">{k.experienceGenerale?.toFixed(2) ?? "—"}</td>
                     <td className="px-4 py-3 font-medium">{k.scoreFinal?.toFixed(2) ?? "—"}</td>

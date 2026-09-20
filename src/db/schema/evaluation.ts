@@ -13,7 +13,7 @@ import {
 import { sql } from "drizzle-orm";
 import { evaluationLanguage, evaluationCriterion, pricePerception } from "./enums";
 import { golfCourse } from "./golf-course";
-import { assignment } from "./assignment";
+import { caddie } from "./caddie";
 
 /**
  * Evaluation ANONYME (FR-032).
@@ -31,7 +31,8 @@ export const evaluation = pgTable(
     golfCourseId: uuid("golf_course_id")
       .notNull()
       .references(() => golfCourse.id),
-    assignmentId: uuid("assignment_id").notNull(),
+    /** Le client DESIGNE son caddie dans une liste : plus d'affectation. */
+    caddieId: uuid("caddie_id").notNull(),
     language: evaluationLanguage("language").notNull(),
     comment: text("comment"),
     courseRating: smallint("course_rating"),
@@ -49,14 +50,15 @@ export const evaluation = pgTable(
   },
   (t) => [
     foreignKey({
-      columns: [t.golfCourseId, t.assignmentId],
-      foreignColumns: [assignment.golfCourseId, assignment.id],
-      name: "fk_evaluation_assignment_same_course",
+      columns: [t.golfCourseId, t.caddieId],
+      foreignColumns: [caddie.golfCourseId, caddie.id],
+      name: "fk_evaluation_caddie_same_course",
     }),
     check("ck_course_rating", sql`${t.courseRating} IS NULL OR ${t.courseRating} BETWEEN 1 AND 5`),
     check("ck_value_money", sql`${t.valueForMoney} IS NULL OR ${t.valueForMoney} BETWEEN 1 AND 5`),
     index("idx_evaluation_course_date").on(t.golfCourseId, t.submittedAt),
     index("idx_evaluation_purge").on(t.commentPurgeAt),
+    index("idx_evaluation_caddie").on(t.caddieId, t.submittedAt),
   ],
 );
 
@@ -91,34 +93,4 @@ export const googleReviewClick = pgTable(
     clickedAt: timestamp("clicked_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("idx_grc_course_date").on(t.golfCourseId, t.clickedAt)],
-);
-
-/**
- * Signal « Non, ce n'est pas mon caddie » (FR-047).
- *
- * Emis AVANT toute evaluation : il n'y a donc rien a rattacher a une
- * evaluation. C'est le symptome d'une erreur d'affectation, et il doit
- * pouvoir etre compte et corrige.
- *
- * ANONYME comme une evaluation : aucune colonne n'identifie le joueur.
- */
-export const wrongCaddieReport = pgTable(
-  "wrong_caddie_report",
-  {
-    id: uuid("id").primaryKey(),
-    golfCourseId: uuid("golf_course_id")
-      .notNull()
-      .references(() => golfCourse.id),
-    /** L'affectation que le serveur avait resolue, et que le client dement. */
-    assignmentId: uuid("assignment_id"),
-    reportedAt: timestamp("reported_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    foreignKey({
-      columns: [t.golfCourseId, t.assignmentId],
-      foreignColumns: [assignment.golfCourseId, assignment.id],
-      name: "fk_wrong_caddie_assignment_same_course",
-    }),
-    index("idx_wrong_caddie_course_date").on(t.golfCourseId, t.reportedAt),
-  ],
 );

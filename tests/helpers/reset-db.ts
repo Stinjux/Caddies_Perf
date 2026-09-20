@@ -11,13 +11,9 @@ import postgres from "postgres";
  */
 
 const TABLES = [
-  "wrong_caddie_report",
   "google_review_click",
   "evaluation_criterion_answer",
   "evaluation",
-  "assignment",
-  "booking",
-  "cart",
   "caddie_personal_data",
   "caddie",
   "session",

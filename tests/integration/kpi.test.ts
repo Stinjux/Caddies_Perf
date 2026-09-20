@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import postgres from "postgres";
-import { createCart } from "@/server/services/cart";
 import { createCaddie } from "@/server/services/caddie";
-import { creerAffectation, terminerAffectation } from "@/server/services/assignment";
 import { soumettreEvaluation, type Critere } from "@/server/services/evaluation";
 import {
   kpiParCaddie,
@@ -54,24 +52,14 @@ async function parcours(
     lastName: "Fictif",
   });
 
-  for (let i = 0; i < parties.length; i++) {
-    const cartId = await createCart(s, `${ref}-${i}`);
-    const affId = await creerAffectation(s, {
-      bookingRef: `${ref}-RES-${i}`,
-      teeTime: new Date(),
-      cartId,
+  for (const partie of parties) {
+    if (partie.evaluer === false) continue;
+    await soumettreEvaluation({
+      golfCourseId: s.golfCourseId,
       caddieId,
+      langue: "fr",
+      notes: partie.notes,
     });
-    await terminerAffectation(s, affId);
-
-    if (parties[i]!.evaluer !== false) {
-      await soumettreEvaluation({
-        golfCourseId: s.golfCourseId,
-        assignmentId: affId,
-        langue: "fr",
-        notes: parties[i]!.notes,
-      });
-    }
   }
   return caddieId;
 }
@@ -107,24 +95,20 @@ describe("formule du score — 70 % compétences, 30 % expérience", () => {
 });
 
 describe("KPI par caddie", () => {
-  it("compte jours travaillés, affectations et évaluations", async () => {
+  it("compte les évaluations reçues", async () => {
     await parcours(cedres, "C-A", [{ notes: notes5 }, { notes: notes5 }]);
 
     const kpis = await kpiParCaddie(admin());
     const k = kpis.find((x) => x.internalRef === "C-A")!;
 
-    expect(k.joursTravailles).toBe(1); // deux parties le même jour
-    expect(k.affectationsTerminees).toBe(2);
     expect(k.evaluations).toBe(2);
-    expect(k.tauxReponse).toBe(1);
   });
 
-  it("calcule un taux de réponse partiel", async () => {
+  it("ne compte que les parties réellement évaluées", async () => {
     await parcours(cedres, "C-B", [{ notes: notes5 }, { notes: notes5, evaluer: false }]);
 
     const k = (await kpiParCaddie(admin())).find((x) => x.internalRef === "C-B")!;
     expect(k.evaluations).toBe(1);
-    expect(k.tauxReponse).toBe(0.5);
   });
 
   it("EXCLUT les « non applicable » de la moyenne, sans les compter zéro", async () => {
@@ -141,7 +125,6 @@ describe("KPI par caddie", () => {
     const k = (await kpiParCaddie(admin())).find((x) => x.internalRef === "C-D")!;
     expect(k.scoreFinal).toBeNull();
     expect(k.evaluations).toBe(0);
-    expect(k.tauxReponse).toBe(0);
   });
 
   it("conserve les KPI d'un caddie désactivé (FR-042)", async () => {
@@ -215,17 +198,9 @@ describe("KPI du terrain — mesures séparées (FR-043)", () => {
       firstName: "P",
       lastName: "F",
     });
-    const cartId = await createCart(admin(), "L-1");
-    const affId = await creerAffectation(admin(), {
-      bookingRef: "L-RES",
-      teeTime: new Date(),
-      cartId,
-      caddieId,
-    });
-    await terminerAffectation(admin(), affId);
     await soumettreEvaluation({
       golfCourseId: admin().golfCourseId,
-      assignmentId: affId,
+      caddieId,
       langue: "fr",
       notes: notes5,
       noteParcours: 2,

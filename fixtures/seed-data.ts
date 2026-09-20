@@ -46,15 +46,7 @@ export const accounts = [
     links: [{ course: "cedres", role: "admin" }],
     totpSecret: SECRET_TOTP_FICTIF,
   },
-  {
-    key: "starter_cedres",
-    email: "starter.cedres@example.invalid",
-    firstName: "Karim",
-    lastName: "Exemple",
-    password: "MotDePasseFictif2!",
-    links: [{ course: "cedres", role: "starter" }],
-  },
-  {
+    {
     key: "admin_atlas",
     email: "admin.atlas@example.invalid",
     firstName: "Sofia",
@@ -72,7 +64,7 @@ export const accounts = [
     totpSecret: SECRET_TOTP_FICTIF,
     links: [
       { course: "cedres", role: "admin" },
-      { course: "atlas", role: "starter" },
+      { course: "atlas", role: "admin" },
     ],
   },
 ] as const;

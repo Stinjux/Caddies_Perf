@@ -1,14 +1,8 @@
 import { Fragment } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { resoudreJeton } from "@/server/services/qr-resolution";
-import {
-  soumettreEvaluation,
-  signalerMauvaisCaddie,
-  enregistrerClicGoogle,
-  compterEvaluations,
-  MAX_REPONSES_PAR_AFFECTATION,
-  CRITERES,
-} from "@/server/services/evaluation";
+import { resoudreJeton, type CaddieChoisissable } from "@/server/services/qr-resolution";
+import { soumettreEvaluation, enregistrerClicGoogle, CRITERES } from "@/server/services/evaluation";
 import {
   lireFormulaire,
   encoder,
@@ -27,33 +21,42 @@ import { AppError } from "@/server/errors";
 export const dynamic = "force-dynamic";
 
 /**
- * PARCOURS CLIENT (spéc. 4).
+ * PARCOURS CLIENT — UN QR POUR TOUT LE TERRAIN.
  *
- * Aucun compte, aucune application, moins de 30 secondes.
+ * Aucun compte, aucune application, moins de 30 secondes. Le client scanne
+ * l'affiche du départ, choisit son caddie dans une liste, puis répond.
  *
  * SANS JAVASCRIPT CLIENT. Au 18e trou, sur un réseau faible, une page qui
  * s'affiche vaut mieux qu'une page qui attend un paquet. Les étoiles se
- * remplissent en CSS : radios en ordre DOM inversé et `:checked ~ label`.
- * Le miroir arabe est automatique.
+ * remplissent en CSS, et le questionnaire tient sur une page défilante.
  *
- * UNE SEULE PAGE DÉFILANTE. Les neuf questions se suivent, un seul envoi.
- * Rien n'étant masqué, l'attribut `required` du navigateur redevient
- * utilisable : il désigne la question oubliée sans aller-retour réseau.
- * Attention — une radio masquée que le navigateur ne peut pas focaliser
- * bloquerait l'envoi SANS AUCUN MESSAGE ; c'est pourquoi les radios des
- * étoiles sont ancrées sous leur rangée (voir `.etoiles input` dans le CSS).
+ * UNE SEULE BARRIÈRE CONTRE LES DOUBLONS, et elle est faible : un témoin
+ * déposé dans le navigateur empêche de noter deux fois le même caddie le même
+ * jour. Une navigation privée la contourne. C'est un choix assumé — sans
+ * affectation, plus rien ne relie une réponse à une partie réelle. Le seuil
+ * de cinq évaluations reste le vrai garde-fou statistique.
  *
- * Le serveur reste l'autorité : il revérifie tout, et en cas d'oubli il
- * renvoie la page positionnée sur la question manquante, réponses conservées.
- * Le commentaire n'est jamais obligatoire.
- *
- * ANONYME : aucune donnée identifiante n'est demandée ni enregistrée.
+ * ANONYME : le témoin ne porte qu'un identifiant de caddie et une date. Ni
+ * nom, ni adresse, ni empreinte du navigateur.
  */
 
-type Etape = "accueil" | "questions" | "merci" | "termine" | "mauvais";
+type Etape = "accueil" | "questions" | "merci" | "termine";
 
-/** Huit notes étoilées, puis la perception du prix. Le commentaire est libre. */
 const TOTAL_QUESTIONS = CHAMPS_NOTES.length + 1;
+const COOKIE_DEJA = "caddieperf_evalues";
+
+/** « <idCaddie>:<AAAA-MM-JJ> », séparés par des virgules. */
+function dejaEvalue(valeur: string | undefined, caddieId: string, jour: string): boolean {
+  return (valeur ?? "").split(",").includes(`${caddieId}:${jour}`);
+}
+
+function ajouterAuTemoin(valeur: string | undefined, caddieId: string, jour: string): string {
+  const entrees = (valeur ?? "").split(",").filter(Boolean);
+  entrees.push(`${caddieId}:${jour}`);
+  // On ne garde que les cinquante dernières : un témoin sans limite finirait
+  // par dépasser la taille acceptée et serait rejeté en silence.
+  return entrees.slice(-50).join(",");
+}
 
 export default async function EvaluationPage({
   params,
@@ -66,6 +69,7 @@ export default async function EvaluationPage({
     ev?: string;
     erreur?: string;
     v?: string;
+    caddie?: string;
   }>;
 }) {
   const { token } = await params;
@@ -86,14 +90,6 @@ export default async function EvaluationPage({
   }
 
   const accent = r.brandColorPrimary ?? "#1b4d3e";
-
-  if (etape === "mauvais") {
-    return (
-      <Page dir={dir} accent={accent} terrain={r.courseName}>
-        <h1 className="titre">{t.mauvaisCaddieMerci}</h1>
-      </Page>
-    );
-  }
 
   if (etape === "termine") {
     return (
@@ -140,46 +136,51 @@ export default async function EvaluationPage({
     );
   }
 
-  const deja = await compterEvaluations(r.golfCourseId, r.assignmentId);
-  if (deja >= MAX_REPONSES_PAR_AFFECTATION) {
-    return (
-      <Page dir={dir} accent={accent} terrain={r.courseName}>
-        <h1 className="titre">{t.dejaEvalue}</h1>
-      </Page>
-    );
-  }
-
   /**
-   * L'accueil reste un écran à part : le client doit pouvoir dire « ce n'est
-   * pas mon caddie » AVANT d'avoir répondu à neuf questions pour rien.
+   * ACCUEIL — le choix du caddie. Il précède tout le reste : répondre à neuf
+   * questions avant de découvrir qu'on s'est trompé de personne serait
+   * insupportable.
    */
   if (etape === "accueil") {
-    async function pasMonCaddie() {
-      "use server";
-      if (!r.ok) return;
-      await signalerMauvaisCaddie(r.golfCourseId, r.assignmentId);
-      redirect(`/e/${token}?etape=mauvais&lang=${langue}`);
-    }
-
     return (
       <Page dir={dir} accent={accent} terrain={r.courseName}>
         <p className="mention">{t.moinsDe30Secondes}</p>
         <h1 className="titre titre--grand" style={{ marginBlockStart: "1.5rem" }}>
-          {t.bonCaddie(r.caddieFirstName)}
+          {t.choisissezCaddie}
         </h1>
 
         <hr className="filet" />
 
-        <div className="actions">
-          <a className="bouton" href={`/e/${token}?etape=questions&lang=${langue}`}>
-            {t.oui}
-          </a>
-          <form action={pasMonCaddie}>
-            <button type="submit" className="bouton bouton--fantome">
-              {t.nonPasMonCaddie}
+        {sp.erreur && (
+          <p role="alert" className="erreur">
+            {t.caddieNonChoisi}
+          </p>
+        )}
+
+        <form method="get" action={`/e/${token}`}>
+          <input type="hidden" name="etape" value="questions" />
+          <input type="hidden" name="lang" value={langue} />
+          <select name="caddie" required defaultValue="" className="choix-caddie">
+            <option value="" disabled>
+              {t.choisirDansLaListe}
+            </option>
+            {r.caddies.map((c: CaddieChoisissable) => (
+              <option key={c.id} value={c.id}>
+                {c.libelle}
+              </option>
+            ))}
+          </select>
+
+          <div className="actions">
+            <button
+              type="submit"
+              className="bouton"
+              style={{ background: accent, borderColor: accent }}
+            >
+              {t.commencer}
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
 
         {LANGUES_DISPONIBLES.length > 1 && (
           <>
@@ -198,32 +199,37 @@ export default async function EvaluationPage({
   }
 
   // --- Questionnaire : une seule page défilante ---
-  const precedentes = decoder(sp.v);
+  const caddie = r.caddies.find((c) => c.id === sp.caddie);
+  if (!caddie) redirect(`/e/${token}?lang=${langue}&erreur=1`);
 
-  /**
-   * Les oublis se déduisent des réponses conservées — inutile de les répéter
-   * dans l'adresse. Le marquage n'a lieu qu'au retour d'un envoi incomplet :
-   * un formulaire vierge n'est pas un formulaire fautif.
-   */
+  const jour = new Date().toISOString().slice(0, 10);
+  const boite = await cookies();
+  if (dejaEvalue(boite.get(COOKIE_DEJA)?.value, caddie.id, jour)) {
+    return (
+      <Page dir={dir} accent={accent} terrain={r.courseName}>
+        <h1 className="titre">{t.dejaEvalue}</h1>
+      </Page>
+    );
+  }
+
+  const precedentes = decoder(sp.v);
   const oublis = new Set<string>(
     sp.erreur === "1"
-      ? [
-          ...champsManquants(precedentes),
-          ...(prixManquant(precedentes) ? ["perceptionPrix"] : []),
-        ]
+      ? [...champsManquants(precedentes), ...(prixManquant(precedentes) ? ["perceptionPrix"] : [])]
       : [],
   );
 
   async function envoyer(formData: FormData) {
     "use server";
-    if (!r.ok) return;
+    if (!r.ok || !caddie) return;
 
     const reponses = lireFormulaire(formData);
 
     if (champsManquants(reponses).length > 0 || prixManquant(reponses)) {
       const ancre = premierChampManquant(reponses);
       redirect(
-        `/e/${token}?etape=questions&lang=${langue}&erreur=1&v=${encodeURIComponent(encoder(reponses))}` +
+        `/e/${token}?etape=questions&lang=${langue}&caddie=${caddie.id}&erreur=1` +
+          `&v=${encodeURIComponent(encoder(reponses))}` +
           (ancre ? `#${ancre}` : ""),
       );
     }
@@ -233,7 +239,7 @@ export default async function EvaluationPage({
     try {
       id = await soumettreEvaluation({
         golfCourseId: r.golfCourseId,
-        assignmentId: r.assignmentId,
+        caddieId: caddie.id,
         langue,
         notes: s.notes,
         commentaire: reponses.commentaire,
@@ -243,8 +249,21 @@ export default async function EvaluationPage({
       });
     } catch (e) {
       const m = e instanceof AppError ? e.message : "Envoi impossible.";
-      redirect(`/e/${token}?etape=questions&lang=${langue}&erreur=${encodeURIComponent(m)}`);
+      redirect(
+        `/e/${token}?etape=questions&lang=${langue}&caddie=${caddie.id}&erreur=${encodeURIComponent(m)}`,
+      );
     }
+
+    // Témoin déposé APRÈS l'enregistrement : marquer avant reviendrait à
+    // bloquer un client dont la réponse n'est jamais arrivée.
+    const store = await cookies();
+    store.set(COOKIE_DEJA, ajouterAuTemoin(store.get(COOKIE_DEJA)?.value, caddie.id, jour), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/e",
+      maxAge: 60 * 60 * 24 * 90,
+    });
 
     redirect(`/e/${token}?etape=merci&lang=${langue}&ev=${id}`);
   }
@@ -253,6 +272,9 @@ export default async function EvaluationPage({
     <div className="page" dir={dir} style={{ "--accent": accent } as React.CSSProperties}>
       <p className="sur-titre">{r.courseName}</p>
       <hr className="filet filet--court" />
+      <p className="mention" style={{ marginBlockEnd: "1.5rem" }}>
+        {caddie.libelle}
+      </p>
 
       {sp.erreur && (
         <p role="alert" className="erreur">
@@ -326,15 +348,7 @@ function libelle(champ: ChampNote, t: ReturnType<typeof messages>, prix: number)
 }
 
 /** Repère de position : sur une page défilante, le client ne voit pas la fin. */
-function Numero({
-  n,
-  t,
-  oublie,
-}: {
-  n: number;
-  t: ReturnType<typeof messages>;
-  oublie?: boolean;
-}) {
+function Numero({ n, t, oublie }: { n: number; t: ReturnType<typeof messages>; oublie?: boolean }) {
   return (
     <span className="numero">
       {t.questionSur(n, TOTAL_QUESTIONS)}
@@ -347,9 +361,6 @@ function Numero({
  * Notation par étoiles. Les radios sont en ordre DOM INVERSÉ (5 → 1) et le
  * rendu est remis à l'endroit par `row-reverse`, qui suit la direction
  * d'écriture et se met donc en miroir tout seul en arabe.
- *
- * `required` porte sur tout le groupe : « non applicable » y répond aussi,
- * puisque c'est une réponse — celle que le critère ne s'applique pas.
  */
 function Etoiles({
   nom,

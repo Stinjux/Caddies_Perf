@@ -1,13 +1,7 @@
-import { eq, count } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { withCourse } from "@/db/scope-tx";
-import {
-  evaluation,
-  evaluationCriterionAnswer,
-  googleReviewClick,
-  wrongCaddieReport,
-  assignment,
-} from "@/db/schema";
+import { caddie, evaluation, evaluationCriterionAnswer, googleReviewClick } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { commentPurgeDate } from "../jobs/retention";
 import { ValidationError, NotFoundError } from "../errors";
@@ -38,7 +32,15 @@ export const CRITERES = [
 export type Critere = (typeof CRITERES)[number];
 
 /** FR-051 : quatre joueurs au maximum pour une même partie. */
-export const MAX_REPONSES_PAR_AFFECTATION = 4;
+/**
+ * PLUS DE LIMITE PAR PARTIE. Le client ne scanne plus une affectation mais un
+ * QR de terrain : rien ne permet de savoir combien de parties ont eu lieu, ni
+ * de rattacher une reponse a l'une d'elles. La seule barriere restante vit
+ * dans le navigateur du client — un temoin par caddie et par jour — et elle
+ * est contournable en navigation privee. C'est un choix assume : le seuil de
+ * pertinence de cinq evaluations devient le garde-fou statistique.
+ */
+export const LIMITE_PAR_PARTIE_SUPPRIMEE = true;
 
 export type PricePerception =
   | "beaucoup_trop_bas"
@@ -51,7 +53,7 @@ export interface SoumissionEvaluation {
   /** Terrain resolu depuis le jeton. Le client n'a pas de portee ; ce champ
    *  la remplace pour que le RLS sache de quel terrain il s'agit. */
   golfCourseId: string;
-  assignmentId: string;
+  caddieId: string;
   langue: Langue;
   /** null signifie « non applicable » : exclu des moyennes, jamais 0. */
   notes: Partial<Record<Critere, number | null>>;
@@ -65,27 +67,41 @@ function noteValide(v: number | null | undefined): boolean {
   return v === null || v === undefined || (Number.isInteger(v) && v >= 1 && v <= 5);
 }
 
-/** @public-client-path — le client n'a pas de compte, donc pas de portée. */
+/**
+ * Nombre d'evaluations deja recues par un caddie. Sert aux rapports, plus a
+ * limiter quoi que ce soit.
+ *
+ * @public-client-path — le client n'a pas de compte, donc pas de portee.
+ */
 export async function compterEvaluations(
   golfCourseId: string,
-  assignmentId: string,
+  caddieId: string,
 ): Promise<number> {
   const rows = await withCourse(golfCourseId, (tx) =>
-    tx.select({ n: count() }).from(evaluation).where(eq(evaluation.assignmentId, assignmentId)),
+    tx.select({ n: count() }).from(evaluation).where(eq(evaluation.caddieId, caddieId)),
   );
   return Number(rows[0]?.n ?? 0);
 }
 
 /** @public-client-path — le client n'a pas de compte, donc pas de portée. */
 export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<string> {
-  const aff = await withCourse(s.golfCourseId, (tx) =>
+  // Le caddie doit exister, appartenir a CE terrain et y etre ACTIF : sans
+  // cette verification, n'importe quel identifiant recu du navigateur ferait
+  // l'affaire, y compris celui d'un caddie parti ou d'un autre parcours.
+  const trouve = await withCourse(s.golfCourseId, (tx) =>
     tx
-      .select({ id: assignment.id, golfCourseId: assignment.golfCourseId })
-      .from(assignment)
-      .where(eq(assignment.id, s.assignmentId))
+      .select({ id: caddie.id })
+      .from(caddie)
+      .where(
+        and(
+          eq(caddie.id, s.caddieId),
+          eq(caddie.golfCourseId, s.golfCourseId),
+          eq(caddie.status, "active"),
+        ),
+      )
       .limit(1),
   );
-  if (aff.length === 0) throw new NotFoundError();
+  if (trouve.length === 0) throw new NotFoundError();
 
   for (const critere of CRITERES) {
     if (!noteValide(s.notes[critere])) {
@@ -96,14 +112,6 @@ export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<stri
     throw new ValidationError("note", "Chaque note doit être comprise entre 1 et 5 étoiles.");
   }
 
-  const deja = await compterEvaluations(s.golfCourseId, s.assignmentId);
-  if (deja >= MAX_REPONSES_PAR_AFFECTATION) {
-    throw new ValidationError(
-      "limite",
-      "Cette partie a déjà reçu le nombre maximal d'évaluations.",
-    );
-  }
-
   const id = uuidv7();
   const maintenant = new Date();
   const commentaire = s.commentaire?.trim();
@@ -111,8 +119,8 @@ export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<stri
   await withCourse(s.golfCourseId, async (tx) => {
     await tx.insert(evaluation).values({
       id,
-      golfCourseId: aff[0]!.golfCourseId,
-      assignmentId: s.assignmentId,
+      golfCourseId: s.golfCourseId,
+      caddieId: s.caddieId,
       language: s.langue,
       comment: commentaire && commentaire.length > 0 ? commentaire.slice(0, 2000) : null,
       courseRating: s.noteParcours ?? null,
@@ -135,32 +143,6 @@ export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<stri
   });
 
   return id;
-}
-
-/**
- * FR-047 : « Non, ce n'est pas mon caddie ». Émis AVANT toute évaluation,
- * il n'a rien à quoi se rattacher sinon l'affectation démentie.
- *
- * @public-client-path — le client n'a pas de compte, donc pas de portée.
- */
-export async function signalerMauvaisCaddie(
-  golfCourseId: string,
-  assignmentId: string,
-): Promise<void> {
-  await withCourse(golfCourseId, async (tx) => {
-    const aff = await tx
-      .select({ golfCourseId: assignment.golfCourseId })
-      .from(assignment)
-      .where(eq(assignment.id, assignmentId))
-      .limit(1);
-    if (aff.length === 0) throw new NotFoundError();
-
-    await tx.insert(wrongCaddieReport).values({
-      id: uuidv7(),
-      golfCourseId: aff[0]!.golfCourseId,
-      assignmentId,
-    });
-  });
 }
 
 /**

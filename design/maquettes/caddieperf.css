@@ -147,6 +147,29 @@ body {
   opacity: 1;
 }
 
+/* --- Liste des caddies -----------------------------------------------------
+   Cible tactile haute et texte a 1rem : en dessous de 16px, les navigateurs
+   mobiles zooment d'office a l'ouverture de la liste, et la page saute.
+   -------------------------------------------------------------------------- */
+.choix-caddie {
+  inline-size: 100%;
+  min-block-size: 52px;
+  padding-inline: 1rem;
+  border: 1px solid var(--laiton);
+  background: transparent;
+  font-family: var(--corps);
+  font-size: 1rem;
+  color: var(--encre);
+  appearance: none;
+  text-align: center;
+  cursor: pointer;
+}
+
+.choix-caddie:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* --- Question ------------------------------------------------------------- */
 .question {
   margin-block-end: 2.5rem;

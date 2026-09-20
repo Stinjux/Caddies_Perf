@@ -1,7 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import { withScope } from "@/db/scope-tx";
-import { caddie, assignment } from "@/db/schema";
+import { caddie } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { requireAdmin, type Scope } from "../scope";
 import { requireRole } from "../auth/require-role";
@@ -152,10 +152,9 @@ export async function setCaddieStatus(
 /**
  * DÉPART D'UN CADDIE (archivage).
  *
- * Désactiver ne suffit pas : un caddie parti peut être affecté à une partie
- * en cours. Le laisser ainsi, c'est laisser son nom s'afficher au 18e trou
- * sur le questionnaire d'un client, pour un service qu'il n'a pas rendu.
- * L'archivage clôt donc d'abord ses affectations du jour.
+ * Un caddie archivé disparaît de la liste que le client voit après avoir
+ * scanné le QR : il ne peut donc plus être noté pour un service qu'il ne rend
+ * plus.
  *
  * Son HISTORIQUE demeure intégralement (FR-042) : les évaluations passées
  * nourrissent la moyenne du parcours, et les effacer fausserait les
@@ -166,22 +165,10 @@ export async function archiverCaddie(
   scope: Scope,
   id: string,
   expectedVersion: number,
-): Promise<number> {
+): Promise<void> {
   requireAdmin(scope);
 
   return withScope(scope, async (tx) => {
-    const closes = await tx
-      .update(assignment)
-      .set({ status: "cancelled", endedAt: new Date(), updatedAt: new Date() })
-      .where(
-        and(
-          eq(assignment.caddieId, id),
-          eq(assignment.golfCourseId, scope.golfCourseId),
-          eq(assignment.status, "active"),
-        ),
-      )
-      .returning({ id: assignment.id });
-
     const maj = await tx
       .update(caddie)
       .set({
@@ -206,8 +193,6 @@ export async function archiverCaddie(
       targetType: "caddie",
       targetId: id,
     });
-
-    return closes.length;
   });
 }
 

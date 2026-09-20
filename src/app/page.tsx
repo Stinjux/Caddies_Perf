@@ -7,5 +7,6 @@ export default async function Home() {
   const ctx = await currentSession();
   if (!ctx) redirect("/connexion");
   if (!ctx.scope) redirect("/choisir-terrain");
-  redirect(ctx.scope.role === "starter" ? "/depart" : "/terrains");
+  // Le role Starter a disparu avec les affectations : tout compte est admin.
+  redirect("/terrains");
 }
