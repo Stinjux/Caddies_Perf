@@ -131,13 +131,9 @@ export default async function RapportsPage({
         </a>
       </form>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-4">
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <Tuile titre="Évaluations" valeur={String(terrain.evaluations)} />
         <Tuile titre="Note du parcours" valeur={terrain.noteParcours?.toFixed(2) ?? "—"} />
-        <Tuile
-          titre="Rapport qualité-prix"
-          valeur={terrain.rapportQualitePrix?.toFixed(2) ?? "—"}
-        />
         <Tuile titre="Clics vers Google" valeur={String(terrain.clicsGoogle)} />
       </div>
 

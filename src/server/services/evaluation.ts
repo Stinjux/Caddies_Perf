@@ -59,7 +59,6 @@ export interface SoumissionEvaluation {
   notes: Partial<Record<Critere, number | null>>;
   commentaire?: string | null;
   noteParcours?: number | null;
-  rapportQualitePrix?: number | null;
   perceptionPrix?: PricePerception | null;
 }
 
@@ -108,7 +107,7 @@ export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<stri
       throw new ValidationError(critere, "Chaque note doit être comprise entre 1 et 5 étoiles.");
     }
   }
-  if (!noteValide(s.noteParcours) || !noteValide(s.rapportQualitePrix)) {
+  if (!noteValide(s.noteParcours)) {
     throw new ValidationError("note", "Chaque note doit être comprise entre 1 et 5 étoiles.");
   }
 
@@ -124,7 +123,9 @@ export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<stri
       language: s.langue,
       comment: commentaire && commentaire.length > 0 ? commentaire.slice(0, 2000) : null,
       courseRating: s.noteParcours ?? null,
-      valueForMoney: s.rapportQualitePrix ?? null,
+      // Question retiree du questionnaire : la colonne subsiste pour ne pas
+      // effacer les reponses deja recueillies, mais plus rien ne l'alimente.
+      valueForMoney: null,
       pricePerception: s.perceptionPrix ?? null,
       submittedAt: maintenant,
       commentPurgeAt: commentPurgeDate(maintenant),

@@ -17,7 +17,12 @@ import { CRITERES, type Critere, type PricePerception } from "./evaluation";
  * réponses, ce qui tient largement dans une adresse.
  */
 
-export const CHAMPS_NOTES = [...CRITERES, "noteParcours", "rapportQualitePrix"] as const;
+/**
+ * La question sur le rapport qualite-prix a ete RETIREE du questionnaire.
+ * La perception du prix reste demandee : c'est elle qui interesse le club,
+ * et elle ne demande pas au client d'arbitrer entre qualite et tarif.
+ */
+export const CHAMPS_NOTES = [...CRITERES, "noteParcours"] as const;
 export type ChampNote = (typeof CHAMPS_NOTES)[number];
 
 /** Une lettre par champ, dans l'ordre. « n » signifie « non applicable ». */
@@ -29,7 +34,6 @@ const CLES: Record<ChampNote, string> = {
   communication: "c",
   experience_generale: "e",
   noteParcours: "t",
-  rapportQualitePrix: "q",
 };
 
 const PERCEPTIONS: PricePerception[] = [
@@ -131,7 +135,6 @@ export function premierChampManquant(r: Reponses): string | null {
 export function versSoumission(r: Reponses): {
   notes: Partial<Record<Critere, number | null>>;
   noteParcours: number | null;
-  rapportQualitePrix: number | null;
 } {
   const conv = (v: number | "na" | undefined): number | null =>
     v === undefined || v === "na" ? null : v;
@@ -142,6 +145,5 @@ export function versSoumission(r: Reponses): {
   return {
     notes,
     noteParcours: conv(r.notes.noteParcours),
-    rapportQualitePrix: conv(r.notes.rapportQualitePrix),
   };
 }

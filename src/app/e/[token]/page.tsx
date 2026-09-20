@@ -244,7 +244,6 @@ export default async function EvaluationPage({
         notes: s.notes,
         commentaire: reponses.commentaire,
         noteParcours: s.noteParcours,
-        rapportQualitePrix: s.rapportQualitePrix,
         perceptionPrix: reponses.perceptionPrix,
       });
     } catch (e) {
@@ -343,7 +342,6 @@ export default async function EvaluationPage({
 
 function libelle(champ: ChampNote, t: ReturnType<typeof messages>, prix: number): string {
   if (champ === "noteParcours") return t.titreParcours;
-  if (champ === "rapportQualitePrix") return t.titrePrixQualite(prix);
   return t.criteres[champ as (typeof CRITERES)[number]];
 }
 

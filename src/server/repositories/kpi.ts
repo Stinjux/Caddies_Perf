@@ -229,7 +229,6 @@ export async function distributionNotes(
 
 export interface KpiTerrain {
   noteParcours: number | null;
-  rapportQualitePrix: number | null;
   perceptionPrix: Record<string, number>;
   clicsGoogle: number;
   evaluations: number;
@@ -246,7 +245,6 @@ export async function kpiTerrain(scope: Scope, p: Periode = {}): Promise<KpiTerr
     tx
       .select({
         parcours: sql<string>`avg(${evaluation.courseRating})`,
-        qualitePrix: sql<string>`avg(${evaluation.valueForMoney})`,
         n: sql<string>`count(*)`,
       })
       .from(evaluation)
@@ -271,7 +269,6 @@ export async function kpiTerrain(scope: Scope, p: Periode = {}): Promise<KpiTerr
   const p0 = agg[0];
   return {
     noteParcours: p0?.parcours ? Number(p0.parcours) : null,
-    rapportQualitePrix: p0?.qualitePrix ? Number(p0.qualitePrix) : null,
     perceptionPrix: Object.fromEntries(perception.map((r) => [r.valeur ?? "inconnu", Number(r.n)])),
     clicsGoogle: Number(clics[0]?.n ?? 0),
     evaluations: Number(p0?.n ?? 0),

@@ -36,6 +36,11 @@ export const evaluation = pgTable(
     language: evaluationLanguage("language").notNull(),
     comment: text("comment"),
     courseRating: smallint("course_rating"),
+    /**
+     * HISTORIQUE SEULEMENT. La question « rapport qualite-prix » a ete retiree
+     * du questionnaire ; la colonne demeure pour ne pas effacer les reponses
+     * deja recueillies, et n'est plus alimentee.
+     */
     valueForMoney: smallint("value_for_money"),
     pricePerception: pricePerception("price_perception"),
     /**

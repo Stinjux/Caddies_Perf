@@ -60,21 +60,22 @@ describe("soumission d'une évaluation", () => {
     expect(reponses).toHaveLength(6);
   });
 
-  it("conserve les trois mesures SÉPARÉMENT (FR-043)", async () => {
+  it("conserve les deux mesures SÉPARÉMENT (FR-043)", async () => {
     const id = await soumettreEvaluation({
       golfCourseId: cedres,
       caddieId: caddieId,
       langue: "fr",
       notes: notesCompletes,
       noteParcours: 4,
-      rapportQualitePrix: 3,
       perceptionPrix: "plutot_eleve",
     });
 
     const rows = await db.select().from(evaluation).where(eq(evaluation.id, id));
     expect(rows[0]?.courseRating).toBe(4);
-    expect(rows[0]?.valueForMoney).toBe(3);
     expect(rows[0]?.pricePerception).toBe("plutot_eleve");
+    // La question du rapport qualite-prix a ete retiree : la colonne subsiste
+    // pour l'historique, mais plus rien ne l'alimente.
+    expect(rows[0]?.valueForMoney).toBeNull();
   });
 
   it("mémorise le tarif affiché au moment de la réponse (FR-048)", async () => {

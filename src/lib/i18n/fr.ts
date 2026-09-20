@@ -37,8 +37,6 @@ export const fr = {
   // Parcours et prix
   titreParcours:
     "Dans l'ensemble, comment évaluez-vous votre expérience sur notre terrain aujourd'hui ?",
-  titrePrixQualite: (prix: number) =>
-    `Compte tenu de la qualité du service reçu, comment évaluez-vous le rapport qualité-prix du service de caddie à ${prix} MAD ?`,
   titrePrixNiveau: (prix: number) =>
     `Comment considérez-vous le prix de ${prix} MAD pour ce service de caddie ?`,
   prix: {

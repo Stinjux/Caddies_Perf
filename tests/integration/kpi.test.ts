@@ -192,7 +192,7 @@ describe("comparaison à la moyenne du parcours", () => {
 });
 
 describe("KPI du terrain — mesures séparées (FR-043)", () => {
-  it("agrège la note du parcours et le rapport qualité-prix sans toucher au score du caddie", async () => {
+  it("agrège la note du parcours et la perception du prix sans toucher au score du caddie", async () => {
     const caddieId = await createCaddie(admin(), {
       internalRef: "C-L",
       firstName: "P",
@@ -204,13 +204,11 @@ describe("KPI du terrain — mesures séparées (FR-043)", () => {
       langue: "fr",
       notes: notes5,
       noteParcours: 2,
-      rapportQualitePrix: 1,
       perceptionPrix: "beaucoup_trop_eleve",
     });
 
     const t = await kpiTerrain(admin());
     expect(t.noteParcours).toBe(2);
-    expect(t.rapportQualitePrix).toBe(1);
     expect(t.perceptionPrix.beaucoup_trop_eleve).toBe(1);
 
     // Le score du caddie reste à 5 : ni la note du parcours ni le prix ne l'affectent.

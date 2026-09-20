@@ -30,7 +30,6 @@ const complet: Reponses = {
     communication: 4,
     experience_generale: 5,
     noteParcours: 4,
-    rapportQualitePrix: 3,
   },
   perceptionPrix: "juste_et_raisonnable",
   commentaire: "Commentaire fictif",
@@ -146,11 +145,11 @@ describe("conversion vers la soumission", () => {
     expect(s.notes.accueil).toBe(5);
   });
 
-  it("sépare la note du parcours et le rapport qualité-prix des critères", () => {
+  it("sépare la note du parcours des critères du caddie (FR-043)", () => {
+    // Le parcours n'est pas le caddie : sa note ne doit jamais entrer dans
+    // le score de celui qui a porté le sac.
     const s = versSoumission(complet);
     expect(s.noteParcours).toBe(4);
-    expect(s.rapportQualitePrix).toBe(3);
     expect(Object.keys(s.notes)).not.toContain("noteParcours");
-    expect(Object.keys(s.notes)).not.toContain("rapportQualitePrix");
   });
 });

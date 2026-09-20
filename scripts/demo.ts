@@ -45,6 +45,21 @@ try {
   }
 
 
+  /**
+   * Menage des caddies de l'ANCIEN jeu de demonstration, du temps ou le QR
+   * appartenait a la voiturette. Ils portaient une reference « DEMO-… » et
+   * font desormais doublon dans la liste que le client voit. On les archive
+   * plutot que de les supprimer : leurs evaluations doivent survivre.
+   */
+  const archives = await sql`
+    UPDATE caddie SET status = 'disabled', availability = 'unavailable'
+    WHERE golf_course_id = ${terrain.id} AND internal_ref LIKE 'DEMO-%' AND status = 'active'
+    RETURNING id
+  `;
+  if (archives.length > 0) {
+    console.log(`  * demonstration : ${archives.length} caddie(s) de l'ancien modele archive(s)`);
+  }
+
   const [deja] = await sql<{ n: string }[]>`
     SELECT count(*) AS n FROM caddie
     WHERE golf_course_id = ${terrain.id} AND internal_ref = ANY(${DEMO_REFS as unknown as string[]})
