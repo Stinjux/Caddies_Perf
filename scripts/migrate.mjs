@@ -94,6 +94,47 @@ try {
   }
 
   console.log(`\n${appliquees} migration(s) appliquee(s), ${fichiers.length} au total.`);
+
+  /**
+   * DERNIERE VERIFICATION, ET LA PLUS IMPORTANTE : la connexion applicative
+   * est-elle REELLEMENT soumise au RLS ?
+   *
+   * Un superutilisateur contourne le RLS EN SILENCE. Les quatorze politiques
+   * de cloisonnement par terrain seraient alors decoratives, et rien ne le
+   * dirait : les pages s'afficheraient, les tests distants passeraient, et le
+   * defaut ne se verrait que le jour ou un terrain lirait les donnees d'un
+   * autre.
+   *
+   * On l'eprouve ici, dans le deploiement, ou le reseau prive de la base est
+   * joignable — et non depuis un poste de developpement, qui ne l'atteint pas.
+   */
+  const urlApp = process.env.APP_DATABASE_URL;
+  if (urlApp) {
+    const app = postgres(urlApp, { max: 1, onnotice: () => {} });
+    try {
+      const [role] = await app`
+        SELECT current_user AS nom, rolsuper, rolbypassrls
+        FROM pg_roles WHERE rolname = current_user
+      `;
+      const contourne = role?.rolsuper || role?.rolbypassrls;
+      console.log(
+        `  * connexion applicative : ${role?.nom}` +
+          (contourne ? " — CONTOURNE LE RLS" : " (soumise au RLS)"),
+      );
+      if (contourne) {
+        console.error(
+          "\nLa connexion applicative contourne le RLS. Le cloisonnement entre\n" +
+            "terrains ne s'appliquerait pas. Deploiement interrompu.",
+        );
+        process.exit(1);
+      }
+    } finally {
+      await app.end();
+    }
+  } else if (process.env.NODE_ENV === "production") {
+    console.error("\nAPP_DATABASE_URL est absente en production. Deploiement interrompu.");
+    process.exit(1);
+  }
 } finally {
   await sql.end();
 }

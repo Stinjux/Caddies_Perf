@@ -27,6 +27,21 @@ import { uuidv7 } from "../src/lib/uuid.ts";
  *   AMORCE_TERRAIN=... node --experimental-strip-types scripts/amorcer.ts
  */
 
+/**
+ * MODE DEPLOIEMENT. Ce script est enchaine aux migrations, avant chaque
+ * demarrage. Il doit donc se taire et rendre la main SANS ERREUR dans les
+ * deux cas ordinaires : aucune consigne d'amorcage, ou base deja peuplee.
+ * Echouer la ferait echouer tous les deploiements suivants.
+ *
+ * Il ne reste bruyant que sur une consigne MAL FORMEE — une adresse invalide,
+ * un mot de passe trop court : la, se taire laisserait croire a une creation
+ * qui n'a pas eu lieu.
+ */
+function rienAFaire(raison: string): never {
+  console.log(`  * amorcage : ${raison}`);
+  process.exit(0);
+}
+
 function requis(nom: string): string {
   const valeur = process.env[nom]?.trim();
   if (!valeur) {
@@ -40,6 +55,10 @@ const url = process.env.DATABASE_URL;
 if (!url) {
   console.error("DATABASE_URL est absente : impossible d'amorcer.");
   process.exit(1);
+}
+
+if (!process.env.AMORCE_EMAIL?.trim()) {
+  rienAFaire("aucune consigne (AMORCE_EMAIL absente)");
 }
 
 const email = requis("AMORCE_EMAIL").toLowerCase();
@@ -78,11 +97,8 @@ try {
   const [compte] = await sql<{ total: string }[]>`SELECT count(*) AS total FROM account`;
   const total = compte?.total ?? "0";
   if (Number(total) > 0) {
-    console.error(
-      `La base compte deja ${total} compte(s) : l'amorcage est inutile et n'aura pas lieu.\n` +
-        "Creez les comptes suivants depuis l'ecran « Comptes » de l'application.",
-    );
-    process.exit(1);
+    await sql.end();
+    rienAFaire(`${total} compte(s) existent deja, rien a creer`);
   }
 
   const hache = await hashPassword(motDePasse);
