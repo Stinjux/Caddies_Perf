@@ -30,12 +30,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Un composant serveur ne connait pas son propre chemin. La mise en page
-  // d'administration en a besoin pour une seule chose : ne pas rediriger vers
-  // /securite la page /securite elle-meme, ce qui tournerait en boucle.
-  const entetes = new Headers(request.headers);
-  entetes.set("x-pathname", pathname);
-  return NextResponse.next({ request: { headers: entetes } });
+  return NextResponse.next();
 }
 
 export const config = {

@@ -26,16 +26,6 @@ export const courses = [
   },
 ] as const;
 
-/**
- * SECOND FACTEUR DES COMPTES D'ESSAI.
- *
- * Secret TOTP FICTIF, identique pour tous les comptes d'amorcage : il ne
- * protege rien, il rend seulement la connexion a deux facteurs jouable en
- * developpement et dans les tests de bout en bout, qui calculent le code a
- * partir de lui. Un vrai secret est tire au hasard, une fois, a l'inscription.
- */
-export const SECRET_TOTP_FICTIF = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
-
 export const accounts = [
   {
     key: "admin_cedres",
@@ -44,7 +34,6 @@ export const accounts = [
     lastName: "Exemple",
     password: "MotDePasseFictif1!",
     links: [{ course: "cedres", role: "admin" }],
-    totpSecret: SECRET_TOTP_FICTIF,
   },
     {
     key: "admin_atlas",
@@ -53,7 +42,6 @@ export const accounts = [
     lastName: "Exemple",
     password: "MotDePasseFictif3!",
     links: [{ course: "atlas", role: "admin" }],
-    totpSecret: SECRET_TOTP_FICTIF,
   },
   {
     key: "admin_deux",
@@ -61,7 +49,6 @@ export const accounts = [
     firstName: "Youssef",
     lastName: "Exemple",
     password: "MotDePasseFictif4!",
-    totpSecret: SECRET_TOTP_FICTIF,
     links: [
       { course: "cedres", role: "admin" },
       { course: "atlas", role: "admin" },
