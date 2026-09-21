@@ -28,7 +28,7 @@ describe("fuseaux horaires (FR-005, FR-044)", () => {
     expect(isValidTimezone("Pas/UnFuseau")).toBe(false);
   });
 
-  it("derive la date locale du terrain, pas celle du serveur", () => {
+  it("derive la date locale du parcours, pas celle du serveur", () => {
     // 23h30 UTC le 17 : deja le 18 a Tokyo, encore le 17 a Montreal.
     const instant = new Date("2026-09-17T23:30:00Z");
     expect(localDateFor(instant, "Asia/Tokyo")).toBe("2026-09-18");
@@ -36,7 +36,7 @@ describe("fuseaux horaires (FR-005, FR-044)", () => {
     expect(localDateFor(instant, "America/Montreal")).toBe("2026-09-17");
   });
 
-  it("affiche un instant dans le fuseau du terrain", () => {
+  it("affiche un instant dans le fuseau du parcours", () => {
     const instant = new Date("2026-09-17T12:00:00Z");
     const montreal = formatInCourseTimezone(instant, "America/Montreal");
     const tokyo = formatInCourseTimezone(instant, "Asia/Tokyo");

@@ -11,7 +11,7 @@ export const session = pgTable(
     accountId: uuid("account_id")
       .notNull()
       .references(() => account.id),
-    /** NULL tant qu'aucun terrain n'a ete choisi (FR-012). */
+    /** NULL tant qu'aucun parcours n'a ete choisi (FR-012). */
     activeGolfCourseId: uuid("active_golf_course_id").references(() => golfCourse.id),
     /**
      * SECOND FACTEUR EN ATTENTE. Le mot de passe a ete verifie, le code ne

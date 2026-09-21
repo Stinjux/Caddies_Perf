@@ -52,22 +52,56 @@ const ids = new Map<string, string>();
 
 for (const c of courses) {
   const id = uuidv7();
-  ids.set(c.key, id);
-  await sql`
-    INSERT INTO golf_course (id, name, address, timezone, qr_token, brand_color_primary, brand_color_secondary, google_review_url)
-    VALUES (${id}, ${c.name}, ${c.address}, ${c.timezone}, ${randomBytes(32).toString("base64url")},
-            ${c.brandColorPrimary}, ${c.brandColorSecondary}, ${c.googleReviewUrl})
-    ON CONFLICT DO NOTHING
+  /**
+   * ON CHERCHE AVANT D'INSERER, et ce n'est pas un detour.
+   *
+   * « ON CONFLICT DO NOTHING » ne servait a rien ici : le conflit se juge sur
+   * la cle primaire, et l'identifiant etait tire au sort a chaque execution.
+   * Aucun conflit, donc — et chaque amorcage ajoutait silencieusement un
+   * deuxieme « Golf des Cedres », puis un troisieme. Les ecrans montraient
+   * alors trois fois le meme parcours, tous vides sauf le premier.
+   *
+   * Le NOM fait foi : c'est l'identite naturelle d'un jeu de demonstration,
+   * ou les parcours sont nommes une fois pour toutes dans les fixtures.
+   */
+  const [existant] = await sql<{ id: string }[]>`
+    SELECT id FROM golf_course WHERE name = ${c.name} ORDER BY created_at LIMIT 1
   `;
+  if (existant) {
+    ids.set(c.key, existant.id);
+  } else {
+    await sql`
+      INSERT INTO golf_course (id, name, address, timezone, qr_token, brand_color_primary, brand_color_secondary, google_review_url)
+      VALUES (${id}, ${c.name}, ${c.address}, ${c.timezone}, ${randomBytes(32).toString("base64url")},
+              ${c.brandColorPrimary}, ${c.brandColorSecondary}, ${c.googleReviewUrl})
+    `;
+    ids.set(c.key, id);
+  }
 }
 
+/**
+ * REJOUABLE. Le script etait ecrit pour une base vierge : il tirait un
+ * identifiant, l'inserait « ON CONFLICT DO NOTHING », puis rattachait CET
+ * identifiant — lequel n'existait pas si le compte etait deja la. Rejoue, il
+ * echouait sur une violation de cle etrangere, ce qui est la pire facon
+ * d'echouer : le message parle de contrainte, jamais de la vraie cause.
+ *
+ * RETURNING ne remonte rien quand le conflit annule l'insertion ; on relit
+ * donc l'identifiant reel, qu'il vienne d'etre cree ou qu'il preexistait.
+ */
 for (const a of accounts) {
-  const id = uuidv7();
+  const general = "generalAdmin" in a && a.generalAdmin === true;
   await sql`
-    INSERT INTO account (id, email, first_name, last_name, password_hash)
-    VALUES (${id}, ${a.email}, ${a.firstName}, ${a.lastName}, ${await hash(a.password)})
-    ON CONFLICT (email) DO NOTHING
+    INSERT INTO account (id, email, first_name, last_name, password_hash, general_admin)
+    VALUES (${uuidv7()}, ${a.email}, ${a.firstName}, ${a.lastName}, ${await hash(a.password)},
+            ${general})
+    ON CONFLICT (email) DO UPDATE SET general_admin = EXCLUDED.general_admin
   `;
+  const [existant] = await sql<{ id: string }[]>`
+    SELECT id FROM account WHERE email = ${a.email}
+  `;
+  const id = existant!.id;
+
   for (const l of a.links) {
     await sql`
       INSERT INTO account_golf_course (account_id, golf_course_id, role)
@@ -75,8 +109,8 @@ for (const a of accounts) {
       ON CONFLICT DO NOTHING
     `;
   }
-  console.log(`  ${a.email}  /  ${a.password}`);
+  console.log(`  ${a.email}  /  ${a.password}${general ? "  (administrateur general)" : ""}`);
 }
 
-console.log(`\n${courses.length} terrains et ${accounts.length} comptes fictifs amorcés.`);
+console.log(`\n${courses.length} parcours et ${accounts.length} comptes fictifs amorcés.`);
 await sql.end();

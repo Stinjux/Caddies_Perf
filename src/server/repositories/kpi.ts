@@ -11,8 +11,8 @@ import { requireAdmin } from "../scope";
  * rapport ne contient JAMAIS d'année de naissance, d'adresse ni de taille
  * d'habits (FR-030).
  *
- * PRINCIPE IV — tout est filtré par le terrain de la portée (FR-026).
- * Une moyenne ne mélange jamais deux terrains.
+ * PRINCIPE IV — tout est filtré par le parcours de la portée (FR-026).
+ * Une moyenne ne mélange jamais deux parcours.
  */
 
 /** Seuil en deçà duquel une comparaison n'est pas statistiquement parlante. */
@@ -52,7 +52,7 @@ export interface KpiCaddie {
 
 /**
  * La periode porte sur la date de SOUMISSION de l'evaluation. Il n'existe
- * plus de date de partie : le client scanne le QR du terrain, pas une
+ * plus de date de partie : le client scanne le QR du parcours, pas une
  * affectation datee.
  */
 function bornes(p: Periode): SQL[] {
@@ -76,11 +76,11 @@ export function scoreFinal(
   return moyenneCompetences * 0.7 + experienceGenerale * 0.3;
 }
 
-/** KPI de tous les caddies du terrain actif, sur la période demandée. */
+/** KPI de tous les caddies du parcours actif, sur la période demandée. */
 export async function kpiParCaddie(scope: Scope, p: Periode = {}): Promise<KpiCaddie[]> {
   requireAdmin(scope);
 
-  const filtreTerrain = eq(evaluation.golfCourseId, scope.golfCourseId);
+  const filtreParcours = eq(evaluation.golfCourseId, scope.golfCourseId);
   const periode = bornes(p);
 
   // Moyennes par critère, calculées sur les seules réponses renseignées :
@@ -96,7 +96,7 @@ export async function kpiParCaddie(scope: Scope, p: Periode = {}): Promise<KpiCa
       })
       .from(evaluationCriterionAnswer)
       .innerJoin(evaluation, eq(evaluation.id, evaluationCriterionAnswer.evaluationId))
-      .where(and(filtreTerrain, ...periode))
+      .where(and(filtreParcours, ...periode))
       .groupBy(evaluation.caddieId, evaluationCriterionAnswer.criterion),
   );
 
@@ -104,7 +104,7 @@ export async function kpiParCaddie(scope: Scope, p: Periode = {}): Promise<KpiCa
     tx
       .select({ caddieId: evaluation.caddieId, n: sql<string>`count(*)` })
       .from(evaluation)
-      .where(and(filtreTerrain, ...periode))
+      .where(and(filtreParcours, ...periode))
       .groupBy(evaluation.caddieId),
   );
 
@@ -210,7 +210,7 @@ export async function distributionNotes(
       })
       .from(evaluationCriterionAnswer)
       .innerJoin(evaluation, eq(evaluation.id, evaluationCriterionAnswer.evaluationId))
-            .where(
+      .where(
         and(
           eq(evaluation.golfCourseId, scope.golfCourseId),
           sql`${evaluationCriterionAnswer.rating} is not null`,
@@ -227,15 +227,15 @@ export async function distributionNotes(
   return out;
 }
 
-export interface KpiTerrain {
+export interface KpiParcours {
   noteParcours: number | null;
   perceptionPrix: Record<string, number>;
   clicsGoogle: number;
   evaluations: number;
 }
 
-/** KPI du TERRAIN : note du parcours, valeur perçue, clics Google. */
-export async function kpiTerrain(scope: Scope, p: Periode = {}): Promise<KpiTerrain> {
+/** KPI du PARCOURS : note du parcours, valeur perçue, clics Google. */
+export async function kpiParcours(scope: Scope, p: Periode = {}): Promise<KpiParcours> {
   requireAdmin(scope);
 
   const periode = bornes(p);
@@ -248,14 +248,14 @@ export async function kpiTerrain(scope: Scope, p: Periode = {}): Promise<KpiTerr
         n: sql<string>`count(*)`,
       })
       .from(evaluation)
-            .where(filtre),
+      .where(filtre),
   );
 
   const perception = await withScope(scope, (tx) =>
     tx
       .select({ valeur: evaluation.pricePerception, n: sql<string>`count(*)` })
       .from(evaluation)
-            .where(and(filtre, sql`${evaluation.pricePerception} is not null`))
+      .where(and(filtre, sql`${evaluation.pricePerception} is not null`))
       .groupBy(evaluation.pricePerception),
   );
 

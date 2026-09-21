@@ -10,7 +10,7 @@ import { resetDb } from "../helpers/reset-db";
 import { testScope } from "../helpers/scope";
 import { courses } from "../../fixtures/seed-data";
 
-/** Scenario V-1 — creation, lecture, modification et archivage d'un terrain. */
+/** Scenario V-1 — creation, lecture, modification et archivage d'un parcours. */
 
 const cedres = courses[0];
 let adminId: string;
@@ -24,11 +24,13 @@ beforeEach(async () => {
     firstName: "Amina",
     lastName: "Exemple",
     passwordHash: await hashPassword("MotDePasseFictif1!"),
+    // Créer un parcours est un acte de plateforme, réservé au niveau général.
+    generalAdmin: true,
   });
 });
 
-describe("V-1 — cycle de vie d'un terrain", () => {
-  it("cree un terrain et lui attribue un identifiant permanent", async () => {
+describe("V-1 — cycle de vie d'un parcours", () => {
+  it("cree un parcours et lui attribue un identifiant permanent", async () => {
     const id = await createCourse(adminId, {
       name: cedres.name,
       address: cedres.address,
@@ -67,7 +69,7 @@ describe("V-1 — cycle de vie d'un terrain", () => {
     expect(Object.values(entries[0] ?? {}).join(" ")).not.toContain(cedres.name);
   });
 
-  it("modifie un terrain et incremente sa version", async () => {
+  it("modifie un parcours et incremente sa version", async () => {
     const id = await createCourse(adminId, { name: cedres.name, timezone: cedres.timezone });
     const scope = testScope({ accountId: adminId, golfCourseId: id, role: "admin" });
 
@@ -91,7 +93,7 @@ describe("V-1 — cycle de vie d'un terrain", () => {
     expect(row?.name).toBe("Première");
   });
 
-  it("archive un terrain au lieu de le supprimer (FR-006)", async () => {
+  it("archive un parcours au lieu de le supprimer (FR-006)", async () => {
     const id = await createCourse(adminId, { name: cedres.name, timezone: cedres.timezone });
     const scope = testScope({ accountId: adminId, golfCourseId: id, role: "admin" });
 
@@ -113,17 +115,17 @@ describe("V-1 — cycle de vie d'un terrain", () => {
 });
 
 describe("V-3 — cloisonnement applicatif", () => {
-  it("ne remonte rien pour un terrain hors de la portee (FR-025)", async () => {
-    const a = await createCourse(adminId, { name: "Terrain A", timezone: "Africa/Casablanca" });
-    const b = await createCourse(adminId, { name: "Terrain B", timezone: "Africa/Casablanca" });
+  it("ne remonte rien pour un parcours hors de la portee (FR-025)", async () => {
+    const a = await createCourse(adminId, { name: "Parcours A", timezone: "Africa/Casablanca" });
+    const b = await createCourse(adminId, { name: "Parcours B", timezone: "Africa/Casablanca" });
 
     const scopeA = testScope({ accountId: adminId, golfCourseId: a, role: "admin" });
     expect(await findCourseInScope(scopeA, b)).toBeNull();
     expect(await findCourseInScope(scopeA, a)).not.toBeNull();
   });
 
-  it("ne liste que les terrains rattaches au compte (FR-023)", async () => {
-    await createCourse(adminId, { name: "Terrain A", timezone: "Africa/Casablanca" });
+  it("ne liste que les parcours rattaches au compte (FR-023)", async () => {
+    await createCourse(adminId, { name: "Parcours A", timezone: "Africa/Casablanca" });
 
     const autre = uuidv7();
     await db.insert(account).values({
@@ -132,10 +134,11 @@ describe("V-3 — cloisonnement applicatif", () => {
       firstName: "Sofia",
       lastName: "Exemple",
       passwordHash: await hashPassword("MotDePasseFictif3!"),
+      generalAdmin: true,
     });
-    await createCourse(autre, { name: "Terrain B", timezone: "Africa/Casablanca" });
+    await createCourse(autre, { name: "Parcours B", timezone: "Africa/Casablanca" });
 
     const mine = await listCoursesForAccount(adminId);
-    expect(mine.map((c) => c.name)).toEqual(["Terrain A"]);
+    expect(mine.map((c) => c.name)).toEqual(["Parcours A"]);
   });
 });

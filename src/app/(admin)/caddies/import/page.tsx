@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireScope } from "@/server/auth/context";
-import { construireApercu, executerImport, COLONNES_SOURCE } from "@/server/services/caddie-import";
+import {
+  construireApercu,
+  executerImport,
+  COLONNES_SOURCE,
+  COLONNES_REJETEES,
+} from "@/server/services/caddie-import";
 import { AppError } from "@/server/errors";
+import { tAdmin } from "@/lib/i18n/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -21,14 +27,16 @@ export default async function ImportPage({
   const { scope } = await requireScope();
   if (scope.role !== "admin") redirect("/");
 
+  const { t } = await tAdmin();
   const { erreur, crees, remplaces, ignores } = await searchParams;
 
   async function importer(formData: FormData) {
     "use server";
     const { scope } = await requireScope();
+    const { t } = await tAdmin();
     const fichier = formData.get("fichier");
     if (!(fichier instanceof File) || fichier.size === 0) {
-      redirect("/caddies/import?erreur=" + encodeURIComponent("Aucun fichier sélectionné."));
+      redirect("/caddies/import?erreur=" + encodeURIComponent(t.import.aucunFichier));
     }
 
     try {
@@ -62,9 +70,9 @@ export default async function ImportPage({
   return (
     <div className="max-w-2xl">
       <Link href="/caddies" className="text-sm text-neutral-500">
-        ← Caddies
+        ← {t.caddies.titre}
       </Link>
-      <h1 className="mt-2 mb-2 text-2xl font-semibold text-neutral-900">Importer des caddies</h1>
+      <h1 className="mt-2 mb-2 text-2xl font-semibold text-neutral-900">{t.import.titre}</h1>
 
       {erreur && (
         <p
@@ -76,21 +84,14 @@ export default async function ImportPage({
       )}
       {crees && (
         <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          {crees} caddie(s) créé(s), {remplaces} remplacé(s), {ignores} ignoré(s).
+          {t.import.bilan(crees, remplaces ?? "0", ignores ?? "0")}
         </p>
       )}
 
       <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-        <p className="font-medium">Trois colonnes ne seront jamais conservées</p>
-        <p className="mt-1">
-          La <strong>taille d&apos;habits</strong>, la <strong>force</strong> et l&apos;
-          <strong>adresse du domicile</strong> sont lues puis rejetées. Elles ne peuvent pas être
-          stockées : la base n&apos;a aucune colonne pour les recevoir.
-        </p>
-        <p className="mt-2">
-          L&apos;<strong>âge</strong> est converti en année de naissance et rangé dans un espace
-          séparé, accessible aux seuls administrateurs.
-        </p>
+        <p className="font-medium">{t.import.avertissementTitre}</p>
+        <p className="mt-1">{t.import.avertissementDetail}</p>
+        <p className="mt-2">{t.import.avertissementAge}</p>
       </div>
 
       <form
@@ -98,25 +99,29 @@ export default async function ImportPage({
         className="space-y-5 rounded-xl border border-neutral-200 bg-white p-6"
       >
         <div>
-          <p className="mb-2 text-sm font-medium text-neutral-800">
-            Colonnes attendues, dans cet ordre
-          </p>
+          <p className="mb-2 text-sm font-medium text-neutral-800">{t.import.colonnesAttendues}</p>
           <ol className="list-inside list-decimal text-sm text-neutral-600">
-            {COLONNES_SOURCE.map((c, i) => (
-              <li key={c} className={[3, 5, 6].includes(i) ? "text-amber-700" : ""}>
-                {c}
-                {[3, 5, 6].includes(i) && " — rejetée"}
-              </li>
-            ))}
+            {/* Les index viennent du service, jamais recopies ici : quand le
+                numero de caddie est passe en premiere case, cette liste avait
+                garde les anciens et designait « age » et « anciennete » comme
+                rejetees, alors qu'elles sont conservees. */}
+            {COLONNES_SOURCE.map((c, i) => {
+              const rejetee = (COLONNES_REJETEES as readonly number[]).includes(i);
+              return (
+                <li key={c} className={rejetee ? "text-amber-700" : ""}>
+                  {c}
+                  {rejetee && t.import.rejetee}
+                </li>
+              );
+            })}
           </ol>
-          <p className="mt-2 text-xs text-neutral-500">
-            L&apos;encodage et le séparateur sont détectés automatiquement. La ligne d&apos;en-tête
-            est reconnue si elle est présente.
-          </p>
+          <p className="mt-2 text-xs text-neutral-500">{t.import.detection}</p>
         </div>
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-neutral-800">Fichier CSV</span>
+          <span className="mb-1.5 block text-sm font-medium text-neutral-800">
+            {t.import.fichier}
+          </span>
           <input
             type="file"
             name="fichier"
@@ -130,7 +135,7 @@ export default async function ImportPage({
           type="submit"
           className="rounded-lg bg-[var(--color-brand)] px-5 py-2.5 text-sm font-medium text-white"
         >
-          Importer
+          {t.import.bouton}
         </button>
       </form>
     </div>

@@ -25,7 +25,7 @@ test("l'écran de connexion a un titre et des champs étiquetés", async ({ page
 test("aucun débordement horizontal sur les écrans d'administration", async ({ page }) => {
   await connexion(page, ADMIN);
 
-  for (const chemin of ["/terrains", "/comptes", "/journal"]) {
+  for (const chemin of ["/parcours", "/comptes", "/journal"]) {
     await page.goto(chemin);
     const debordement = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
@@ -38,14 +38,14 @@ test("le parcours client présente de grandes cibles tactiles", async ({ page })
   // C'est l'écran d'un client debout au 18e trou, sur son téléphone, parfois
   // en plein soleil. Les cibles doivent y être généreuses.
   // La MEME base que le serveur interrogé : celle de développement. Viser la
-  // base de test donnerait un terrain vidé entre deux séries, et le test se
+  // base de test donnerait un parcours vidé entre deux séries, et le test se
   // contenterait de se taire.
   const sql = postgres(process.env.DATABASE_URL ?? "", { max: 1 });
-  const [terrain] = await sql<{ qr_token: string }[]>`SELECT qr_token FROM golf_course LIMIT 1`;
+  const [parcours] = await sql<{ qr_token: string }[]>`SELECT qr_token FROM golf_course LIMIT 1`;
   await sql.end();
-  test.skip(!terrain, "aucun terrain amorcé");
+  test.skip(!parcours, "aucun parcours amorcé");
 
-  await page.goto(`/e/${terrain!.qr_token}`);
+  await page.goto(`/e/${parcours!.qr_token}`);
 
   const liste = page.locator('select[name="caddie"]');
   const boiteListe = await liste.boundingBox();

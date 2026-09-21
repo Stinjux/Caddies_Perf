@@ -23,6 +23,8 @@ export async function makeAccount(opts: {
   email?: string;
   password?: string;
   status?: "active" | "disabled";
+  /** Administrateur general : portee admin sur TOUS les parcours. */
+  generalAdmin?: boolean;
   links?: { courseId: string; role: "admin" | "starter" }[];
 }): Promise<string> {
   const id = uuidv7();
@@ -33,6 +35,7 @@ export async function makeAccount(opts: {
     lastName: "Fictif",
     passwordHash: await hashPassword(opts.password ?? PASSWORD),
     status: opts.status ?? "active",
+    generalAdmin: opts.generalAdmin === true,
   });
   for (const l of opts.links ?? []) {
     await db

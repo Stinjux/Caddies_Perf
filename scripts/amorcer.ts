@@ -4,7 +4,7 @@ import { hashPassword, verifyPassword } from "../src/server/auth/password.ts";
 import { uuidv7 } from "../src/lib/uuid.ts";
 
 /**
- * AMORCAGE — CREE LE TOUT PREMIER ADMINISTRATEUR ET SON TERRAIN.
+ * AMORCAGE — CREE LE TOUT PREMIER ADMINISTRATEUR ET SON PARCOURS.
  *
  * Sans lui, une installation neuve est inaccessible : creer un compte exige
  * une portee, qui exige un compte. Les deux se demandent l'un l'autre, et le
@@ -25,7 +25,7 @@ import { uuidv7 } from "../src/lib/uuid.ts";
  *
  * Usage :
  *   AMORCE_EMAIL=... AMORCE_MOT_DE_PASSE=... AMORCE_PRENOM=... AMORCE_NOM=... \
- *   AMORCE_TERRAIN=... node --experimental-strip-types scripts/amorcer.ts
+ *   AMORCE_PARCOURS=... node --experimental-strip-types scripts/amorcer.ts
  */
 
 /**
@@ -66,7 +66,7 @@ const email = requis("AMORCE_EMAIL").toLowerCase();
 const motDePasse = requis("AMORCE_MOT_DE_PASSE");
 const prenom = requis("AMORCE_PRENOM");
 const nom = requis("AMORCE_NOM");
-const terrain = requis("AMORCE_TERRAIN");
+const parcours = requis("AMORCE_PARCOURS");
 const fuseau = process.env.AMORCE_FUSEAU?.trim() || "Africa/Casablanca";
 
 // Memes regles que createAccount() : un compte cree ici doit pouvoir etre
@@ -114,8 +114,12 @@ try {
     if (process.env.AMORCE_REINITIALISER === "1") {
       const sqlControle = postgres(url, { max: 1, onnotice: () => {} });
       const hacheNeuf = await hashPassword(motDePasse);
+      // Le niveau general est RETABLI en meme temps que le mot de passe :
+      // ce mode est la seule issue d'une installation cassee, et une
+      // installation dont plus personne ne peut creer de parcours l'est.
       const maj = await sql`
-        UPDATE account SET password_hash = ${hacheNeuf}, updated_at = now()
+        UPDATE account
+        SET password_hash = ${hacheNeuf}, general_admin = true, updated_at = now()
         WHERE email = ${email}
         RETURNING id
       `;
@@ -133,9 +137,11 @@ try {
        * repare et on decouvre le contraire a l'ecran de connexion.
        */
       const relu = await sqlControle`
-        SELECT password_hash AS hache, status, email FROM account WHERE email = ${email}
+        SELECT password_hash AS hache, status, email, general_admin
+        FROM account WHERE email = ${email}
       `;
-      const ligne = relu[0] as { hache: string; status: string; email: string } | undefined;
+      const ligne = relu[0] as
+        { hache: string; status: string; email: string; general_admin: boolean } | undefined;
       const rattachements = await sqlControle`
         SELECT count(*) AS n FROM account_golf_course agc
         JOIN account a ON a.id = agc.account_id WHERE a.email = ${email}
@@ -147,8 +153,10 @@ try {
         ligne?.status,
         "| adresse stockee =",
         JSON.stringify(ligne?.email),
-        "| terrains rattaches =",
+        "| parcours rattaches =",
         (rattachements[0] as { n: string } | undefined)?.n,
+        "| administrateur general =",
+        ligne?.general_admin,
       );
       await sqlControle.end();
       process.exit(0);
@@ -160,38 +168,41 @@ try {
 
   const hache = await hashPassword(motDePasse);
   const idCompte = uuidv7();
-  const idTerrain = uuidv7();
+  const idParcours = uuidv7();
 
-  // Un seul aller-retour : un terrain sans administrateur, ou un administrateur
-  // sans terrain, seraient tous deux inutilisables et il faudrait tout reprendre
+  // Un seul aller-retour : un parcours sans administrateur, ou un administrateur
+  // sans parcours, seraient tous deux inutilisables et il faudrait tout reprendre
   // a la main en SQL.
   await sql.begin(async (tx) => {
-    // Le terrain nait avec son QR : c'est lui que le client scanne au depart,
+    // Le parcours nait avec son QR : c'est lui que le client scanne au depart,
     // et il est PERMANENT — la meme affiche vaut d'une saison a l'autre.
     await tx`
       INSERT INTO golf_course (id, name, timezone, qr_token)
-      VALUES (${idTerrain}, ${terrain}, ${fuseau}, ${randomBytes(32).toString("base64url")})
+      VALUES (${idParcours}, ${parcours}, ${fuseau}, ${randomBytes(32).toString("base64url")})
     `;
+    // Le premier compte est ADMINISTRATEUR GENERAL. Sans cela, il ne
+    // pourrait creer qu'un seul parcours — celui-ci — et plus jamais aucun
+    // autre : l'installation naitrait deja bloquee.
     await tx`
-      INSERT INTO account (id, email, first_name, last_name, password_hash)
-      VALUES (${idCompte}, ${email}, ${prenom}, ${nom}, ${hache})
+      INSERT INTO account (id, email, first_name, last_name, password_hash, general_admin)
+      VALUES (${idCompte}, ${email}, ${prenom}, ${nom}, ${hache}, true)
     `;
     await tx`
       INSERT INTO account_golf_course (account_id, golf_course_id, role)
-      VALUES (${idCompte}, ${idTerrain}, 'admin')
+      VALUES (${idCompte}, ${idParcours}, 'admin')
     `;
     await tx`
       INSERT INTO audit_log (id, golf_course_id, actor_account_id, action, target_type, target_id)
-      VALUES (${uuidv7()}, ${idTerrain}, ${idCompte}, 'course.create', 'golf_course', ${idTerrain})
+      VALUES (${uuidv7()}, ${idParcours}, ${idCompte}, 'course.create', 'golf_course', ${idParcours})
     `;
   });
 
   console.log(`\nAdministrateur cree : ${email}`);
-  console.log(`Terrain cree        : ${terrain} (${fuseau})`);
+  console.log(`Parcours cree        : ${parcours} (${fuseau})`);
+  console.log("Niveau               : administrateur general (tous les parcours)");
   console.log(
-    "\nA la premiere connexion, l'application exigera l'inscription au second\n" +
-      "facteur avant de donner acces a quoi que ce soit. Prevoyez une application\n" +
-      "d'authentification et de quoi noter les codes de secours.",
+    "\nCe compte peut creer d'autres parcours et designer d'autres\n" +
+      "administrateurs generaux depuis l'ecran « Comptes ».",
   );
 } finally {
   await sql.end();

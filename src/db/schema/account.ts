@@ -1,4 +1,13 @@
-import { pgTable, uuid, text, timestamp, integer, primaryKey, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  integer,
+  boolean,
+  primaryKey,
+  index,
+} from "drizzle-orm/pg-core";
 import { accountStatus, accountRole } from "./enums";
 import { golfCourse } from "./golf-course";
 
@@ -11,6 +20,19 @@ export const account = pgTable("account", {
   /** scrypt. N'est jamais renvoye par une lecture (FR-017). */
   passwordHash: text("password_hash").notNull(),
   status: accountStatus("status").notNull().default("active"),
+  /**
+   * DEUXIEME NIVEAU D'ADMINISTRATION.
+   *
+   * Un administrateur general a la portee « admin » sur TOUS les parcours,
+   * y compris ceux crees apres lui. Cela ne peut pas se representer par des
+   * rattachements : il en faudrait un par parcours, et le parcours de demain
+   * naitrait hors de sa portee.
+   *
+   * Le cloisonnement reste entier — il demeure, a chaque instant, dans la
+   * portee d'UN SEUL parcours. Le privilege porte sur le choix, pas sur la
+   * simultaneite.
+   */
+  generalAdmin: boolean("general_admin").notNull().default(false),
   /**
    * SECOND FACTEUR (TOTP). Le secret n'est JAMAIS selectionne par les depots
    * publics : comme passwordHash, il vit hors de PUBLIC_COLUMNS.
@@ -30,8 +52,10 @@ export const account = pgTable("account", {
 });
 
 /**
- * Le role est porte par le rattachement, non par le compte : une meme personne
- * peut etre administrateur sur un terrain et Starter sur un autre.
+ * Le role ORDINAIRE est porte par le rattachement, non par le compte : une
+ * meme personne peut etre administrateur sur un parcours et Starter sur un
+ * autre. Seul le niveau general (account.generalAdmin) echappe a cette regle,
+ * precisement parce qu'il ne vise aucun parcours en particulier.
  */
 export const accountGolfCourse = pgTable(
   "account_golf_course",

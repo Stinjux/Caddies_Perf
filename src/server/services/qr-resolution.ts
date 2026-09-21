@@ -4,10 +4,10 @@ import { withCourse } from "@/db/scope-tx";
 import { caddie, golfCourse } from "@/db/schema";
 
 /**
- * RÉSOLUTION DU QR CODE DU TERRAIN.
+ * RÉSOLUTION DU QR CODE DU PARCOURS.
  *
  * Un seul QR pour tout le parcours, affiché au départ. Le serveur le traduit
- * en terrain, puis rend la liste des caddies dans laquelle le client choisit
+ * en parcours, puis rend la liste des caddies dans laquelle le client choisit
  * le sien. Aucune donnée ne transite par le QR : le jeton est opaque.
  *
  * LA LISTE EST PUBLIQUE — quiconque a scanné le QR la voit. Le nom de famille
@@ -51,12 +51,12 @@ export function libelleCaddie(numero: string, prenom: string, nom: string): stri
 /**
  * @public-client-path — le client n'a pas de compte, donc pas de portée. Le
  * jeton se résout hors portée, puis tout le reste se fait sous celle du
- * terrain qu'il désigne.
+ * parcours qu'il désigne.
  */
 export async function resoudreJeton(token: string): Promise<Resolution> {
   if (!token || token.length < 16) return { ok: false, raison: "jeton_inconnu" };
 
-  const [terrain] = await db
+  const [parcours] = await db
     .select({
       id: golfCourse.id,
       name: golfCourse.name,
@@ -68,9 +68,9 @@ export async function resoudreJeton(token: string): Promise<Resolution> {
     .where(and(eq(golfCourse.qrToken, token), eq(golfCourse.status, "active")))
     .limit(1);
 
-  if (!terrain) return { ok: false, raison: "jeton_inconnu" };
+  if (!parcours) return { ok: false, raison: "jeton_inconnu" };
 
-  const rangs = await withCourse(terrain.id, (tx) =>
+  const rangs = await withCourse(parcours.id, (tx) =>
     tx
       .select({
         id: caddie.id,
@@ -79,7 +79,7 @@ export async function resoudreJeton(token: string): Promise<Resolution> {
         nom: caddie.lastName,
       })
       .from(caddie)
-      .where(and(eq(caddie.golfCourseId, terrain.id), eq(caddie.status, "active")))
+      .where(and(eq(caddie.golfCourseId, parcours.id), eq(caddie.status, "active")))
       .orderBy(asc(caddie.internalRef)),
   );
 
@@ -87,11 +87,11 @@ export async function resoudreJeton(token: string): Promise<Resolution> {
 
   return {
     ok: true,
-    golfCourseId: terrain.id,
-    courseName: terrain.name,
-    brandColorPrimary: terrain.brandColorPrimary,
-    logoPath: terrain.logoPath,
-    googleReviewUrl: terrain.googleReviewUrl,
+    golfCourseId: parcours.id,
+    courseName: parcours.name,
+    brandColorPrimary: parcours.brandColorPrimary,
+    logoPath: parcours.logoPath,
+    googleReviewUrl: parcours.googleReviewUrl,
     priceMad: TARIF_CADDIE_MAD,
     caddies: rangs.map((c) => ({
       id: c.id,

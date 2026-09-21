@@ -39,11 +39,11 @@ async function purgeBirthYears(now: Date, systemAccountId: string): Promise<numb
 
   let effacees = 0;
 
-  // La purge traverse tous les terrains, mais le RLS n'en laisse voir qu'un a
+  // La purge traverse tous les parcours, mais le RLS n'en laisse voir qu'un a
   // la fois : on les parcourt donc un par un, ce qui est aussi la seule facon
-  // d'etre certain qu'aucune ligne d'un autre terrain ne soit touchee.
-  for (const terrain of await db.select({ id: golfCourse.id }).from(golfCourse)) {
-    await withCourse(terrain.id, async (tx) => {
+  // d'etre certain qu'aucune ligne d'un autre parcours ne soit touchee.
+  for (const parcours of await db.select({ id: golfCourse.id }).from(golfCourse)) {
+    await withCourse(parcours.id, async (tx) => {
       const expires = await tx
         .select({ caddieId: caddie.id, golfCourseId: caddie.golfCourseId })
         .from(caddie)
@@ -76,8 +76,8 @@ async function purgeBirthYears(now: Date, systemAccountId: string): Promise<numb
 async function purgeComments(now: Date): Promise<number> {
   let vides = 0;
 
-  for (const terrain of await db.select({ id: golfCourse.id }).from(golfCourse)) {
-    await withCourse(terrain.id, async (tx) => {
+  for (const parcours of await db.select({ id: golfCourse.id }).from(golfCourse)) {
+    await withCourse(parcours.id, async (tx) => {
       const lignes = await tx
         .update(evaluation)
         .set({ comment: null })

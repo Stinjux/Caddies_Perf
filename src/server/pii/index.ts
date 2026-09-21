@@ -80,7 +80,7 @@ export async function writeBirthYear(
 
 /**
  * Efface les renseignements personnels SANS toucher a l'historique du caddie
- * ni aux statistiques du terrain (FR-033, SC-009).
+ * ni aux statistiques du parcours (FR-033, SC-009).
  */
 export async function eraseBirthYear(scope: Scope, caddieId: string): Promise<void> {
   requireAdmin(scope);

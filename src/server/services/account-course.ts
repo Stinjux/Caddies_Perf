@@ -7,9 +7,9 @@ import { writeAudit } from "../audit/write";
 import { ValidationError, NotFoundError, LastAdminError } from "../errors";
 
 /**
- * Rattachements compte - terrain (FR-010, FR-015).
+ * Rattachements compte - parcours (FR-010, FR-015).
  *
- * Un detachement qui laisserait un terrain sans administrateur actif est
+ * Un detachement qui laisserait un parcours sans administrateur actif est
  * REFUSE, comme une desactivation. Le controle vit dans la transaction.
  */
 
@@ -21,7 +21,7 @@ export async function attachAccount(
   requireAdmin(scope);
 
   // Verification HORS portee, et c'est necessaire : rattacher quelqu'un a ce
-  // terrain suppose precisement qu'il n'y est pas encore rattache. Sous portee,
+  // parcours suppose precisement qu'il n'y est pas encore rattache. Sous portee,
   // le RLS ne le verrait pas, et l'operation serait impossible par nature.
   // Aucune information n'est divulguee au-dela de « cet identifiant existe » —
   // que l'appelant tient deja, puisqu'il le fournit.
@@ -44,7 +44,7 @@ export async function attachAccount(
       )
       .limit(1);
     if (already.length > 0) {
-      throw new ValidationError("account", "Ce compte est déjà rattaché à ce terrain.");
+      throw new ValidationError("account", "Ce compte est déjà rattaché à ce parcours.");
     }
 
     await tx
@@ -100,7 +100,7 @@ export async function detachAccount(scope: Scope, accountId: string): Promise<vo
         ),
       );
 
-    // Une session pointant vers un terrain desormais non rattache est invalide.
+    // Une session pointant vers un parcours desormais non rattache est invalide.
     await tx
       .update(session)
       .set({ activeGolfCourseId: null })

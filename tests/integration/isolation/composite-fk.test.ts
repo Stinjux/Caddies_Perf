@@ -10,7 +10,7 @@ import { makeCourse } from "../../helpers/fixtures";
  * directement en SQL. Si le cloisonnement ne tenait qu'a du code, ils
  * passeraient. Ils echouent — c'est le but : PostgreSQL lui-meme refuse.
  *
- * Le modele s'est reduit : un QR par terrain, plus de voiturettes ni
+ * Le modele s'est reduit : un QR par parcours, plus de voiturettes ni
  * d'affectations. Il ne reste qu'un lien operationnel, evaluation → caddie,
  * et c'est celui-la qui doit etre infranchissable.
  */
@@ -41,14 +41,14 @@ async function insererEvaluation(courseId: string, caddieId: string) {
                      now() + interval '2 years')`;
 }
 
-describe("une évaluation ne peut pas désigner le caddie d'un autre terrain", () => {
+describe("une évaluation ne peut pas désigner le caddie d'un autre parcours", () => {
   it("accepte une évaluation cohérente", async () => {
     const caddie = await unCaddie(cedres, "REF-A");
     await expect(insererEvaluation(cedres, caddie)).resolves.toBeDefined();
   });
 
-  it("REFUSE un caddie appartenant à un autre terrain", async () => {
-    // Le caddie existe, le terrain aussi : seul le COUPLE est incohérent.
+  it("REFUSE un caddie appartenant à un autre parcours", async () => {
+    // Le caddie existe, le parcours aussi : seul le COUPLE est incohérent.
     // Une clé étrangère simple laisserait passer ; la clé composite non.
     const caddieAtlas = await unCaddie(atlas, "REF-B");
     await expect(insererEvaluation(cedres, caddieAtlas)).rejects.toThrow(
@@ -56,7 +56,7 @@ describe("une évaluation ne peut pas désigner le caddie d'un autre terrain", (
     );
   });
 
-  it("REFUSE de déplacer après coup une évaluation vers un autre terrain", async () => {
+  it("REFUSE de déplacer après coup une évaluation vers un autre parcours", async () => {
     const caddie = await unCaddie(cedres, "REF-A");
     await insererEvaluation(cedres, caddie);
 
@@ -66,8 +66,8 @@ describe("une évaluation ne peut pas désigner le caddie d'un autre terrain", (
   });
 });
 
-describe("le jeton du QR identifie UN terrain", () => {
-  it("refuse le même jeton sur deux terrains", async () => {
+describe("le jeton du QR identifie UN parcours", () => {
+  it("refuse le même jeton sur deux parcours", async () => {
     const [jeton] = await sql<{ qr_token: string }[]>`
       SELECT qr_token FROM golf_course WHERE id = ${cedres}
     `;

@@ -7,6 +7,7 @@ import { roleOnCourse } from "@/server/repositories/account";
 import { ALLOWED_LOGO_TYPES } from "@/server/services/logo-upload";
 import { createScopeFromVerifiedSession } from "@/server/scope";
 import { AppError } from "@/server/errors";
+import { tAdmin } from "@/lib/i18n/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ function read(formData: FormData) {
   };
 }
 
-export default async function TerrainPage({
+export default async function ParcoursDetailPage({
   params,
   searchParams,
 }: {
@@ -45,21 +46,28 @@ export default async function TerrainPage({
   const ctx = await currentSession();
   if (!ctx) redirect("/connexion");
 
+  const { t } = await tAdmin();
   const creation = id === "nouveau";
 
-  // Le formulaire d'un terrain existant exige d'etre administrateur SUR CE
-  // terrain, jamais un role global (FR-021).
+  // Créer un parcours est réservé à l'administrateur général ; le service le
+  // refuserait de toute manière, mais un refus après saisie du formulaire
+  // serait une perte de temps gratuite.
+  if (creation && !ctx.generalAdmin) redirect("/parcours");
+
+  // Le formulaire d'un parcours existant exige d'etre administrateur SUR CE
+  // parcours, jamais un role global (FR-021).
   let existing = null;
   if (!creation) {
     const role = await roleOnCourse(ctx.accountId, id);
-    if (role !== "admin") redirect("/terrains");
+    if (role !== "admin") redirect("/parcours");
     const scope = createScopeFromVerifiedSession({
       accountId: ctx.accountId,
       golfCourseId: id,
       role,
+      generalAdmin: ctx.generalAdmin,
     });
     existing = await findCourseInScope(scope, id);
-    if (!existing) redirect("/terrains");
+    if (!existing) redirect("/parcours");
   }
 
   async function enregistrer(formData: FormData) {
@@ -72,33 +80,34 @@ export default async function TerrainPage({
     try {
       if (target === "nouveau") {
         const newId = await createCourse(ctx.accountId, input);
-        redirect(`/terrains/${newId}`);
+        redirect(`/parcours/${newId}`);
       } else {
         const role = await roleOnCourse(ctx.accountId, target);
-        if (role !== "admin") redirect("/terrains");
+        if (role !== "admin") redirect("/parcours");
         const scope = createScopeFromVerifiedSession({
           accountId: ctx.accountId,
           golfCourseId: target,
           role,
+          generalAdmin: ctx.generalAdmin,
         });
         await updateCourse(scope, input, Number(formData.get("version") ?? 1));
       }
     } catch (e) {
       if (e instanceof AppError) {
-        redirect(`/terrains/${target}?erreur=${encodeURIComponent(e.message)}`);
+        redirect(`/parcours/${target}?erreur=${encodeURIComponent(e.message)}`);
       }
       throw e;
     }
-    redirect("/terrains");
+    redirect("/parcours");
   }
 
   return (
     <div className="max-w-2xl">
-      <Link href="/terrains" className="text-sm text-neutral-500">
-        ← Terrains
+      <Link href="/parcours" className="text-sm text-neutral-500">
+        ← {t.parcours.titre}
       </Link>
       <h1 className="mt-2 mb-6 text-2xl font-semibold text-neutral-900">
-        {creation ? "Nouveau terrain" : existing?.name}
+        {creation ? t.formParcours.nouveau : existing?.name}
       </h1>
 
       {erreur && (
@@ -117,7 +126,7 @@ export default async function TerrainPage({
         <input type="hidden" name="courseId" value={creation ? "nouveau" : id} />
         <input type="hidden" name="version" value={existing?.version ?? 1} />
 
-        <Field label="Nom du terrain" required hint="Obligatoire.">
+        <Field label={t.formParcours.nom} required hint={t.commun.obligatoire}>
           <input
             name="name"
             required
@@ -127,7 +136,7 @@ export default async function TerrainPage({
           />
         </Field>
 
-        <Field label="Adresse">
+        <Field label={t.formParcours.adresse}>
           <input
             name="address"
             defaultValue={existing?.address ?? ""}
@@ -135,11 +144,7 @@ export default async function TerrainPage({
           />
         </Field>
 
-        <Field
-          label="Fuseau horaire"
-          required
-          hint="Toutes les dates du terrain s'affichent dans ce fuseau, jamais celui du lecteur."
-        >
+        <Field label={t.formParcours.fuseau} required hint={t.formParcours.fuseauAide}>
           <select
             name="timezone"
             required
@@ -155,7 +160,7 @@ export default async function TerrainPage({
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Couleur principale">
+          <Field label={t.formParcours.couleurPrincipale}>
             <input
               name="brandColorPrimary"
               defaultValue={existing?.brandColorPrimary ?? ""}
@@ -163,7 +168,7 @@ export default async function TerrainPage({
               placeholder="#1b4d3e"
             />
           </Field>
-          <Field label="Couleur secondaire">
+          <Field label={t.formParcours.couleurSecondaire}>
             <input
               name="brandColorSecondary"
               defaultValue={existing?.brandColorSecondary ?? ""}
@@ -174,8 +179,8 @@ export default async function TerrainPage({
         </div>
 
         <Field
-          label="Logo"
-          hint={`Formats acceptés : ${ALLOWED_LOGO_TYPES.join(", ")}. 512 Ko maximum.`}
+          label={t.formParcours.logo}
+          hint={t.formParcours.logoAide(ALLOWED_LOGO_TYPES.join(", "))}
         >
           <input
             type="file"
@@ -185,7 +190,7 @@ export default async function TerrainPage({
           />
         </Field>
 
-        <Field label="Lien Google Reviews" hint="Adresse https propre à ce terrain.">
+        <Field label={t.formParcours.lienGoogle} hint={t.formParcours.lienGoogleAide}>
           <input
             name="googleReviewUrl"
             defaultValue={existing?.googleReviewUrl ?? ""}
@@ -199,7 +204,7 @@ export default async function TerrainPage({
             type="submit"
             className="rounded-lg bg-[var(--color-brand)] px-5 py-2.5 text-sm font-medium text-white"
           >
-            Enregistrer
+            {t.commun.enregistrer}
           </button>
         </div>
       </form>

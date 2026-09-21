@@ -14,14 +14,13 @@ import {
   CHAMPS_NOTES,
   type ChampNote,
 } from "@/server/services/reponses";
-import { resoudreLangue, direction, NOMS_LANGUES, LANGUES_DISPONIBLES } from "@/lib/i18n";
-import { messages } from "@/lib/i18n/fr";
+import { resoudreLangue, direction, messages, NOMS_LANGUES, LANGUES_DISPONIBLES } from "@/lib/i18n";
 import { AppError } from "@/server/errors";
 
 export const dynamic = "force-dynamic";
 
 /**
- * PARCOURS CLIENT — UN QR POUR TOUT LE TERRAIN.
+ * PARCOURS CLIENT — UN QR POUR TOUT LE PARCOURS.
  *
  * Aucun compte, aucune application, moins de 30 secondes. Le client scanne
  * l'affiche du départ, choisit son caddie dans une liste, puis répond.
@@ -93,7 +92,7 @@ export default async function EvaluationPage({
 
   if (etape === "termine") {
     return (
-      <Page dir={dir} accent={accent} terrain={r.courseName}>
+      <Page dir={dir} accent={accent} parcours={r.courseName}>
         <h1 className="titre">{t.termine}</h1>
       </Page>
     );
@@ -108,7 +107,7 @@ export default async function EvaluationPage({
     }
 
     return (
-      <Page dir={dir} accent={accent} terrain={r.courseName}>
+      <Page dir={dir} accent={accent} parcours={r.courseName}>
         <h1 className="titre titre--grand">{t.merci}</h1>
         <p className="mention" style={{ marginBlockStart: "1rem" }}>
           {t.merciDetail}
@@ -143,7 +142,7 @@ export default async function EvaluationPage({
    */
   if (etape === "accueil") {
     return (
-      <Page dir={dir} accent={accent} terrain={r.courseName}>
+      <Page dir={dir} accent={accent} parcours={r.courseName}>
         <p className="mention">{t.moinsDe30Secondes}</p>
         <h1 className="titre titre--grand" style={{ marginBlockStart: "1.5rem" }}>
           {t.choisissezCaddie}
@@ -185,10 +184,22 @@ export default async function EvaluationPage({
         {LANGUES_DISPONIBLES.length > 1 && (
           <>
             <hr className="filet" style={{ marginBlockStart: "2.5rem" }} />
-            <p className="sur-titre">
+            <p className="sur-titre">{t.choisirLangue}</p>
+            {/* Chaque langue est un LIEN, pas un menu : un seul geste, et rien
+                à soumettre. Le joueur qui ne lit pas le français doit pouvoir
+                changer de langue sans deviner à quoi sert un bouton. */}
+            <p className="langues">
               {LANGUES_DISPONIBLES.map((l) => (
-                <a key={l} href={`/e/${token}?lang=${l}`} style={{ color: "inherit" }}>
-                  {NOMS_LANGUES[l]}{" "}
+                <a
+                  key={l}
+                  href={`/e/${token}?lang=${l}`}
+                  hrefLang={l}
+                  lang={l}
+                  dir={direction(l)}
+                  aria-current={l === langue ? "true" : undefined}
+                  className={l === langue ? "langues__choisie" : undefined}
+                >
+                  {NOMS_LANGUES[l]}
                 </a>
               ))}
             </p>
@@ -206,7 +217,7 @@ export default async function EvaluationPage({
   const boite = await cookies();
   if (dejaEvalue(boite.get(COOKIE_DEJA)?.value, caddie.id, jour)) {
     return (
-      <Page dir={dir} accent={accent} terrain={r.courseName}>
+      <Page dir={dir} accent={accent} parcours={r.courseName}>
         <h1 className="titre">{t.dejaEvalue}</h1>
       </Page>
     );
@@ -418,12 +429,12 @@ function Page({
   children,
   dir,
   accent,
-  terrain,
+  parcours,
 }: {
   children: React.ReactNode;
   dir: "rtl" | "ltr";
   accent?: string;
-  terrain?: string;
+  parcours?: string;
 }) {
   return (
     <div
@@ -431,9 +442,9 @@ function Page({
       dir={dir}
       style={accent ? ({ "--accent": accent } as React.CSSProperties) : undefined}
     >
-      {terrain && (
+      {parcours && (
         <>
-          <p className="sur-titre">{terrain}</p>
+          <p className="sur-titre">{parcours}</p>
           <hr className="filet filet--court" />
         </>
       )}

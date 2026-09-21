@@ -8,7 +8,7 @@ export const golfCourse = pgTable("golf_course", {
   /** Identifiant IANA, ex. "Africa/Casablanca" (FR-005). */
   timezone: text("timezone").notNull(),
   /**
-   * QR UNIQUE DU TERRAIN, affiche au depart. Opaque et permanent : il ne
+   * QR UNIQUE DU PARCOURS, affiche au depart. Opaque et permanent : il ne
    * contient ni nom, ni reservation, ni donnee personnelle. Le client le
    * scanne puis choisit son caddie dans la liste.
    */
@@ -20,7 +20,7 @@ export const golfCourse = pgTable("golf_course", {
   /**
    * Duree, en heures apres la fin d'une partie, pendant laquelle le QR code
    * accepte encore une evaluation (FR-050). NULL signifie « jusqu'a la fin
-   * de la journee locale du terrain ».
+   * de la journee locale du parcours ».
    */
   evaluationWindowHours: integer("evaluation_window_hours"),
   settings: jsonb("settings").notNull().default({}),

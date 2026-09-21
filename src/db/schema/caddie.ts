@@ -17,7 +17,7 @@ export const caddie = pgTable(
     golfCourseId: uuid("golf_course_id")
       .notNull()
       .references(() => golfCourse.id),
-    /** Unique au terrain, jamais reattribue, meme apres desactivation (FR-041). */
+    /** Unique au parcours, jamais reattribue, meme apres desactivation (FR-041). */
     internalRef: text("internal_ref").notNull(),
     firstName: text("first_name").notNull(),
     lastName: text("last_name").notNull(),

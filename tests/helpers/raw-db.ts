@@ -8,7 +8,7 @@ import { testDbUrl } from "./reset-db";
  *
  * Les tests passent par le role applicatif, soumis au RLS (voir
  * vitest.config.ts). Mais leurs propres fixtures et leurs verifications ne
- * doivent PAS l'etre : un test qui affirme « aucune ligne de l'autre terrain
+ * doivent PAS l'etre : un test qui affirme « aucune ligne de l'autre parcours
  * n'a fuite » doit interroger la base sans oeilleres, sinon il constate son
  * propre aveuglement et se declare satisfait.
  *

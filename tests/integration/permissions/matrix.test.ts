@@ -23,7 +23,7 @@ let cible: string;
 beforeEach(async () => {
   await resetDb();
   courseId = await makeCourse("Golf des Cèdres");
-  compte = await makeAccount({ links: [{ courseId, role: "admin" }] });
+  compte = await makeAccount({ generalAdmin: true, links: [{ courseId, role: "admin" }] });
   cible = await makeAccount({ links: [{ courseId, role: "starter" }] });
 });
 
@@ -36,10 +36,10 @@ describe("ce qu'un Starter NE PEUT PAS faire (FR-020)", () => {
       await expect(action()).rejects.toThrow(/droits/);
     });
 
-  refuse("modifier un terrain", () =>
+  refuse("modifier un parcours", () =>
     updateCourse(starter(), { name: "X", timezone: "Africa/Casablanca" }, 1),
   );
-  refuse("archiver un terrain", () => archiveCourse(starter(), 1));
+  refuse("archiver un parcours", () => archiveCourse(starter(), 1));
   refuse("créer un compte", () =>
     createAccount(starter(), {
       email: "x@example.invalid",
@@ -59,7 +59,7 @@ describe("ce qu'un Starter NE PEUT PAS faire (FR-020)", () => {
 });
 
 describe("ce qu'un administrateur PEUT faire (FR-018)", () => {
-  it("modifie et archive un terrain", async () => {
+  it("modifie et archive un parcours", async () => {
     await expect(
       updateCourse(admin(), { name: "Nouveau", timezone: "Africa/Casablanca" }, 1),
     ).resolves.toBeUndefined();
@@ -78,7 +78,7 @@ describe("ce qu'un administrateur PEUT faire (FR-018)", () => {
     await expect(enableAccount(admin(), id, 2)).resolves.toBeUndefined();
   });
 
-  it("crée un terrain sans portée préalable, en s'y rattachant", async () => {
+  it("crée un parcours sans portée préalable, en s'y rattachant", async () => {
     await expect(
       createCourse(compte, { name: "Autre", timezone: "Africa/Casablanca" }),
     ).resolves.toMatch(/^[0-9a-f-]{36}$/);

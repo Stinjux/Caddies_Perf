@@ -6,13 +6,13 @@ import type { Scope } from "@/server/scope";
 /**
  * PORTEE TRANSMISE A POSTGRESQL (FR-023b).
  *
- * Le RLS ne peut cloisonner que s'il sait de quel terrain il s'agit. Ce
+ * Le RLS ne peut cloisonner que s'il sait de quel parcours il s'agit. Ce
  * reglage est LOCAL a la transaction : il disparait au commit, et ne peut
  * donc pas fuir vers la requete suivante qui reutiliserait la connexion.
  * C'est la raison d'etre de la transaction ici — pas l'atomicite.
  *
  * Reentrant : un service qui a deja ouvert sa portee et appelle un depot ne
- * cree pas une seconde transaction, il partage la sienne. Deux terrains
+ * cree pas une seconde transaction, il partage la sienne. Deux parcours
  * differents dans une meme pile est un defaut de programmation, pas un cas
  * d'usage : on leve plutot que de laisser passer.
  */
@@ -67,14 +67,14 @@ export function withScope<T>(scope: Scope, fn: (tx: Tx) => PromiseLike<T>): Prom
 }
 
 /**
- * Variante pour le parcours client, ou le terrain n'est connu qu'APRES la
+ * Variante pour le parcours client, ou le parcours n'est connu qu'APRES la
  * resolution du jeton : il n'y a pas de compte, donc pas de Scope.
  */
 export function withCourse<T>(golfCourseId: string, fn: (tx: Tx) => PromiseLike<T>): Promise<T> {
   const courante = ambiante.getStore();
   if (courante) {
     if (courante.golfCourseId !== golfCourseId) {
-      throw new Error("Deux terrains dans une meme transaction : le cloisonnement serait rompu.");
+      throw new Error("Deux parcours dans une meme transaction : le cloisonnement serait rompu.");
     }
     return Promise.resolve(fn(courante.tx));
   }

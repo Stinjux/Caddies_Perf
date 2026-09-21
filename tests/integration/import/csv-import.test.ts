@@ -156,7 +156,9 @@ describe("validation des lignes", () => {
   it("refuse deux fois le même numéro dans le fichier", async () => {
     const a = await construireApercu(
       scope(),
-      fichier(`${EN_TETE}\n009;Fictif;Hassan;38;L;6;forte;Rue 1\n009;Autre;Omar;30;M;2;moyenne;Rue 2`),
+      fichier(
+        `${EN_TETE}\n009;Fictif;Hassan;38;L;6;forte;Rue 1\n009;Autre;Omar;30;M;2;moyenne;Rue 2`,
+      ),
     );
     expect(a.lignes[1]?.erreurs.join()).toMatch(/Numéro déjà utilisé/);
   });
@@ -238,7 +240,10 @@ describe("exécution de l'import", () => {
   });
 
   it("n'écrit RIEN si la transaction échoue — aucune importation partielle", async () => {
-    const a = await construireApercu(scope(), fichier(`${EN_TETE}\n017;Fictif;Hassan;38;L;6;forte;R1`));
+    const a = await construireApercu(
+      scope(),
+      fichier(`${EN_TETE}\n017;Fictif;Hassan;38;L;6;forte;R1`),
+    );
     // On force un conflit en détournant l'identifiant vers une valeur invalide.
     a.lignes[0]!.birthYear = 1800;
 

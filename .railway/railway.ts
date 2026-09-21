@@ -73,7 +73,7 @@ export default defineRailway(() => {
       AMORCE_MOT_DE_PASSE: preserve(),
       AMORCE_PRENOM: preserve(),
       AMORCE_NOM: preserve(),
-      AMORCE_TERRAIN: preserve(),
+      AMORCE_PARCOURS: preserve(),
       AMORCE_REINITIALISER: preserve(),
       // Jeu de demonstration : une voiturette scannable et son affectation,
       // toutes fictives. A retirer avant tout usage reel.

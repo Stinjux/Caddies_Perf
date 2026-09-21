@@ -1,15 +1,18 @@
+import { fr, type Messages } from "./fr";
+import { en } from "./en";
+import { ar } from "./ar";
+import { de } from "./de";
+import { es } from "./es";
+
 /**
  * Internationalisation du parcours client (spéc. 4).
  *
- * CINQ LANGUES prévues : français, anglais, arabe, allemand, espagnol.
+ * CINQ LANGUES, toutes intégrées : français, anglais, arabe, allemand,
+ * espagnol. Le français reste la langue de référence — c'est lui qui donne
+ * sa FORME aux quatre autres, et une traduction incomplète ne compile pas.
  *
- * SEUL LE FRANÇAIS est intégré à ce jour. La constitution exige que chaque
- * traduction soit présentée au propriétaire du produit pour APPROBATION
- * avant intégration : inventer les quatre autres serait une violation.
- *
- * Une langue non encore approuvée retombe sur le français, et l'interface
- * ne la propose pas — mieux vaut ne pas offrir un choix que d'offrir une
- * traduction que personne n'a validée.
+ * Chacune a été présentée au propriétaire du produit et approuvée avant
+ * intégration, comme l'exige la constitution.
  */
 
 export const LANGUES = ["fr", "en", "ar", "de", "es"] as const;
@@ -26,8 +29,16 @@ export const NOMS_LANGUES: Record<Langue, string> = {
   es: "Español",
 };
 
-/** Langues dont la traduction a été APPROUVÉE et intégrée. */
-export const LANGUES_DISPONIBLES: Langue[] = ["fr"];
+const DICTIONNAIRES: Record<Langue, Messages> = { fr, en, ar, de, es };
+
+/**
+ * Langues dont la traduction a été APPROUVÉE et intégrée.
+ *
+ * Dérivée du dictionnaire, non recopiée : ajouter une langue à `LANGUES` sans
+ * lui écrire de traduction ne compilerait pas, et l'écran d'accueil ne peut
+ * donc jamais proposer un drapeau qui mène au français.
+ */
+export const LANGUES_DISPONIBLES: Langue[] = [...LANGUES];
 
 export function estLangue(v: string | undefined): v is Langue {
   return !!v && (LANGUES as readonly string[]).includes(v);
@@ -41,3 +52,10 @@ export function resoudreLangue(demandee: string | undefined): Langue {
   if (estLangue(demandee) && LANGUES_DISPONIBLES.includes(demandee)) return demandee;
   return "fr";
 }
+
+/** Les textes de la langue demandée. */
+export function messages(langue: Langue): Messages {
+  return DICTIONNAIRES[langue];
+}
+
+export type { Messages };

@@ -1,5 +1,3 @@
-import type { Langue } from "./index";
-
 /**
  * Textes du parcours client, en FRANÇAIS — langue de référence.
  *
@@ -36,7 +34,7 @@ export const fr = {
 
   // Parcours et prix
   titreParcours:
-    "Dans l'ensemble, comment évaluez-vous votre expérience sur notre terrain aujourd'hui ?",
+    "Dans l'ensemble, comment évaluez-vous votre expérience sur notre parcours aujourd'hui ?",
   titrePrixNiveau: (prix: number) =>
     `Comment considérez-vous le prix de ${prix} MAD pour ce service de caddie ?`,
   prix: {
@@ -78,9 +76,20 @@ export const fr = {
   dejaEvalue: "Vous avez déjà évalué ce caddie aujourd'hui. Merci !",
 } as const;
 
-export type Messages = typeof fr;
+/**
+ * Le français est le MOULE de toutes les autres langues.
+ *
+ * `as const` fige chaque texte en type littéral ; élargi, il ne retient que
+ * la FORME : les mêmes clés, aux mêmes endroits, et les mêmes paramètres de
+ * fonction. Une traduction à laquelle il manque une question, ou dont
+ * `titrePrixNiveau` oublierait le prix, ne compile pas.
+ */
+type Elargi<T> = T extends string
+  ? string
+  : T extends number
+    ? number
+    : T extends (...args: infer A) => infer R
+      ? (...args: A) => R
+      : { [K in keyof T]: Elargi<T[K]> };
 
-/** Tant qu'une langue n'est pas approuvée, elle retombe sur le français. */
-export function messages(_langue: Langue): Messages {
-  return fr;
-}
+export type Messages = Elargi<typeof fr>;

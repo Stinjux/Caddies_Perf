@@ -1,7 +1,6 @@
 import { auditLog } from "@/db/schema";
 import type { Db } from "@/db";
 import { uuidv7 } from "@/lib/uuid";
-import type { Scope } from "../scope";
 
 /**
  * Journal en ecriture seule (FR-035 a FR-038).
@@ -25,6 +24,8 @@ export type AuditAction =
   | "account.attach"
   | "account.detach"
   | "account.password_reset"
+  | "account.grant_general"
+  | "account.revoke_general"
   | "caddie.create"
   | "caddie.update"
   | "caddie.disable"
@@ -48,6 +49,23 @@ export type AuditAction =
   | "report.export"
   | "audit.read";
 
+/**
+ * Qui agit, et sur quel parcours.
+ *
+ * Une portee satisfait ce contrat, mais l'inverse n'est pas vrai — et c'est
+ * le point. La creation d'un parcours journalise un evenement AVANT qu'une
+ * portee existe : le parcours vient de naitre. Exiger ici une portee
+ * complete obligeait a en fabriquer une de toutes pieces, par une conversion
+ * forcee qui contournait justement le garde-fou cense l'interdire.
+ *
+ * En demandant le strict necessaire, le journal cesse d'etre une raison de
+ * forger des portees.
+ */
+export interface Auteur {
+  readonly accountId: string;
+  readonly golfCourseId: string;
+}
+
 export interface AuditEntry {
   readonly action: AuditAction;
   readonly targetType: "golf_course" | "account" | "caddie" | "cart" | "evaluation" | "report";
@@ -57,11 +75,11 @@ export interface AuditEntry {
 /** La transaction en cours, ou la connexion elle-meme hors transaction. */
 export type AuditTx = Db | Parameters<Parameters<Db["transaction"]>[0]>[0];
 
-export async function writeAudit(tx: AuditTx, scope: Scope, entry: AuditEntry): Promise<void> {
+export async function writeAudit(tx: AuditTx, auteur: Auteur, entry: AuditEntry): Promise<void> {
   await tx.insert(auditLog).values({
     id: uuidv7(),
-    golfCourseId: scope.golfCourseId,
-    actorAccountId: scope.accountId,
+    golfCourseId: auteur.golfCourseId,
+    actorAccountId: auteur.accountId,
     action: entry.action,
     targetType: entry.targetType,
     targetId: entry.targetId,

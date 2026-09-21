@@ -78,7 +78,7 @@ describe("révocation immédiate d'une session (FR-016)", () => {
 });
 
 describe("perte de portée après détachement (P-1)", () => {
-  it("retire la portée quand le rattachement au terrain actif disparaît", async () => {
+  it("retire la portée quand le rattachement au parcours actif disparaît", async () => {
     await makeAccount({ email: "detache@example.invalid", links: [{ courseId, role: "starter" }] });
     const token = (await login("detache@example.invalid", PASSWORD)).token;
     expect((await resolveSession(token))?.scope).not.toBeNull();

@@ -79,7 +79,7 @@ describe("droits du rôle applicatif sur le journal", () => {
 
     await sql.begin(async (tx) => {
       await tx`SET LOCAL ROLE caddieperf_app`;
-      // Le role applicatif est soumis au RLS : sans terrain courant, il ne voit
+      // Le role applicatif est soumis au RLS : sans parcours courant, il ne voit
       // ni n'ecrit rien. C'est ce que fait withScope() dans l'application.
       await tx`SELECT set_config('app.golf_course_id', ${courseId}, true)`;
       await tx`SELECT count(*) FROM audit_log`;

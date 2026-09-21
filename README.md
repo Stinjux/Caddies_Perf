@@ -1,6 +1,6 @@
 # CaddiePerf
 
-Plateforme de gestion et d'évaluation des caddies pour terrains de golf.
+Plateforme de gestion et d'évaluation des caddies pour parcours de golf.
 
 Un client scanne le QR code permanent d'une voiturette au 18e trou et évalue son caddie
 en moins de 30 secondes, sans compte et sans application à télécharger.
@@ -10,14 +10,14 @@ en moins de 30 secondes, sans compte et sans application à télécharger.
 
 ## État
 
-Spécification n°1 — socle : données, comptes et terrains.
+Spécification n°1 — socle : données, comptes et parcours.
 **Phases 1 à 9 terminées.** Les spécifications 2 à 5 restent à écrire.
 
 | Couvert                                    | Reste à faire                          |
 | ------------------------------------------ | -------------------------------------- |
 | Modèle de données de référence (13 tables) | Caddies et import CSV (spéc. 2)        |
-| Terrains, comptes, authentification        | Voiturettes et QR codes (spéc. 2)      |
-| Cloisonnement par terrain                  | Réservations et affectations (spéc. 3) |
+| Parcours, comptes, authentification        | Voiturettes et QR codes (spéc. 2)      |
+| Cloisonnement par parcours                 | Réservations et affectations (spéc. 3) |
 | Permissions et non-exposition au Starter   | Questionnaire client (spéc. 4)         |
 | Journal, correction, effacement, purge     | Scores et rapports (spéc. 5)           |
 
@@ -95,8 +95,8 @@ dans `caddie_personal_data`, hors de tout chemin de jointure ordinaire, atteigna
 par un unique module qui journalise chaque accès. Aucune lecture en lot n'est exposée :
 un export massif est impossible, pas seulement découragé.
 
-**Cloisonnement par terrain** — les clés étrangères composites `(golf_course_id, id)`
-font refuser par PostgreSQL toute affectation reliant deux terrains. Des tests écrivent
+**Cloisonnement par parcours** — les clés étrangères composites `(golf_course_id, id)`
+font refuser par PostgreSQL toute affectation reliant deux parcours. Des tests écrivent
 en SQL brut pour le prouver, en contournant tout le code applicatif.
 
 **Le Starter ne voit rien de personnel** — un test Playwright capture _tout_ le trafic
@@ -106,6 +106,39 @@ jamais affichée. Sa capacité à échouer a été vérifiée par contrôle nég
 **Journal inaltérable** — les droits de modification et de suppression sont retirés au
 rôle applicatif au niveau de PostgreSQL. L'exigence reste vraie même si le code
 applicatif est compromis.
+
+## Deux niveaux d'administration
+
+| Niveau                     | Portée                                                          | Peut créer un parcours |
+| -------------------------- | --------------------------------------------------------------- | ---------------------- |
+| **Administrateur**         | Le ou les parcours auxquels son compte est rattaché             | Non                    |
+| **Administrateur général** | Tous les parcours, **y compris ceux créés après sa nomination** | Oui                    |
+
+Le niveau général ne pouvait pas se représenter par des rattachements : il en aurait
+fallu un par parcours, et le parcours de demain serait né hors de sa portée. C'est
+donc une propriété du compte (`account.general_admin`).
+
+**Le cloisonnement n'en est pas affaibli.** Un administrateur général reste, à chaque
+instant, dans la portée d'un seul parcours — le RLS demeure la barrière, inchangée.
+Son privilège porte sur le **choix** du parcours, jamais sur la simultanéité.
+
+On accorde et on retire ce niveau depuis la liste des comptes du parcours où la
+personne est rattachée. Deux garde-fous : nul ne peut se retirer son propre niveau,
+et le dernier administrateur général ne peut pas être rétrogradé — sans lui, plus
+personne ne pourrait créer un parcours ni réparer les droits.
+
+## Langues
+
+| Surface                         | Langues                                      | Comment elle est choisie                                      |
+| ------------------------------- | -------------------------------------------- | ------------------------------------------------------------- |
+| Questionnaire du joueur (`/e/`) | français, anglais, arabe, allemand, espagnol | Un lien sur l'écran d'accueil (`?lang=`)                      |
+| Interface d'administration      | français, anglais                            | Témoin de préférence, sinon `Accept-Language`, sinon français |
+
+Le français est la langue de **référence** : son dictionnaire donne sa forme à toutes
+les autres. Une traduction à laquelle il manque une clé, ou dont un texte à trous
+oublie sa valeur, **ne compile pas**. L'arabe s'écrit de droite à gauche ; la balise
+`<html>` porte la langue et la direction, ce dont dépendent les lecteurs d'écran et la
+mise en miroir de la rangée d'étoiles.
 
 ## Documentation
 

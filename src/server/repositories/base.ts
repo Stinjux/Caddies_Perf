@@ -11,7 +11,7 @@ import { ConflictError } from "../errors";
  * a reperer en revue (FR-023).
  */
 
-/** Filtre obligatoire par terrain. A combiner avec toute autre condition. */
+/** Filtre obligatoire par parcours. A combiner avec toute autre condition. */
 export function scoped(scope: Scope, courseColumn: PgColumn, ...extra: (SQL | undefined)[]): SQL {
   const conditions = [eq(courseColumn, scope.golfCourseId), ...extra.filter(Boolean)];
   return and(...(conditions as SQL[]))!;

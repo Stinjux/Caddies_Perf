@@ -7,6 +7,15 @@ export default defineConfig({
   reporter: "list",
   use: {
     baseURL: "http://localhost:3200",
+    // Le francais est la langue de REFERENCE du produit, et les assertions de
+    // ces tests sont ecrites en francais. Sans ce reglage, le navigateur
+    // d'essai annonce « en-US », l'interface passe en anglais — ce qu'elle
+    // DOIT faire — et chaque libelle cherche est introuvable. Fixer la
+    // locale rend la langue deliberee plutot que subie.
+    //
+    // L'anglais n'est pas laisse de cote pour autant : tests/e2e/langues.spec.ts
+    // le demande explicitement.
+    locale: "fr-FR",
     // Indispensable au scenario V-4 : la capture reseau prouve qu'aucune
     // donnee personnelle n'atteint le Starter, meme sans etre affichee.
     trace: "retain-on-failure",

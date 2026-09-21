@@ -13,8 +13,8 @@ import { connexion, ADMIN } from "./helpers";
 const BUDGET_MS = 2000;
 
 for (const [nom, chemin, repere] of [
-  ["liste des terrains", "/terrains", "Terrains"],
-  ["gestion des comptes", "/comptes", "Comptes du terrain"],
+  ["liste des parcours", "/parcours", "Parcours"],
+  ["gestion des comptes", "/comptes", "Comptes du parcours"],
   ["journal des actions", "/journal", "Journal des actions"],
 ] as const) {
   test(`${nom} : affichage sous ${BUDGET_MS} ms`, async ({ page }) => {

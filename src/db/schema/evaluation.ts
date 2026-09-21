@@ -20,7 +20,7 @@ import { caddie } from "./caddie";
  * Aucune colonne identifiant le joueur : ni nom, ni courriel, ni adresse IP,
  * ni empreinte de navigateur.
  *
- * SEPARATION DES MESURES (FR-043) : course_rating appartient au terrain,
+ * SEPARATION DES MESURES (FR-043) : course_rating appartient au parcours,
  * value_for_money et price_perception a la perception du prix. Aucune
  * n'entre dans le score du caddie, calcule uniquement depuis les criteres.
  */

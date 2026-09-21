@@ -25,7 +25,8 @@ let adminId: string;
 beforeEach(async () => {
   await resetDb();
   courseId = await makeCourse("Golf des Cèdres");
-  adminId = await makeAccount({ links: [{ courseId, role: "admin" }] });
+  // Créer un parcours relève du niveau général (voir services/golf-course).
+  adminId = await makeAccount({ generalAdmin: true, links: [{ courseId, role: "admin" }] });
 });
 
 const scope = () => testScope({ accountId: adminId, golfCourseId: courseId, role: "admin" });
@@ -35,7 +36,7 @@ async function actions(): Promise<string[]> {
   return rows.map((r) => r.action).sort();
 }
 
-describe("mutations de terrain", () => {
+describe("mutations de parcours", () => {
   it("journalise la création, la modification et l'archivage", async () => {
     const id = await createCourse(adminId, { name: "Nouveau", timezone: "Africa/Casablanca" });
     const s = testScope({ accountId: adminId, golfCourseId: id, role: "admin" });
@@ -112,7 +113,7 @@ describe("accès aux renseignements personnels (FR-036)", () => {
 });
 
 describe("contenu d'une entrée (FR-035)", () => {
-  it("porte auteur, terrain, nature, cible et horodatage", async () => {
+  it("porte auteur, parcours, nature, cible et horodatage", async () => {
     await createAccount(scope(), {
       email: "champs@example.invalid",
       firstName: "P",

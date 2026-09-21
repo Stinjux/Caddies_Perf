@@ -24,12 +24,15 @@ beforeEach(async () => {
   await resetDb();
   cedres = await makeCourse("Golf des Cèdres");
   atlas = await makeCourse("Royal Atlas");
+  // Niveau général : ces deux comptes créent des parcours plus bas.
   adminCedres = await makeAccount({
     email: "cedres@example.invalid",
+    generalAdmin: true,
     links: [{ courseId: cedres, role: "admin" }],
   });
   adminAtlas = await makeAccount({
     email: "atlas@example.invalid",
+    generalAdmin: true,
     links: [{ courseId: atlas, role: "admin" }],
   });
 });
@@ -38,7 +41,7 @@ const scopeCedres = () =>
   testScope({ accountId: adminCedres, golfCourseId: cedres, role: "admin" });
 
 describe("liste des comptes", () => {
-  it("n'affiche aucun compte rattaché au seul terrain voisin", async () => {
+  it("n'affiche aucun compte rattaché au seul parcours voisin", async () => {
     const liste = await listAccountsInScope(scopeCedres());
     expect(liste.map((a) => a.email)).toEqual(["cedres@example.invalid"]);
   });
@@ -82,20 +85,20 @@ describe("liste des comptes", () => {
   });
 });
 
-describe("liste des terrains", () => {
-  it("ne liste que les terrains rattachés au compte", async () => {
+describe("liste des parcours", () => {
+  it("ne liste que les parcours rattachés au compte", async () => {
     const mine = await listCoursesForAccount(adminCedres);
     expect(mine.map((c) => c.name)).toEqual(["Golf des Cèdres"]);
   });
 
-  it("liste les deux terrains d'un compte doublement rattaché, et rien de plus", async () => {
+  it("liste les deux parcours d'un compte doublement rattaché, et rien de plus", async () => {
     const double = await makeAccount({
       links: [
         { courseId: cedres, role: "admin" },
         { courseId: atlas, role: "starter" },
       ],
     });
-    await makeCourse("Terrain Tiers");
+    await makeCourse("Parcours Tiers");
 
     const links = await listLinksForAccount(double);
     expect(links.map((l) => l.name).sort()).toEqual(["Golf des Cèdres", "Royal Atlas"]);
@@ -103,7 +106,7 @@ describe("liste des terrains", () => {
 });
 
 describe("liste du journal", () => {
-  it("ne mélange jamais les entrées de deux terrains", async () => {
+  it("ne mélange jamais les entrées de deux parcours", async () => {
     await createCourse(adminCedres, { name: "Nouveau Cèdres", timezone: "Africa/Casablanca" });
     await createCourse(adminAtlas, { name: "Nouvel Atlas", timezone: "Africa/Casablanca" });
 

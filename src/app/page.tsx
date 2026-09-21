@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const ctx = await currentSession();
   if (!ctx) redirect("/connexion");
-  if (!ctx.scope) redirect("/choisir-terrain");
+  if (!ctx.scope) redirect("/choisir-parcours");
   // Le role Starter a disparu avec les affectations : tout compte est admin.
-  redirect("/terrains");
+  redirect("/parcours");
 }

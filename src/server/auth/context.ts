@@ -14,10 +14,10 @@ export async function currentSession(): Promise<SessionContext | null> {
   return resolveSession(store.get(SESSION_COOKIE)?.value);
 }
 
-/** Exige une session ET un terrain actif. Redirige sinon. */
+/** Exige une session ET un parcours actif. Redirige sinon. */
 export async function requireScope(): Promise<{ ctx: SessionContext; scope: Scope }> {
   const ctx = await currentSession();
   if (!ctx) redirect("/connexion");
-  if (!ctx.scope) redirect("/choisir-terrain");
+  if (!ctx.scope) redirect("/choisir-parcours");
   return { ctx, scope: ctx.scope };
 }

@@ -2,12 +2,12 @@ import { describe, it, expect } from "vitest";
 import { localDateFor, formatInCourseTimezone, isValidTimezone } from "@/lib/timezone";
 
 /**
- * T037 — les dates suivent le fuseau du TERRAIN, jamais celui du lecteur
+ * T037 — les dates suivent le fuseau du PARCOURS, jamais celui du lecteur
  * (FR-005), et la date locale sert de cle au decompte des jours travailles
  * (FR-044).
  */
 
-describe("date locale du terrain (FR-005)", () => {
+describe("date locale du parcours (FR-005)", () => {
   it("ne depend pas du fuseau du serveur ni du navigateur", () => {
     const instant = new Date("2026-06-15T02:00:00Z");
     expect(localDateFor(instant, "Africa/Casablanca")).toBe("2026-06-15");
@@ -38,8 +38,8 @@ describe("date locale du terrain (FR-005)", () => {
   });
 });
 
-describe("affichage dans le fuseau du terrain", () => {
-  it("affiche deux heures differentes pour deux terrains distants", () => {
+describe("affichage dans le fuseau du parcours", () => {
+  it("affiche deux heures differentes pour deux parcours distants", () => {
     const instant = new Date("2026-09-17T15:00:00Z");
     expect(formatInCourseTimezone(instant, "Africa/Casablanca")).not.toBe(
       formatInCourseTimezone(instant, "Asia/Tokyo"),

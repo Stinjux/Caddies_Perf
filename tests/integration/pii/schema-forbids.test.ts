@@ -69,7 +69,7 @@ describe("V-5 — le schema est incapable de recevoir des donnees interdites", (
 });
 
 describe("V-3 — cloisonnement garanti par la base", () => {
-  it("impose une cle etrangere composite par terrain sur le lien evaluation-caddie", async () => {
+  it("impose une cle etrangere composite par parcours sur le lien evaluation-caddie", async () => {
     const rows = await sql<{ conname: string }[]>`
       SELECT conname FROM pg_constraint
       WHERE contype = 'f' AND conname LIKE '%same_course%'

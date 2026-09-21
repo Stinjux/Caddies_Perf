@@ -17,7 +17,7 @@ import { makeCourse, makeAccount } from "../helpers/fixtures";
  * T076 — PURGE A ECHEANCE (FR-034, FR-034b, FR-034c).
  *
  * Le piege a eviter : une purge naive supprimerait la ligne d'evaluation avec
- * son commentaire, et les statistiques historiques du terrain s'effaceraient
+ * son commentaire, et les statistiques historiques du parcours s'effaceraient
  * d'elles-memes au bout de deux ans. Ici, seul le TEXTE est vide.
  */
 

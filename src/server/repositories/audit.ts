@@ -5,8 +5,8 @@ import type { Scope } from "../scope";
 import { journaliserConsultation } from "../audit/consultation";
 
 /**
- * Lecture du journal, TOUJOURS limitee au terrain de la portee (FR-039).
- * Aucune fonction n'expose le journal d'un autre terrain.
+ * Lecture du journal, TOUJOURS limitee au parcours de la portee (FR-039).
+ * Aucune fonction n'expose le journal d'un autre parcours.
  */
 
 export interface AuditFilters {

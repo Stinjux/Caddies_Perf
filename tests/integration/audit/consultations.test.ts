@@ -19,24 +19,24 @@ import { exporterKpiCsv } from "@/server/services/rapports";
  * savoir qui a consulte quoi serait impossible apres coup.
  */
 
-let terrain = "";
+let parcours = "";
 let adminId = "";
 
-const admin = () => testScope({ accountId: adminId, golfCourseId: terrain, role: "admin" });
-const starter = () => testScope({ accountId: adminId, golfCourseId: terrain, role: "starter" });
+const admin = () => testScope({ accountId: adminId, golfCourseId: parcours, role: "admin" });
+const starter = () => testScope({ accountId: adminId, golfCourseId: parcours, role: "starter" });
 
 async function actions(): Promise<string[]> {
   const rows = await db
     .select({ action: auditLog.action })
     .from(auditLog)
-    .where(eq(auditLog.golfCourseId, terrain));
+    .where(eq(auditLog.golfCourseId, parcours));
   return rows.map((r) => r.action);
 }
 
 beforeEach(async () => {
   await resetDb();
-  terrain = await makeCourse("Golf Fictif du Journal");
-  adminId = await makeAccount({ links: [{ courseId: terrain, role: "admin" }] });
+  parcours = await makeCourse("Golf Fictif du Journal");
+  adminId = await makeAccount({ links: [{ courseId: parcours, role: "admin" }] });
 });
 
 describe("les consultations laissent une trace", () => {

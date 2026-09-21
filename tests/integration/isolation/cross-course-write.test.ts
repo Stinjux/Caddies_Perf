@@ -10,10 +10,10 @@ import { testScope } from "../../helpers/scope";
 import { makeCourse, makeAccount, PASSWORD } from "../../helpers/fixtures";
 
 /**
- * T054 — ECRITURE INTER-TERRAINS REFUSEE (FR-023, FR-025).
+ * T054 — ECRITURE INTER-PARCOURS REFUSEE (FR-023, FR-025).
  *
- * Une portee sur le terrain A ne doit pouvoir modifier AUCUNE donnee du
- * terrain B, meme en fournissant un identifiant valide de B.
+ * Une portee sur le parcours A ne doit pouvoir modifier AUCUNE donnee du
+ * parcours B, meme en fournissant un identifiant valide de B.
  */
 
 let cedres: string;
@@ -30,16 +30,16 @@ beforeEach(async () => {
 });
 
 /**
- * Portee FORGEE : elle prétend porter le terrain voisin. C'est exactement ce
+ * Portee FORGEE : elle prétend porter le parcours voisin. C'est exactement ce
  * qu'une faille produirait. Les depots doivent quand meme refuser, parce que
- * le filtrage se fait sur l'identifiant de terrain de la portee et que la
+ * le filtrage se fait sur l'identifiant de parcours de la portee et que la
  * session reelle ne l'aurait jamais produit.
  */
 const scopeCedres = () =>
   testScope({ accountId: adminCedres, golfCourseId: cedres, role: "admin" });
 
-describe("modification d'un terrain voisin", () => {
-  it("ne modifie jamais le terrain voisin, même avec la bonne version", async () => {
+describe("modification d'un parcours voisin", () => {
+  it("ne modifie jamais le parcours voisin, même avec la bonne version", async () => {
     await expect(
       updateCourse(scopeCedres(), { name: "Détourné", timezone: "Africa/Casablanca" }, 1),
     ).resolves.toBeUndefined();
@@ -51,7 +51,7 @@ describe("modification d'un terrain voisin", () => {
     expect(mien[0]?.name).toBe("Détourné");
   });
 
-  it("n'archive jamais le terrain voisin", async () => {
+  it("n'archive jamais le parcours voisin", async () => {
     await archiveCourse(scopeCedres(), 1);
 
     const voisin = await db.select().from(golfCourse).where(eq(golfCourse.id, atlas));
@@ -59,16 +59,16 @@ describe("modification d'un terrain voisin", () => {
   });
 });
 
-describe("écriture sur un compte d'un autre terrain", () => {
-  it("refuse de désactiver un compte du terrain voisin, comme s'il n'existait pas", async () => {
+describe("écriture sur un compte d'un autre parcours", () => {
+  it("refuse de désactiver un compte du parcours voisin, comme s'il n'existait pas", async () => {
     await expect(disableAccount(scopeCedres(), adminAtlas, 1)).rejects.toThrow(/introuvable/);
   });
 
-  it("refuse de détacher un compte non rattaché au terrain actif", async () => {
+  it("refuse de détacher un compte non rattaché au parcours actif", async () => {
     await expect(detachAccount(scopeCedres(), adminAtlas)).rejects.toThrow(/introuvable/);
   });
 
-  it("rattache toujours au terrain de la portée, jamais à un autre", async () => {
+  it("rattache toujours au parcours de la portée, jamais à un autre", async () => {
     await attachAccount(scopeCedres(), adminAtlas, "starter");
 
     const liens = await db
@@ -80,7 +80,7 @@ describe("écriture sur un compte d'un autre terrain", () => {
     expect(liens.find((l) => l.golfCourseId === cedres)?.role).toBe("starter");
   });
 
-  it("crée toujours le compte sur le terrain de la portée", async () => {
+  it("crée toujours le compte sur le parcours de la portée", async () => {
     const id = await createAccount(scopeCedres(), {
       email: "nouveau@example.invalid",
       firstName: "Prenom",
@@ -99,8 +99,8 @@ describe("écriture sur un compte d'un autre terrain", () => {
   });
 });
 
-describe("le terrain voisin reste intact", () => {
-  it("conserve ses rattachements après toute opération sur le terrain actif", async () => {
+describe("le parcours voisin reste intact", () => {
+  it("conserve ses rattachements après toute opération sur le parcours actif", async () => {
     await updateCourse(scopeCedres(), { name: "X", timezone: "Africa/Casablanca" }, 1);
     await createAccount(scopeCedres(), {
       email: "autre@example.invalid",

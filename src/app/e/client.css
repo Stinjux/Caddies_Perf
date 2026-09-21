@@ -401,3 +401,32 @@ textarea {
 [dir="rtl"] .bouton {
   font-size: 1rem;
 }
+
+/* --- Choix de la langue, sur l'écran d'accueil ------------------------- */
+/* Cinq langues sur un téléphone : elles doivent pouvoir passer à la ligne
+   sans jamais se toucher, et rester des cibles tactiles confortables. */
+.langues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin-block-start: 0.75rem;
+}
+
+.langues a {
+  color: inherit;
+  padding-block: 0.5rem;
+  text-decoration: none;
+  border-block-end: 1px solid transparent;
+}
+
+.langues a:hover,
+.langues a:focus-visible {
+  border-block-end-color: currentColor;
+}
+
+/* La langue en cours reste lisible sans être un lien mort : elle est
+   simplement plus appuyée que les autres. */
+.langues__choisie {
+  font-weight: 600;
+  border-block-end-color: currentColor !important;
+}

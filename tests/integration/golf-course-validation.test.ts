@@ -20,32 +20,34 @@ beforeEach(async () => {
     firstName: "Amina",
     lastName: "Exemple",
     passwordHash: await hashPassword("MotDePasseFictif1!"),
+    // Créer un parcours est un acte de plateforme, réservé au niveau général.
+    generalAdmin: true,
   });
 });
 
-describe("validation d'un terrain (FR-004)", () => {
+describe("validation d'un parcours (FR-004)", () => {
   it("refuse un nom manquant en le nommant explicitement", async () => {
     await expect(
       createCourse(adminId, { name: "  ", timezone: "Africa/Casablanca" }),
-    ).rejects.toThrow(/nom du terrain est obligatoire/);
+    ).rejects.toThrow(/nom du parcours est obligatoire/);
   });
 
   it("refuse un fuseau horaire manquant", async () => {
-    await expect(createCourse(adminId, { name: "Terrain", timezone: "" })).rejects.toThrow(
+    await expect(createCourse(adminId, { name: "Parcours", timezone: "" })).rejects.toThrow(
       /fuseau horaire est obligatoire/,
     );
   });
 
   it("refuse un fuseau horaire inconnu", async () => {
     await expect(
-      createCourse(adminId, { name: "Terrain", timezone: "Pas/UnFuseau" }),
+      createCourse(adminId, { name: "Parcours", timezone: "Pas/UnFuseau" }),
     ).rejects.toThrow(/Fuseau horaire inconnu/);
   });
 
   it("refuse une couleur hors format hexadecimal", async () => {
     await expect(
       createCourse(adminId, {
-        name: "Terrain",
+        name: "Parcours",
         timezone: "Africa/Casablanca",
         brandColorPrimary: "vert",
       }),
@@ -55,14 +57,14 @@ describe("validation d'un terrain (FR-004)", () => {
   it("refuse un lien d'avis qui n'est pas en https", async () => {
     await expect(
       createCourse(adminId, {
-        name: "Terrain",
+        name: "Parcours",
         timezone: "Africa/Casablanca",
         googleReviewUrl: "http://example.invalid/avis",
       }),
     ).rejects.toThrow(/https/);
   });
 
-  it("accepte un terrain complet et valide", async () => {
+  it("accepte un parcours complet et valide", async () => {
     const id = await createCourse(adminId, {
       name: "Golf des Cèdres",
       address: "Route Fictive 1",

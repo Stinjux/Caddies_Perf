@@ -156,7 +156,7 @@ export async function construireApercu(
     });
   }
 
-  // Doublons vis-a-vis des caddies DEJA enregistres sur ce terrain.
+  // Doublons vis-a-vis des caddies DEJA enregistres sur ce parcours.
   const existants = await withScope(scope, (tx) =>
     tx
       .select({
@@ -236,7 +236,7 @@ export async function executerImport(
 
   await withScope(scope, async (tx) => {
     // Le numero n'est plus engendre : il vient du fichier, parce que c'est
-    // celui que le caddie porte deja sur le terrain.
+    // celui que le caddie porte deja sur le parcours.
     const aujourdhui = new Date().toISOString().slice(0, 10);
 
     for (const l of aCreer) {

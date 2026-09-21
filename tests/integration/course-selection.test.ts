@@ -4,7 +4,7 @@ import { listLinksForAccount } from "@/server/repositories/account";
 import { resetDb } from "../helpers/reset-db";
 import { makeCourse, makeAccount, PASSWORD } from "../helpers/fixtures";
 
-/** T045 — choix du terrain actif (FR-012, FR-013). */
+/** T045 — choix du parcours actif (FR-012, FR-013). */
 
 let cedres: string;
 let atlas: string;
@@ -15,8 +15,8 @@ beforeEach(async () => {
   atlas = await makeCourse("Royal Atlas");
 });
 
-describe("sélection du terrain à la connexion (FR-012)", () => {
-  it("sélectionne d'office le terrain quand il n'y en a qu'un", async () => {
+describe("sélection du parcours à la connexion (FR-012)", () => {
+  it("sélectionne d'office le parcours quand il n'y en a qu'un", async () => {
     await makeAccount({
       email: "solo@example.invalid",
       links: [{ courseId: cedres, role: "starter" }],
@@ -29,7 +29,7 @@ describe("sélection du terrain à la connexion (FR-012)", () => {
     expect(ctx?.scope?.role).toBe("starter");
   });
 
-  it("ne sélectionne aucun terrain quand le compte en a plusieurs", async () => {
+  it("ne sélectionne aucun parcours quand le compte en a plusieurs", async () => {
     await makeAccount({
       email: "double@example.invalid",
       links: [
@@ -45,7 +45,7 @@ describe("sélection du terrain à la connexion (FR-012)", () => {
     expect(ctx?.scope).toBeNull();
   });
 
-  it("ne propose que les terrains rattachés, jamais les autres (FR-023)", async () => {
+  it("ne propose que les parcours rattachés, jamais les autres (FR-023)", async () => {
     const id = await makeAccount({
       email: "limite@example.invalid",
       links: [{ courseId: cedres, role: "admin" }],
@@ -55,7 +55,7 @@ describe("sélection du terrain à la connexion (FR-012)", () => {
     expect(links.map((l) => l.golfCourseId)).toEqual([cedres]);
   });
 
-  it("porte le rôle du terrain choisi, pas un rôle global", async () => {
+  it("porte le rôle du parcours choisi, pas un rôle global", async () => {
     await makeAccount({
       email: "roles@example.invalid",
       links: [
@@ -73,7 +73,7 @@ describe("sélection du terrain à la connexion (FR-012)", () => {
     expect((await resolveSession(token))?.scope?.role).toBe("starter");
   });
 
-  it("refuse de sélectionner un terrain non rattaché", async () => {
+  it("refuse de sélectionner un parcours non rattaché", async () => {
     await makeAccount({
       email: "refus@example.invalid",
       links: [{ courseId: cedres, role: "admin" }],
@@ -116,7 +116,7 @@ describe("connexion (FR-017)", () => {
   it("refuse un compte sans aucun rattachement, avec un message explicite", async () => {
     await makeAccount({ email: "orphelin@example.invalid" });
     await expect(login("orphelin@example.invalid", PASSWORD)).rejects.toThrow(
-      /rattaché à aucun terrain/,
+      /rattaché à aucun parcours/,
     );
   });
 

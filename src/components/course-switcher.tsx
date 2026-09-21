@@ -4,19 +4,26 @@ import { selectCourse } from "@/server/auth/current";
 import { SESSION_COOKIE } from "@/server/auth/session";
 
 /**
- * Selecteur de terrain actif (FR-012, FR-013).
+ * Selecteur de parcours actif (FR-012, FR-013).
  *
- * FR-027 : changer de terrain provoque une redirection complete, ce qui
- * ecarte de l'ecran toute donnee du terrain precedent — aucun etat client
+ * FR-027 : changer de parcours provoque une redirection complete, ce qui
+ * ecarte de l'ecran toute donnee du parcours precedent — aucun etat client
  * ne survit au changement.
+ *
+ * Un administrateur general y retrouve TOUS les parcours : c'est la liste
+ * recue en parametre qui en decide, jamais ce composant.
  */
 
 export async function CourseSwitcher({
   courses,
   activeId,
+  label,
+  bouton,
 }: {
   courses: { golfCourseId: string; name: string; role: "admin" | "starter" }[];
   activeId: string | null;
+  label: string;
+  bouton: string;
 }) {
   async function changer(formData: FormData) {
     "use server";
@@ -41,7 +48,7 @@ export async function CourseSwitcher({
   return (
     <form action={changer} className="flex items-center gap-2">
       <label htmlFor="golfCourseId" className="sr-only">
-        Terrain actif
+        {label}
       </label>
       <select
         id="golfCourseId"
@@ -56,7 +63,7 @@ export async function CourseSwitcher({
         ))}
       </select>
       <button type="submit" className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm">
-        Changer
+        {bouton}
       </button>
     </form>
   );

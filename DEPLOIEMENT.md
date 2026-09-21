@@ -14,7 +14,7 @@ Tant que l'hébergement souverain n'est pas tranché :
 - les comptes d'essai suffisent (`fixtures/seed-data.ts`), ils sont fictifs.
 
 Cette instance sert à montrer le produit et à éprouver le déploiement. Elle ne
-sert pas à exploiter un terrain.
+sert pas à exploiter un parcours.
 
 ---
 
@@ -105,7 +105,7 @@ railway run node -e "const p=require('postgres');const s=p(process.env.APP_DATAB
 
 La réponse attendue est `caddieperf_app`, `rolsuper: false`,
 `rolbypassrls: false`. **Tout autre résultat signifie que le cloisonnement entre
-terrains ne s'applique pas**, quelles que soient les apparences.
+parcours ne s'applique pas**, quelles que soient les apparences.
 
 ### 6. Créer le premier administrateur
 
@@ -113,7 +113,7 @@ Une installation neuve est **inaccessible** : créer un compte exige une portée
 qui exige un compte. Ce script casse ce cercle, une fois et une seule.
 
 ```bash
-railway run --service caddieperf sh -c 'AMORCE_EMAIL="vous@example.invalid" AMORCE_MOT_DE_PASSE="…" AMORCE_PRENOM="…" AMORCE_NOM="…" AMORCE_TERRAIN="Nom du parcours" npm run db:amorcer'
+railway run --service caddieperf sh -c 'AMORCE_EMAIL="vous@example.invalid" AMORCE_MOT_DE_PASSE="…" AMORCE_PRENOM="…" AMORCE_NOM="…" AMORCE_PARCOURS="Nom du parcours" npm run db:amorcer'
 ```
 
 Il refuse : un mot de passe de moins de douze caractères, une adresse

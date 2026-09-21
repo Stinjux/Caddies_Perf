@@ -20,6 +20,8 @@ export interface AccountSummary {
   firstName: string;
   lastName: string;
   status: "active" | "disabled";
+  /** Niveau general : administrateur de TOUS les parcours. */
+  generalAdmin: boolean;
   version: number;
 }
 
@@ -29,10 +31,11 @@ const PUBLIC_COLUMNS = {
   firstName: account.firstName,
   lastName: account.lastName,
   status: account.status,
+  generalAdmin: account.generalAdmin,
   version: account.version,
 } as const;
 
-/** Comptes rattaches au terrain actif, et eux seuls (FR-023). */
+/** Comptes rattaches au parcours actif, et eux seuls (FR-023). */
 export async function listAccountsInScope(
   scope: Scope,
 ): Promise<(AccountSummary & { role: "admin" | "starter" })[]> {
@@ -72,8 +75,45 @@ export async function findAccountInScope(
   return rows[0] ?? null;
 }
 
-/** Rattachements d'un compte, avec le terrain et le role. */
-export async function listLinksForAccount(accountId: string) {
+export interface LienParcours {
+  golfCourseId: string;
+  name: string;
+  timezone: string;
+  status: "active" | "archived";
+  role: "admin" | "starter";
+}
+
+/** Vrai si le compte porte le niveau general. Lecture unique, sans portee. */
+export async function estAdminGeneral(accountId: string): Promise<boolean> {
+  const rows = await db
+    .select({ g: account.generalAdmin })
+    .from(account)
+    .where(eq(account.id, accountId))
+    .limit(1);
+  return rows[0]?.g === true;
+}
+
+/**
+ * Parcours accessibles a un compte.
+ *
+ * LE TEST DU NIVEAU GENERAL EST FAIT ICI, et nulle part ailleurs. Les ecrans
+ * qui listent des parcours appellent cette seule fonction : aucun ne peut
+ * oublier le cas, et le prochain l'heritera sans rien savoir.
+ */
+export async function listLinksForAccount(accountId: string): Promise<LienParcours[]> {
+  if (await estAdminGeneral(accountId)) {
+    const tous = await db
+      .select({
+        golfCourseId: golfCourse.id,
+        name: golfCourse.name,
+        timezone: golfCourse.timezone,
+        status: golfCourse.status,
+      })
+      .from(golfCourse)
+      .orderBy(asc(golfCourse.name));
+    return tous.map((c) => ({ ...c, role: "admin" as const }));
+  }
+
   return db
     .select({
       golfCourseId: golfCourse.id,
@@ -88,11 +128,26 @@ export async function listLinksForAccount(accountId: string) {
     .orderBy(asc(golfCourse.name));
 }
 
-/** Role du compte SUR ce terrain. Null si aucun rattachement (FR-012). */
+/**
+ * Role du compte SUR ce parcours. Null si aucun rattachement (FR-012).
+ *
+ * Un administrateur general est « admin » partout — mais seulement sur un
+ * parcours QUI EXISTE : sans cette verification, un identifiant invente
+ * ouvrirait une portee vide, et l'echec surviendrait plus loin, plus obscur.
+ */
 export async function roleOnCourse(
   accountId: string,
   golfCourseId: string,
 ): Promise<"admin" | "starter" | null> {
+  if (await estAdminGeneral(accountId)) {
+    const existe = await db
+      .select({ id: golfCourse.id })
+      .from(golfCourse)
+      .where(eq(golfCourse.id, golfCourseId))
+      .limit(1);
+    return existe.length > 0 ? "admin" : null;
+  }
+
   const rows = await db
     .select({ role: accountGolfCourse.role })
     .from(accountGolfCourse)

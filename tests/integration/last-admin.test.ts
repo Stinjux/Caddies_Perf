@@ -10,7 +10,7 @@ import { makeCourse, makeAccount } from "../helpers/fixtures";
 
 /**
  * T044 — INVARIANT DU DERNIER ADMINISTRATEUR (FR-015).
- * Un terrain actif ne doit JAMAIS se retrouver sans administrateur actif,
+ * Un parcours actif ne doit JAMAIS se retrouver sans administrateur actif,
  * par aucun chemin.
  */
 
@@ -67,7 +67,7 @@ describe("désactivation du dernier administrateur", () => {
     );
   });
 
-  it("ne compte pas un administrateur d'un AUTRE terrain", async () => {
+  it("ne compte pas un administrateur d'un AUTRE parcours", async () => {
     const autre = await makeCourse("Royal Atlas");
     await makeAccount({ links: [{ courseId: autre, role: "admin" }] });
     await expect(disableAccount(asAdmin(), adminId, 1)).rejects.toThrow(
@@ -98,7 +98,7 @@ describe("détachement du dernier administrateur", () => {
 });
 
 describe("rattachement (FR-010)", () => {
-  it("rattache un compte existant au terrain actif", async () => {
+  it("rattache un compte existant au parcours actif", async () => {
     const autre = await makeCourse("Royal Atlas");
     const compte = await makeAccount({ links: [{ courseId: autre, role: "starter" }] });
 
@@ -106,7 +106,7 @@ describe("rattachement (FR-010)", () => {
     expect(await activeAdmins()).toBe(2);
   });
 
-  it("refuse un double rattachement au même terrain", async () => {
+  it("refuse un double rattachement au même parcours", async () => {
     const compte = await makeAccount({ links: [{ courseId, role: "starter" }] });
     await expect(attachAccount(asAdmin(), compte, "admin")).rejects.toThrow(/déjà rattaché/);
   });

@@ -14,7 +14,7 @@ import { ValidationError, ConflictError, NotFoundError, LastAdminError } from ".
  * L'INVARIANT DU DERNIER ADMINISTRATEUR (FR-015) est verifie DANS la
  * transaction, juste avant l'ecriture : un controle fait avant la transaction
  * laisserait une fenetre ou deux desactivations simultanees videraient le
- * terrain de ses administrateurs.
+ * parcours de ses administrateurs.
  */
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

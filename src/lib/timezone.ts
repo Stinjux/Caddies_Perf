@@ -1,5 +1,5 @@
 /**
- * Les instants sont stockes en timestamptz (UTC). La date LOCALE d'un terrain
+ * Les instants sont stockes en timestamptz (UTC). La date LOCALE d'un parcours
  * en est derivee a la lecture, jamais stockee — sauf assignment.local_date,
  * figee a la creation car elle sert de cle au decompte des jours travailles.
  */
@@ -13,7 +13,7 @@ export function isValidTimezone(tz: string): boolean {
   }
 }
 
-/** Date locale du terrain au format AAAA-MM-JJ (FR-005, FR-044). */
+/** Date locale du parcours au format AAAA-MM-JJ (FR-005, FR-044). */
 export function localDateFor(instant: Date, timezone: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
@@ -26,7 +26,7 @@ export function localDateFor(instant: Date, timezone: string): string {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
-/** Affichage d'un instant dans le fuseau du terrain, jamais celui du navigateur. */
+/** Affichage d'un instant dans le fuseau du parcours, jamais celui du navigateur. */
 export function formatInCourseTimezone(
   instant: Date,
   timezone: string,

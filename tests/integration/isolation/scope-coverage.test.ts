@@ -8,7 +8,7 @@ import path from "node:path";
  * Ce test ne verifie pas un comportement : il verifie une DISCIPLINE
  * ARCHITECTURALE. Il echoue le jour ou quelqu'un — humain ou machine —
  * ajoute une fonction de depot appelable sans portee, ou fait entrer un
- * identifiant de terrain venu du navigateur dans une decision d'acces.
+ * identifiant de parcours venu du navigateur dans une decision d'acces.
  *
  * C'est le garde-fou qui protege le principe IV dans la duree, une fois que
  * plus personne ne se souviendra pourquoi il a ete ecrit.
@@ -47,7 +47,7 @@ describe("la portée reste obligatoire dans les dépôts", () => {
     expect(read(REPO_DIR).length).toBeGreaterThan(0);
   });
 
-  it("aucune fonction de dépôt ne filtre sans un identifiant de terrain", () => {
+  it("aucune fonction de dépôt ne filtre sans un identifiant de parcours", () => {
     const fautives: string[] = [];
 
     for (const { name, source } of read(REPO_DIR)) {
@@ -56,7 +56,7 @@ describe("la portée reste obligatoire dans les dépôts", () => {
       for (const fn of exportedDbFunctions(source)) {
         const prendPortee = /scope\s*:\s*Scope/.test(fn.signature);
         // Seules exceptions admises : les fonctions qui portent explicitement
-        // un identifiant de compte ou de terrain, et dont le nom le dit.
+        // un identifiant de compte ou de parcours, et dont le nom le dit.
         const exceptionAdmise =
           /accountId\s*:\s*string/.test(fn.signature) ||
           /golfCourseId\s*:\s*string/.test(fn.signature) ||
@@ -117,9 +117,17 @@ describe("la portée reste obligatoire dans les dépôts", () => {
 describe("une portée ne peut naître que d'une session vérifiée", () => {
   it("n'expose qu'un seul constructeur de portée", () => {
     const source = readFileSync(SCOPE_FILE, "utf8");
-    const constructeurs = source.match(/export function \w+/g) ?? [];
-    expect(constructeurs).toContain("export function createScopeFromVerifiedSession");
-    expect(constructeurs.length).toBeLessThanOrEqual(3);
+    const exportees = [...source.matchAll(/export function (\w+)/g)].map((m) => m[1]!);
+
+    // UN SEUL constructeur, quel que soit le nombre de vérificateurs. Compter
+    // les fonctions exportées mesurait la taille du module, pas ce qui compte :
+    // ajouter un requireX est anodin, ajouter un createX ne l'est jamais.
+    expect(exportees.filter((n) => n.startsWith("create"))).toEqual([
+      "createScopeFromVerifiedSession",
+    ]);
+    // Le module reste petit : s'il enfle, c'est qu'il fait autre chose que
+    // garder la frontière.
+    expect(exportees.length).toBeLessThanOrEqual(5);
   });
 
   it("marque le type de portée par une empreinte, interdisant sa fabrication ailleurs", () => {
@@ -146,7 +154,7 @@ describe("une portée ne peut naître que d'une session vérifiée", () => {
     };
     parcourir(racine);
 
-    const autorises = ["scope/index.ts", "auth/current.ts", "terrains/[id]/page.tsx"];
+    const autorises = ["scope/index.ts", "auth/current.ts", "parcours/[id]/page.tsx"];
     const intrus = appelants.filter((f) => !autorises.some((a) => f.includes(a)));
 
     expect(intrus).toEqual([]);

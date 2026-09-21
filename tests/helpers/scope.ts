@@ -9,6 +9,8 @@ export function testScope(params: {
   accountId: string;
   golfCourseId: string;
   role: "admin" | "starter";
+  /** Niveau general. Omis, il vaut faux : le defaut est le moindre privilege. */
+  generalAdmin?: boolean;
 }): Scope {
   return createScopeFromVerifiedSession(params);
 }

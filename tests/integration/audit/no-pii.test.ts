@@ -24,7 +24,7 @@ let adminId: string;
 beforeEach(async () => {
   await resetDb();
   courseId = await makeCourse("Golf des Cèdres");
-  adminId = await makeAccount({ links: [{ courseId, role: "admin" }] });
+  adminId = await makeAccount({ generalAdmin: true, links: [{ courseId, role: "admin" }] });
 });
 
 const scope = () => testScope({ accountId: adminId, golfCourseId: courseId, role: "admin" });
@@ -34,7 +34,7 @@ async function journalSerialise(): Promise<string> {
 }
 
 describe("le journal ne consigne aucune valeur métier", () => {
-  it("ne contient pas le nom d'un terrain créé ou modifié", async () => {
+  it("ne contient pas le nom d'un parcours créé ou modifié", async () => {
     const id = await createCourse(adminId, {
       name: "Nom Très Reconnaissable",
       timezone: "Africa/Casablanca",

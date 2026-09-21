@@ -6,7 +6,7 @@ import {
   kpiParCaddie,
   comparerAuParcours,
   distributionNotes,
-  kpiTerrain,
+  kpiParcours,
   scoreFinal,
   SEUIL_PERTINENCE,
 } from "@/server/repositories/kpi";
@@ -136,7 +136,7 @@ describe("KPI par caddie", () => {
     expect(k.scoreFinal).toBe(5);
   });
 
-  it("ne mélange JAMAIS deux terrains (FR-026)", async () => {
+  it("ne mélange JAMAIS deux parcours (FR-026)", async () => {
     await parcours(cedres, "C-F", [{ notes: notes5 }]);
     await parcours(atlas, "A-F", [{ notes: notes3 }]);
 
@@ -181,7 +181,7 @@ describe("comparaison à la moyenne du parcours", () => {
     expect(c.significative).toBe(true);
   });
 
-  it("compare au parcours du MÊME terrain seulement", async () => {
+  it("compare au parcours du MÊME parcours seulement", async () => {
     const id = await parcours(cedres, "C-K", [{ notes: notes5 }]);
     await parcours(atlas, "A-K", [{ notes: notes3 }]);
 
@@ -191,7 +191,7 @@ describe("comparaison à la moyenne du parcours", () => {
   });
 });
 
-describe("KPI du terrain — mesures séparées (FR-043)", () => {
+describe("KPI du parcours — mesures séparées (FR-043)", () => {
   it("agrège la note du parcours et la perception du prix sans toucher au score du caddie", async () => {
     const caddieId = await createCaddie(admin(), {
       internalRef: "C-L",
@@ -207,7 +207,7 @@ describe("KPI du terrain — mesures séparées (FR-043)", () => {
       perceptionPrix: "beaucoup_trop_eleve",
     });
 
-    const t = await kpiTerrain(admin());
+    const t = await kpiParcours(admin());
     expect(t.noteParcours).toBe(2);
     expect(t.perceptionPrix.beaucoup_trop_eleve).toBe(1);
 
@@ -241,7 +241,7 @@ describe("export CSV", () => {
     expect(entete).toContain("score_final");
   });
 
-  it("n'exporte que les caddies du terrain actif", async () => {
+  it("n'exporte que les caddies du parcours actif", async () => {
     await parcours(cedres, "C-O", [{ notes: notes5 }]);
     await parcours(atlas, "A-O", [{ notes: notes3 }]);
 

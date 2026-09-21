@@ -100,9 +100,9 @@ try {
    * est-elle REELLEMENT soumise au RLS ?
    *
    * Un superutilisateur contourne le RLS EN SILENCE. Les quatorze politiques
-   * de cloisonnement par terrain seraient alors decoratives, et rien ne le
+   * de cloisonnement par parcours seraient alors decoratives, et rien ne le
    * dirait : les pages s'afficheraient, les tests distants passeraient, et le
-   * defaut ne se verrait que le jour ou un terrain lirait les donnees d'un
+   * defaut ne se verrait que le jour ou un parcours lirait les donnees d'un
    * autre.
    *
    * On l'eprouve ici, dans le deploiement, ou le reseau prive de la base est
@@ -124,7 +124,7 @@ try {
       if (contourne) {
         console.error(
           "\nLa connexion applicative contourne le RLS. Le cloisonnement entre\n" +
-            "terrains ne s'appliquerait pas. Deploiement interrompu.",
+            "parcours ne s'appliquerait pas. Deploiement interrompu.",
         );
         process.exit(1);
       }

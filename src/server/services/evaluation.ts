@@ -13,12 +13,12 @@ import type { Langue } from "@/lib/i18n";
  *
  * ANONYME (FR-032) : aucune donnée identifiante n'est enregistrée — ni nom,
  * ni courriel, ni adresse IP, ni empreinte de navigateur. Le client n'a
- * aucun compte, et ces fonctions n'ont donc aucune portée de terrain : le
- * terrain est déduit de l'affectation, côté serveur.
+ * aucun compte, et ces fonctions n'ont donc aucune portée de parcours : le
+ * parcours est déduit de l'affectation, côté serveur.
  *
  * TROIS MESURES DISTINCTES (FR-043) : le score du caddie se calcule
  * uniquement à partir des six critères. La note du parcours appartient au
- * terrain. Les réponses sur le prix ne touchent jamais la note du caddie.
+ * parcours. Les réponses sur le prix ne touchent jamais la note du caddie.
  */
 
 export const CRITERES = [
@@ -34,7 +34,7 @@ export type Critere = (typeof CRITERES)[number];
 /** FR-051 : quatre joueurs au maximum pour une même partie. */
 /**
  * PLUS DE LIMITE PAR PARTIE. Le client ne scanne plus une affectation mais un
- * QR de terrain : rien ne permet de savoir combien de parties ont eu lieu, ni
+ * QR de parcours : rien ne permet de savoir combien de parties ont eu lieu, ni
  * de rattacher une reponse a l'une d'elles. La seule barriere restante vit
  * dans le navigateur du client — un temoin par caddie et par jour — et elle
  * est contournable en navigation privee. C'est un choix assume : le seuil de
@@ -50,8 +50,8 @@ export type PricePerception =
   | "beaucoup_trop_eleve";
 
 export interface SoumissionEvaluation {
-  /** Terrain resolu depuis le jeton. Le client n'a pas de portee ; ce champ
-   *  la remplace pour que le RLS sache de quel terrain il s'agit. */
+  /** Parcours resolu depuis le jeton. Le client n'a pas de portee ; ce champ
+   *  la remplace pour que le RLS sache de quel parcours il s'agit. */
   golfCourseId: string;
   caddieId: string;
   langue: Langue;
@@ -72,10 +72,7 @@ function noteValide(v: number | null | undefined): boolean {
  *
  * @public-client-path — le client n'a pas de compte, donc pas de portee.
  */
-export async function compterEvaluations(
-  golfCourseId: string,
-  caddieId: string,
-): Promise<number> {
+export async function compterEvaluations(golfCourseId: string, caddieId: string): Promise<number> {
   const rows = await withCourse(golfCourseId, (tx) =>
     tx.select({ n: count() }).from(evaluation).where(eq(evaluation.caddieId, caddieId)),
   );
@@ -84,7 +81,7 @@ export async function compterEvaluations(
 
 /** @public-client-path — le client n'a pas de compte, donc pas de portée. */
 export async function soumettreEvaluation(s: SoumissionEvaluation): Promise<string> {
-  // Le caddie doit exister, appartenir a CE terrain et y etre ACTIF : sans
+  // Le caddie doit exister, appartenir a CE parcours et y etre ACTIF : sans
   // cette verification, n'importe quel identifiant recu du navigateur ferait
   // l'affaire, y compris celui d'un caddie parti ou d'un autre parcours.
   const trouve = await withCourse(s.golfCourseId, (tx) =>

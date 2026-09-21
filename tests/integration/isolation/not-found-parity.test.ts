@@ -11,7 +11,7 @@ import { uuidv7 } from "@/lib/uuid";
 /**
  * T057 — PARITE DES REPONSES (FR-025).
  *
- * Une ressource INEXISTANTE et une ressource D'UN AUTRE TERRAIN doivent
+ * Une ressource INEXISTANTE et une ressource D'UN AUTRE PARCOURS doivent
  * produire EXACTEMENT la meme reponse. Toute difference — message, type
  * d'erreur, voire duree — revelerait l'existence de donnees voisines.
  */
@@ -34,7 +34,7 @@ const scope = () => testScope({ accountId: adminCedres, golfCourseId: cedres, ro
 const INEXISTANT = uuidv7();
 
 describe("lectures : même réponse dans les deux cas", () => {
-  it("terrain inexistant et terrain voisin donnent tous deux null", async () => {
+  it("parcours inexistant et parcours voisin donnent tous deux null", async () => {
     const inexistant = await findCourseInScope(scope(), INEXISTANT);
     const voisin = await findCourseInScope(scope(), atlas);
     expect(inexistant).toBe(voisin);
@@ -74,7 +74,7 @@ describe("écritures : même erreur dans les deux cas", () => {
 });
 
 describe("le message de refus ne révèle rien", () => {
-  it("ne cite ni identifiant, ni nom, ni terrain", async () => {
+  it("ne cite ni identifiant, ni nom, ni parcours", async () => {
     const message = await disableAccount(scope(), compteVoisin, 1).catch((e) => e.message);
 
     expect(message).toBe("Ressource introuvable.");

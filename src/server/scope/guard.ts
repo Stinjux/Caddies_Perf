@@ -10,7 +10,7 @@ import { NotFoundError } from "../errors";
  */
 
 /** Exige le role administrateur, sinon renvoie vers l'espace autorise. */
-export function guardAdmin(scope: Scope, fallback = "/terrains"): Scope {
+export function guardAdmin(scope: Scope, fallback = "/parcours"): Scope {
   if (scope.role !== "admin") redirect(fallback);
   return scope;
 }
@@ -19,7 +19,7 @@ export function guardAdmin(scope: Scope, fallback = "/terrains"): Scope {
 export const assertAdmin = requireAdmin;
 
 /**
- * FR-025 : une ressource absente et une ressource d'un autre terrain doivent
+ * FR-025 : une ressource absente et une ressource d'un autre parcours doivent
  * produire EXACTEMENT la meme reponse. Ce passage obligatoire garantit qu'on
  * ne peut pas, par inadvertance, distinguer les deux.
  */

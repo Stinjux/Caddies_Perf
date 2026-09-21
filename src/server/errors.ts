@@ -19,7 +19,7 @@ export class AppError extends Error {
   }
 }
 
-/** Ressource absente OU appartenant a un autre terrain : indiscernable (FR-025). */
+/** Ressource absente OU appartenant a un autre parcours : indiscernable (FR-025). */
 export class NotFoundError extends AppError {
   constructor() {
     super("Ressource introuvable.", "not_found");
@@ -55,11 +55,11 @@ export class ConflictError extends AppError {
   }
 }
 
-/** FR-015 : un terrain conserve toujours au moins un administrateur actif. */
+/** FR-015 : un parcours conserve toujours au moins un administrateur actif. */
 export class LastAdminError extends AppError {
   constructor() {
     super(
-      "Opération refusée : ce terrain doit conserver au moins un administrateur actif.",
+      "Opération refusée : ce parcours doit conserver au moins un administrateur actif.",
       "last_admin",
     );
   }

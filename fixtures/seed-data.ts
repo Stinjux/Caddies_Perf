@@ -2,7 +2,7 @@
  * JEU DE DONNEES ENTIEREMENT FICTIF (principe II).
  * Aucun nom, aucune adresse, aucun identifiant reel.
  *
- * Deux terrains : avec un seul, aucun test de cloisonnement ne prouverait rien.
+ * Deux parcours : avec un seul, aucun test de cloisonnement ne prouverait rien.
  */
 
 export const courses = [
@@ -35,7 +35,7 @@ export const accounts = [
     password: "MotDePasseFictif1!",
     links: [{ course: "cedres", role: "admin" }],
   },
-    {
+  {
     key: "admin_atlas",
     email: "admin.atlas@example.invalid",
     firstName: "Sofia",
@@ -53,6 +53,22 @@ export const accounts = [
       { course: "cedres", role: "admin" },
       { course: "atlas", role: "admin" },
     ],
+  },
+  /**
+   * ADMINISTRATEUR GENERAL, et AUCUN rattachement.
+   *
+   * L'absence de lien n'est pas un oubli : c'est la demonstration. Il atteint
+   * tous les parcours sans etre inscrit sur aucun, y compris ceux crees apres
+   * lui — ce qu'une liste de rattachements ne saurait exprimer.
+   */
+  {
+    key: "admin_general",
+    email: "admin.general@example.invalid",
+    firstName: "Karim",
+    lastName: "Exemple",
+    password: "MotDePasseFictif5!",
+    generalAdmin: true,
+    links: [],
   },
 ] as const;
 

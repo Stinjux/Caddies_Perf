@@ -1,7 +1,7 @@
 import { ValidationError } from "../errors";
 
 /**
- * Validation du logo d'un terrain (FR-003).
+ * Validation du logo d'un parcours (FR-003).
  * Formats et taille limites : un fichier refuse doit l'etre explicitement,
  * jamais en silence.
  */

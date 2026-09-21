@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { login } from "@/server/auth/current";
 import { SESSION_COOKIE, sessionCookieOptions } from "@/server/auth/session";
 import { AppError } from "@/server/errors";
+import { tAdmin } from "@/lib/i18n/admin";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export const dynamic = "force-dynamic";
 
@@ -11,20 +13,22 @@ async function connexion(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
 
+  const { t } = await tAdmin();
+
   let resultat;
   try {
     resultat = await login(email, password);
   } catch (e) {
-    const message = e instanceof AppError ? e.message : "Connexion impossible.";
+    const message = e instanceof AppError ? e.message : t.connexion.echec;
     redirect(`/connexion?erreur=${encodeURIComponent(message)}`);
   }
 
   const store = await cookies();
   store.set(SESSION_COOKIE, resultat.token, sessionCookieOptions);
 
-  // La racine oriente selon le role et le nombre de terrains rattaches.
-  // Rediriger directement vers /terrains provoquerait une double redirection
-  // visible pour un compte rattache a plusieurs terrains.
+  // La racine oriente selon le role et le nombre de parcours rattaches.
+  // Rediriger directement vers /parcours provoquerait une double redirection
+  // visible pour un compte rattache a plusieurs parcours.
   redirect("/");
 }
 
@@ -33,6 +37,7 @@ export default async function ConnexionPage({
 }: {
   searchParams: Promise<{ erreur?: string }>;
 }) {
+  const { langue, t } = await tAdmin();
   const { erreur } = await searchParams;
 
   return (
@@ -41,7 +46,14 @@ export default async function ConnexionPage({
         <h1 className="mb-1 text-center text-2xl font-semibold text-[var(--color-brand)]">
           CaddiePerf
         </h1>
-        <p className="mb-6 text-center text-sm text-neutral-500">Connexion</p>
+        <p className="mb-4 text-center text-sm text-neutral-500">{t.connexion.sousTitre}</p>
+
+        {/* Avant d'entrer, personne n'a de preference enregistree cote serveur.
+            Sans ce selecteur ici, un administrateur anglophone devrait se
+            connecter en francais pour pouvoir demander l'anglais. */}
+        <div className="mb-6 flex justify-center">
+          <LanguageSwitcher langue={langue} />
+        </div>
 
         {erreur && (
           <p
@@ -52,43 +64,43 @@ export default async function ConnexionPage({
           </p>
         )}
 
-                  <form
-            action={connexion}
-            className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6"
+        <form
+          action={connexion}
+          className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6"
+        >
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-neutral-800">
+              {t.connexion.courriel}
+            </span>
+            <input
+              name="email"
+              type="email"
+              required
+              autoComplete="username"
+              className="w-full rounded-lg border border-neutral-300 px-3 py-3 text-base"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-neutral-800">
+              {t.connexion.motDePasse}
+            </span>
+            <input
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className="w-full rounded-lg border border-neutral-300 px-3 py-3 text-base"
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="w-full rounded-lg bg-[var(--color-brand)] px-4 py-3 text-base font-medium text-white"
           >
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-neutral-800">
-                Adresse de courriel
-              </span>
-              <input
-                name="email"
-                type="email"
-                required
-                autoComplete="username"
-                className="w-full rounded-lg border border-neutral-300 px-3 py-3 text-base"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-neutral-800">
-                Mot de passe
-              </span>
-              <input
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                className="w-full rounded-lg border border-neutral-300 px-3 py-3 text-base"
-              />
-            </label>
-
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-[var(--color-brand)] px-4 py-3 text-base font-medium text-white"
-            >
-              Se connecter
-            </button>
-          </form>
+            {t.connexion.seConnecter}
+          </button>
+        </form>
       </div>
     </div>
   );

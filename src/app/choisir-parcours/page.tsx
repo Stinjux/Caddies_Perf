@@ -4,14 +4,16 @@ import { currentSession } from "@/server/auth/context";
 import { selectCourse } from "@/server/auth/current";
 import { SESSION_COOKIE } from "@/server/auth/session";
 import { listLinksForAccount } from "@/server/repositories/account";
+import { tAdmin } from "@/lib/i18n/admin";
 
 export const dynamic = "force-dynamic";
 
-/** FR-012 : ne propose QUE les terrains rattachés au compte. */
-export default async function ChoisirTerrainPage() {
+/** FR-012 : ne propose QUE les parcours rattachés au compte. */
+export default async function ChoisirParcoursPage() {
   const ctx = await currentSession();
   if (!ctx) redirect("/connexion");
 
+  const { t } = await tAdmin();
   const links = await listLinksForAccount(ctx.accountId);
 
   async function choisir(formData: FormData) {
@@ -27,7 +29,7 @@ export default async function ChoisirTerrainPage() {
     <div className="flex min-h-dvh items-center justify-center bg-neutral-50 px-4">
       <div className="w-full max-w-sm">
         <h1 className="mb-6 text-center text-xl font-semibold text-neutral-900">
-          Choisissez votre terrain
+          {t.choisir.titre}
         </h1>
         <ul className="space-y-3">
           {links.map((l) => (
@@ -40,7 +42,7 @@ export default async function ChoisirTerrainPage() {
                 >
                   <span className="block font-medium text-neutral-900">{l.name}</span>
                   <span className="block text-sm text-neutral-500">
-                    {l.role === "admin" ? "Administrateur" : "Starter"} · {l.timezone}
+                    {l.role === "admin" ? t.commun.administrateur : t.commun.starter} · {l.timezone}
                   </span>
                 </button>
               </form>

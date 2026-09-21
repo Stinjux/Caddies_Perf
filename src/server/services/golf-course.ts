@@ -6,11 +6,12 @@ import { golfCourse, accountGolfCourse } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { isValidTimezone } from "@/lib/timezone";
 import { requireAdmin, type Scope } from "../scope";
+import { estAdminGeneral } from "../repositories/account";
 import { writeAudit } from "../audit/write";
-import { ValidationError, ConflictError, NotFoundError } from "../errors";
+import { ValidationError, ConflictError, NotFoundError, ForbiddenError } from "../errors";
 
 /**
- * Service des terrains (FR-001 a FR-007).
+ * Service des parcours (FR-001 a FR-007).
  *
  * Chaque mutation est journalisee dans la MEME transaction que l'ecriture,
  * et protegee par verrouillage optimiste (FR-045).
@@ -30,7 +31,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 
 function validate(input: CourseInput): void {
   if (!input.name?.trim()) {
-    throw new ValidationError("name", "Le nom du terrain est obligatoire.");
+    throw new ValidationError("name", "Le nom du parcours est obligatoire.");
   }
   if (!input.timezone?.trim()) {
     throw new ValidationError("timezone", "Le fuseau horaire est obligatoire.");
@@ -57,16 +58,24 @@ function validate(input: CourseInput): void {
 }
 
 /**
- * La creation d'un terrain precede toute portee : elle rattache d'office son
- * createur comme administrateur, sans quoi le terrain naitrait orphelin (FR-015).
+ * La creation d'un parcours precede toute portee : elle rattache d'office son
+ * createur comme administrateur, sans quoi le parcours naitrait orphelin (FR-015).
+ *
+ * RESERVEE A L'ADMINISTRATEUR GENERAL. Creer un parcours ne se fait depuis
+ * aucun parcours : c'est un acte de plateforme. Un administrateur ordinaire
+ * qui le pourrait se fabriquerait un domaine a lui, hors de toute surveillance.
  */
 export async function createCourse(actorAccountId: string, input: CourseInput): Promise<string> {
+  // L'autorisation AVANT la validation : a qui n'a pas le droit d'agir, on ne
+  // dit meme pas si sa saisie etait correcte.
+  if (!(await estAdminGeneral(actorAccountId))) throw new ForbiddenError();
+
   validate(input);
   const id = uuidv7();
 
-  // Le terrain n'existe pas encore, mais son identifiant est deja tire : on
+  // Le parcours n'existe pas encore, mais son identifiant est deja tire : on
   // ouvre la portee AVANT l'insertion, faute de quoi le RLS refuserait la
-  // ligne qui inaugure le terrain — et son entree de journal avec elle.
+  // ligne qui inaugure le parcours — et son entree de journal avec elle.
   await withCourse(id, async (tx) => {
     await tx.insert(golfCourse).values({
       id,
@@ -85,11 +94,17 @@ export async function createCourse(actorAccountId: string, input: CourseInput): 
       .insert(accountGolfCourse)
       .values({ accountId: actorAccountId, golfCourseId: id, role: "admin" });
 
-    await writeAudit(tx, { accountId: actorAccountId, golfCourseId: id, role: "admin" } as Scope, {
-      action: "course.create",
-      targetType: "golf_course",
-      targetId: id,
-    });
+    // Ni portee ni conversion forcee : le journal ne demande que l'auteur et
+    // le parcours, qui sont l'un et l'autre etablis ici.
+    await writeAudit(
+      tx,
+      { accountId: actorAccountId, golfCourseId: id },
+      {
+        action: "course.create",
+        targetType: "golf_course",
+        targetId: id,
+      },
+    );
   });
 
   return id;
@@ -138,7 +153,7 @@ export async function updateCourse(
   });
 }
 
-/** FR-006 : un terrain porteur d'historique est archive, jamais supprime. */
+/** FR-006 : un parcours porteur d'historique est archive, jamais supprime. */
 export async function archiveCourse(scope: Scope, expectedVersion: number): Promise<void> {
   requireAdmin(scope);
 

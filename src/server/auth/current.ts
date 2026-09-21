@@ -1,8 +1,9 @@
 import { eq, and, gt } from "drizzle-orm";
 import { db } from "@/db";
-import { account, session, accountGolfCourse } from "@/db/schema";
+import { account, session, accountGolfCourse, golfCourse } from "@/db/schema";
 import { uuidv7 } from "@/lib/uuid";
 import { createScopeFromVerifiedSession, type Scope } from "../scope";
+import { listLinksForAccount, estAdminGeneral } from "../repositories/account";
 import { verifyPassword } from "./password";
 import { createSessionToken, hashToken, sessionExpiry } from "./session";
 import { UnauthenticatedError, ValidationError } from "../errors";
@@ -23,6 +24,8 @@ export interface SessionContext {
   firstName: string;
   lastName: string;
   activeGolfCourseId: string | null;
+  /** Niveau general : « admin » sur tous les parcours, presents et a venir. */
+  generalAdmin: boolean;
   scope: Scope | null;
 }
 
@@ -36,6 +39,7 @@ export async function login(email: string, password: string): Promise<Connexion>
       id: account.id,
       passwordHash: account.passwordHash,
       status: account.status,
+      generalAdmin: account.generalAdmin,
     })
     .from(account)
     .where(eq(account.email, email.trim().toLowerCase()))
@@ -55,19 +59,25 @@ export async function login(email: string, password: string): Promise<Connexion>
   }
   if (!(await verifyPassword(password, found.passwordHash))) throw generic;
 
-  const links = await db
-    .select({ golfCourseId: accountGolfCourse.golfCourseId, role: accountGolfCourse.role })
-    .from(accountGolfCourse)
-    .where(eq(accountGolfCourse.accountId, found.id));
+  // Pour un administrateur general, « rattachements » veut dire TOUS les
+  // parcours : c'est la meme fonction qui repond, afin que la connexion et
+  // les ecrans ne puissent jamais diverger sur ce qui est accessible.
+  const links = await listLinksForAccount(found.id);
 
   if (links.length === 0) {
+    // Un administrateur general sans aucun parcours n'est pas un compte mal
+    // configure : c'est une plateforme encore vide. Le message le dit, sans
+    // quoi le premier administrateur resterait a la porte de sa propre
+    // installation.
     throw new ValidationError(
       "account",
-      "Votre compte n'est rattaché à aucun terrain. Contactez un administrateur.",
+      found.generalAdmin
+        ? "Aucun parcours n'existe encore. Créez-en un pour commencer."
+        : "Votre compte n'est rattaché à aucun parcours. Contactez un administrateur.",
     );
   }
 
-  // FR-012 : un seul rattachement, le terrain est choisi d'office.
+  // FR-012 : un seul parcours accessible, il est choisi d'office.
   const sole = links.length === 1 ? links[0]!.golfCourseId : null;
   const role = links.length === 1 ? links[0]!.role : "starter";
 
@@ -93,6 +103,7 @@ export async function resolveSession(token: string | undefined): Promise<Session
       firstName: account.firstName,
       lastName: account.lastName,
       status: account.status,
+      generalAdmin: account.generalAdmin,
       activeGolfCourseId: session.activeGolfCourseId,
     })
     .from(session)
@@ -111,23 +122,31 @@ export async function resolveSession(token: string | undefined): Promise<Session
 
   let scope: Scope | null = null;
   if (row.activeGolfCourseId) {
-    const link = await db
-      .select({ role: accountGolfCourse.role })
-      .from(accountGolfCourse)
-      .where(
-        and(
-          eq(accountGolfCourse.accountId, row.accountId),
-          eq(accountGolfCourse.golfCourseId, row.activeGolfCourseId),
-        ),
-      )
-      .limit(1);
+    // Un administrateur general est « admin » partout : la question du
+    // rattachement ne se pose pas pour lui. Pour tous les autres, elle est
+    // reposee A CHAQUE REQUETE — un rattachement retire pendant la session
+    // doit invalider la portee sans attendre l'expiration (P-1).
+    const role = row.generalAdmin
+      ? "admin"
+      : ((
+          await db
+            .select({ role: accountGolfCourse.role })
+            .from(accountGolfCourse)
+            .where(
+              and(
+                eq(accountGolfCourse.accountId, row.accountId),
+                eq(accountGolfCourse.golfCourseId, row.activeGolfCourseId),
+              ),
+            )
+            .limit(1)
+        )[0]?.role ?? null);
 
-    // Le rattachement a pu etre retire : la portee devient invalide (P-1).
-    scope = link[0]
+    scope = role
       ? createScopeFromVerifiedSession({
           accountId: row.accountId,
           golfCourseId: row.activeGolfCourseId,
-          role: link[0].role,
+          role,
+          generalAdmin: row.generalAdmin,
         })
       : null;
   }
@@ -137,26 +156,40 @@ export async function resolveSession(token: string | undefined): Promise<Session
     firstName: row.firstName,
     lastName: row.lastName,
     activeGolfCourseId: row.activeGolfCourseId,
+    generalAdmin: row.generalAdmin,
     scope,
   };
 }
 
-/** FR-012 : changer de terrain actif, apres verification du rattachement. */
+/** FR-012 : changer de parcours actif, apres verification de l'acces. */
 export async function selectCourse(token: string, golfCourseId: string): Promise<void> {
   const ctx = await resolveSession(token);
   if (!ctx) throw new UnauthenticatedError();
 
-  const link = await db
-    .select({ role: accountGolfCourse.role })
-    .from(accountGolfCourse)
-    .where(
-      and(
-        eq(accountGolfCourse.accountId, ctx.accountId),
-        eq(accountGolfCourse.golfCourseId, golfCourseId),
-      ),
-    )
-    .limit(1);
-  if (link.length === 0) throw new UnauthenticatedError();
+  // Le niveau general est relu en base, jamais pris dans le contexte : c'est
+  // la seule lecture qui fasse foi si le privilege vient d'etre retire.
+  if (!(await estAdminGeneral(ctx.accountId))) {
+    const link = await db
+      .select({ role: accountGolfCourse.role })
+      .from(accountGolfCourse)
+      .where(
+        and(
+          eq(accountGolfCourse.accountId, ctx.accountId),
+          eq(accountGolfCourse.golfCourseId, golfCourseId),
+        ),
+      )
+      .limit(1);
+    if (link.length === 0) throw new UnauthenticatedError();
+  } else {
+    // Meme pour lui, le parcours doit exister : sans ce controle, une portee
+    // pointerait vers un identifiant fantome.
+    const existe = await db
+      .select({ id: golfCourse.id })
+      .from(golfCourse)
+      .where(eq(golfCourse.id, golfCourseId))
+      .limit(1);
+    if (existe.length === 0) throw new UnauthenticatedError();
+  }
 
   await db
     .update(session)

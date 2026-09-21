@@ -4,6 +4,7 @@ import { listAuditInScope } from "@/server/repositories/audit";
 import { listAccountsInScope } from "@/server/repositories/account";
 import { getActiveCourse } from "@/server/repositories/golf-course";
 import { formatInCourseTimezone } from "@/lib/timezone";
+import { tAdmin } from "@/lib/i18n/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -15,41 +16,19 @@ export const dynamic = "force-dynamic";
  * ici (FR-037).
  */
 
-const LIBELLES: Record<string, string> = {
-  "course.create": "Terrain créé",
-  "course.update": "Terrain modifié",
-  "course.archive": "Terrain archivé",
-  "account.create": "Compte créé",
-  "account.update": "Compte modifié",
-  "account.disable": "Compte désactivé",
-  "account.enable": "Compte réactivé",
-  "account.attach": "Compte rattaché",
-  "account.detach": "Compte détaché",
-  "account.password_reset": "Mot de passe réinitialisé",
-  "caddie.create": "Caddie créé",
-  "caddie.update": "Caddie modifié",
-  "caddie.disable": "Caddie désactivé",
-  "pii.read": "Renseignements personnels consultés",
-  "pii.write": "Renseignements personnels modifiés",
-  "pii.erase": "Renseignements personnels effacés",
-  "retention.purge": "Purge à échéance",
-  // Consultations. Une lecture ne laisse aucune trace naturelle : sans ces
-  // entrées, on ne saurait jamais qui a regardé quoi.
-  "caddie.list": "Liste des caddies consultée",
-  "caddie.read": "Fiche caddie consultée",
-  "account.list": "Liste des comptes consultée",
-  "report.read": "Rapport consulté",
-  "report.export": "Rapport exporté",
-  "audit.read": "Journal consulté",
-};
-
 export default async function JournalPage({
   searchParams,
 }: {
   searchParams: Promise<{ action?: string; auteur?: string; du?: string; au?: string }>;
 }) {
   const { scope } = await requireScope();
-  if (scope.role !== "admin") redirect("/terrains");
+  if (scope.role !== "admin") redirect("/parcours");
+
+  const { t } = await tAdmin();
+  // Les libellés viennent du dictionnaire : le journal se lit dans la langue
+  // de celui qui le consulte, alors que les codes stockés, eux, ne changent
+  // jamais — c'est ce qui les rend comparables d'une langue à l'autre.
+  const LIBELLES: Record<string, string> = t.journal.actions;
 
   const params = await searchParams;
   const course = await getActiveCourse(scope);
@@ -64,21 +43,18 @@ export default async function JournalPage({
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-semibold text-neutral-900">Journal des actions</h1>
-      <p className="mb-6 text-sm text-neutral-500">
-        Ce journal est en écriture seule. Aucune entrée ne peut être modifiée ni supprimée, et
-        aucune donnée personnelle n&apos;y figure.
-      </p>
+      <h1 className="mb-1 text-2xl font-semibold text-neutral-900">{t.journal.titre}</h1>
+      <p className="mb-6 text-sm text-neutral-500">{t.journal.explication}</p>
 
       <form className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-neutral-200 bg-white p-4">
         <label className="text-sm">
-          <span className="mb-1 block text-neutral-700">Nature</span>
+          <span className="mb-1 block text-neutral-700">{t.journal.nature}</span>
           <select
             name="action"
             defaultValue={params.action ?? ""}
             className="rounded-lg border border-neutral-300 px-3 py-2"
           >
-            <option value="">Toutes</option>
+            <option value="">{t.commun.toutes}</option>
             {Object.entries(LIBELLES).map(([code, libelle]) => (
               <option key={code} value={code}>
                 {libelle}
@@ -88,13 +64,13 @@ export default async function JournalPage({
         </label>
 
         <label className="text-sm">
-          <span className="mb-1 block text-neutral-700">Auteur</span>
+          <span className="mb-1 block text-neutral-700">{t.journal.auteur}</span>
           <select
             name="auteur"
             defaultValue={params.auteur ?? ""}
             className="rounded-lg border border-neutral-300 px-3 py-2"
           >
-            <option value="">Tous</option>
+            <option value="">{t.commun.tous}</option>
             {auteurs.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.firstName} {a.lastName}
@@ -104,7 +80,7 @@ export default async function JournalPage({
         </label>
 
         <label className="text-sm">
-          <span className="mb-1 block text-neutral-700">Du</span>
+          <span className="mb-1 block text-neutral-700">{t.commun.du}</span>
           <input
             type="date"
             name="du"
@@ -114,7 +90,7 @@ export default async function JournalPage({
         </label>
 
         <label className="text-sm">
-          <span className="mb-1 block text-neutral-700">Au</span>
+          <span className="mb-1 block text-neutral-700">{t.commun.au}</span>
           <input
             type="date"
             name="au"
@@ -127,13 +103,13 @@ export default async function JournalPage({
           type="submit"
           className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-medium text-white"
         >
-          Filtrer
+          {t.commun.filtrer}
         </button>
       </form>
 
       {entries.length === 0 ? (
         <p className="rounded-xl border border-dashed border-neutral-300 bg-white p-10 text-center text-neutral-600">
-          Aucune action ne correspond à ces critères.
+          {t.journal.aucune}
         </p>
       ) : (
         <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
@@ -142,7 +118,7 @@ export default async function JournalPage({
               <div>
                 <p className="text-neutral-900">{LIBELLES[e.action] ?? e.action}</p>
                 <p className="text-sm text-neutral-500">
-                  par {e.actorFirstName} {e.actorLastName} · {e.targetType}
+                  {t.journal.par} {e.actorFirstName} {e.actorLastName} · {e.targetType}
                 </p>
               </div>
               <span className="text-sm text-neutral-500">

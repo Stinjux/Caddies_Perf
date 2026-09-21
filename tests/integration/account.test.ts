@@ -22,7 +22,7 @@ beforeEach(async () => {
 const asAdmin = () => testScope({ accountId: adminId, golfCourseId: courseId, role: "admin" });
 
 describe("création de comptes (FR-009, FR-011)", () => {
-  it("crée un compte Starter rattaché au terrain actif", async () => {
+  it("crée un compte Starter rattaché au parcours actif", async () => {
     const id = await createAccount(asAdmin(), {
       email: "starter.cedres@example.invalid",
       firstName: "Karim",
@@ -140,7 +140,7 @@ describe("désactivation et réactivation (FR-014)", () => {
     await expect(disableAccount(asAdmin(), starterId, 99)).rejects.toThrow(/modifiée entre-temps/);
   });
 
-  it("traite un compte d'un autre terrain comme inexistant (FR-025)", async () => {
+  it("traite un compte d'un autre parcours comme inexistant (FR-025)", async () => {
     const autre = await makeCourse("Royal Atlas");
     const etranger = await makeAccount({ links: [{ courseId: autre, role: "starter" }] });
     await expect(disableAccount(asAdmin(), etranger, 1)).rejects.toThrow(/introuvable/);

@@ -14,7 +14,7 @@ import { makeCourse, makeAccount } from "../../helpers/fixtures";
  * T075 / SCENARIO V-8 — EFFACEMENT SANS PERTE D'HISTORIQUE.
  *
  * L'exigence la plus delicate du produit : un caddie doit pouvoir faire
- * effacer ses renseignements personnels SANS que les statistiques du terrain
+ * effacer ses renseignements personnels SANS que les statistiques du parcours
  * ne bougent d'un iota (FR-033, SC-009).
  *
  * Le test calcule les moyennes AVANT, efface, puis recalcule : elles doivent
@@ -32,7 +32,6 @@ const scope = () => testScope({ accountId: adminId, golfCourseId: courseId, role
 
 /** Construit un historique complet : affectations terminees et evaluations. */
 async function seedHistorique() {
-
   // Une valeur null represente une reponse « non applicable » (FR-043).
   const notes: (number | null)[][] = [
     [5, 4, 5, 3, 4, 5],
@@ -76,7 +75,6 @@ async function moyennes() {
   `;
   return rows;
 }
-
 
 beforeEach(async () => {
   await resetDb();

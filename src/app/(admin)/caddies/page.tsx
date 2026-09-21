@@ -4,12 +4,15 @@ import { revalidatePath } from "next/cache";
 import { requireScope } from "@/server/auth/context";
 import { listCaddies } from "@/server/repositories/caddie";
 import { archiverCaddie } from "@/server/services/caddie";
+import { tAdmin } from "@/lib/i18n/admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function CaddiesPage() {
   const { scope } = await requireScope();
   if (scope.role !== "admin") redirect("/");
+
+  const { t } = await tAdmin();
 
   /**
    * DÉPART D'UN CADDIE. Le numéro de version voyage avec le formulaire : deux
@@ -28,18 +31,18 @@ export default async function CaddiesPage() {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-neutral-900">Caddies</h1>
+        <h1 className="text-2xl font-semibold text-neutral-900">{t.caddies.titre}</h1>
         <Link
           href="/caddies/import"
           className="rounded-lg bg-[var(--color-brand)] px-4 py-2.5 text-sm font-medium text-white"
         >
-          Importer un fichier CSV
+          {t.caddies.importer}
         </Link>
       </div>
 
       {caddies.length === 0 ? (
         <p className="rounded-xl border border-dashed border-neutral-300 bg-white p-10 text-center text-neutral-600">
-          Aucun caddie enregistré. Importez un fichier CSV pour commencer.
+          {t.caddies.aucun}
         </p>
       ) : (
         <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
@@ -51,8 +54,8 @@ export default async function CaddiesPage() {
                 </p>
                 <p className="text-sm text-neutral-500">
                   {c.seniorityYears !== null
-                    ? `${c.seniorityYears} an${c.seniorityYears > 1 ? "s" : ""} d'ancienneté`
-                    : "Ancienneté non renseignée"}
+                    ? t.caddies.anciennete(c.seniorityYears)
+                    : t.caddies.ancienneteInconnue}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -63,16 +66,16 @@ export default async function CaddiesPage() {
                       : "rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700"
                   }
                 >
-                  {c.availability === "available" ? "Disponible" : "Indisponible"}
+                  {c.availability === "available" ? t.caddies.disponible : t.caddies.indisponible}
                 </span>
                 <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-600">
-                  {c.status === "active" ? "Actif" : "Désactivé"}
+                  {c.status === "active" ? t.commun.actif : t.commun.desactive}
                 </span>
                 <Link
                   href={`/caddies/${c.id}/donnees-personnelles`}
                   className="text-sm text-neutral-500 underline"
                 >
-                  Renseignements
+                  {t.caddies.renseignements}
                 </Link>
                 {c.status === "active" && (
                   <form action={archiver}>
@@ -82,7 +85,7 @@ export default async function CaddiesPage() {
                       type="submit"
                       className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700"
                     >
-                      Départ
+                      {t.caddies.depart}
                     </button>
                   </form>
                 )}
